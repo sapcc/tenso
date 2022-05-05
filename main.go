@@ -21,8 +21,10 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -35,6 +37,20 @@ import (
 )
 
 func main() {
+	logg.ShowDebug = getenvBool("TENSO_DEBUG")
+
+	//The TENSO_INSECURE flag can be used to get Tenso to work through mitmproxy
+	//(which is very useful for development and debugging). (It's very important
+	//that this is not the standard "TENSO_DEBUG" variable. That one is meant to
+	//be useful for production systems, where you definitely don't want to turn
+	//off certificate verification.)
+	if getenvBool("TENSO_INSECURE") {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		http.DefaultClient.Transport = userAgentInjector{http.DefaultTransport}
+	}
+
 	cfg := tenso.ParseConfiguration()
 	db, err := tenso.InitDB(cfg.DatabaseURL)
 	must(err)
@@ -102,4 +118,22 @@ func must(err error) {
 	if err != nil {
 		logg.Fatal(err.Error())
 	}
+}
+
+func getenvBool(key string) bool {
+	val, err := strconv.ParseBool(key)
+	if err != nil {
+		return false
+	}
+	return val
+}
+
+type userAgentInjector struct {
+	Inner http.RoundTripper
+}
+
+//RoundTrip implements the http.RoundTripper interface.
+func (uai userAgentInjector) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Set("User-Agent", "tenso/rolling")
+	return uai.Inner.RoundTrip(req)
 }
