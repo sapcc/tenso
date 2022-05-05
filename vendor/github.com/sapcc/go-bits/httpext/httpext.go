@@ -1,6 +1,6 @@
 /*******************************************************************************
 *
-* Copyright 2022 SAP SE
+* Copyright 2019-2020 SAP SE
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,22 +17,28 @@
 *
 *******************************************************************************/
 
-package main
+//Package httpext provides some convenience functions on top of the "net/http"
+//package from the stdlib.
+package httpext
 
 import (
-	"github.com/sapcc/go-bits/logg"
-	"github.com/sapcc/tenso/internal/tenso"
+	"net"
+	"net/http"
 )
 
-func main() {
-	cfg := tenso.ParseConfiguration()
-	db, err := tenso.InitDB(cfg.DatabaseURL)
-	must(err)
-	_ = db
-}
-
-func must(err error) {
-	if err != nil {
-		logg.Fatal(err.Error())
+//GetRequesterIPFor inspects an http.Request and returns the IP address of the
+//machine where the request originated (or the empty string if no IP can be
+//found in the request).
+func GetRequesterIPFor(r *http.Request) string {
+	remoteAddr := r.RemoteAddr
+	if xForwardedFor := r.Header.Get("X-Forwarded-For"); xForwardedFor != "" {
+		remoteAddr = xForwardedFor
 	}
+
+	//strip port, if any
+	host, _, err := net.SplitHostPort(remoteAddr)
+	if err == nil {
+		return host
+	}
+	return remoteAddr
 }
