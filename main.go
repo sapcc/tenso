@@ -80,6 +80,7 @@ func runAPI(cfg tenso.Configuration, db *tenso.DB) {
 	}
 }
 
+//nolint:unparam
 func runWorker(cfg tenso.Configuration, db *tenso.DB) {
 	ctx := httpee.ContextWithSIGINT(context.Background(), 10*time.Second)
 
