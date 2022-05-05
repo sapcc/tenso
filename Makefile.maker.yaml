@@ -1,0 +1,46 @@
+# Configuration file for <https://github.com/sapcc/go-makefile-maker>
+
+binaries:
+  - name:        tenso
+    fromPackage: .
+    installTo:   bin/
+
+coverageTest:
+  only: '/internal'
+  except: '/delivery'
+
+vendoring:
+  enabled: true
+
+golangciLint:
+  createConfig: true
+  errcheckExcludes:
+    - encoding/json.Marshal
+    # Any error in HTTP handlers is handled by the server itself.
+    - (net/http.ResponseWriter).Write
+
+githubWorkflow:
+  global:
+    assignees:
+      - majewsky
+      - SuperSandro2000
+    ignorePaths: [ "**.md" ] # all Markdown files
+  ci:
+    enabled: true
+    coveralls: true
+    postgres:
+      enabled: true
+  license:
+    enabled: true
+  securityChecks:
+    enabled: true
+  spellCheck:
+    enabled: true
+    ignorePaths: [] # override global setting so that nothing is ignored
+
+renovate:
+  enabled: true
+
+verbatim: |
+  copy-fixtures:
+    find -name '*.actual' | xargs -I{} bash -c 'mv {} $$(echo {} | sed "s/.actual//g")'
