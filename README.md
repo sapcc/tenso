@@ -9,7 +9,9 @@ The name comes from "tensō" (転送), which is Japanese for "data transfer".
 ## Usage
 
 Build with `make`, install with `make install` or `docker build`. Run without
-any arguments. The following environment variables are understood:
+a single argument, either "api" or "worker", to select whether to expose the
+HTTP API or run the background worker jobs. The following environment variables
+are understood by both API and worker:
 
 | Variable | Default | Explanation |
 | -------- | ------- | ----------- |
@@ -19,3 +21,5 @@ any arguments. The following environment variables are understood:
 | `TENSO_DB_HOSTNAME` | `localhost` | Hostname of the database server. |
 | `TENSO_DB_PORT` | `5432` | Port on which the PostgreSQL service is running on. |
 | `TENSO_DB_CONNECTION_OPTIONS` | *(optional)* | Database connection options. |
+
+TODO env vars for only API and for only worker

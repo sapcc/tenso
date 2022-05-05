@@ -21,6 +21,7 @@ package main
 
 import (
 	"github.com/sapcc/go-bits/logg"
+
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
@@ -29,6 +30,8 @@ func main() {
 	db, err := tenso.InitDB(cfg.DatabaseURL)
 	must(err)
 	_ = db
+
+	//TODO: add subcommands "api" and "worker"
 }
 
 func must(err error) {
