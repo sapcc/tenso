@@ -22,4 +22,8 @@ are understood by both API and worker:
 | `TENSO_DB_PORT` | `5432` | Port on which the PostgreSQL service is running on. |
 | `TENSO_DB_CONNECTION_OPTIONS` | *(optional)* | Database connection options. |
 
-TODO env vars for only API and for only worker
+The following environment variables are only understood by the API:
+
+| Variable | Default | Explanation |
+| -------- | ------- | ----------- |
+| `TENSO_API_LISTEN_ADDRESS` | `:8080` | Listen address for HTTP server. |

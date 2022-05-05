@@ -20,8 +20,17 @@
 package main
 
 import (
+	"context"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/cors"
+	"github.com/sapcc/go-bits/httpee"
 	"github.com/sapcc/go-bits/logg"
 
+	"github.com/sapcc/tenso/internal/api"
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
@@ -29,9 +38,51 @@ func main() {
 	cfg := tenso.ParseConfiguration()
 	db, err := tenso.InitDB(cfg.DatabaseURL)
 	must(err)
-	_ = db
 
-	//TODO: add subcommands "api" and "worker"
+	commandWord := ""
+	if len(os.Args) == 2 {
+		commandWord = os.Args[1]
+	}
+	switch commandWord {
+	case "api":
+		runAPI(cfg, db)
+	case "worker":
+		runWorker(cfg, db)
+	default:
+		logg.Fatal("usage: %s [api|worker]", os.Args[0])
+	}
+}
+
+func runAPI(cfg tenso.Configuration, db *tenso.DB) {
+	ctx := httpee.ContextWithSIGINT(context.Background(), 10*time.Second)
+
+	//wire up HTTP handlers
+	handler := api.Handler(cfg, db)
+	handler = logg.Middleware{}.Wrap(handler)
+	handler = cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"HEAD", "GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders: []string{"Content-Type", "User-Agent", "X-Auth-Token", "Authorization"},
+	}).Handler(handler)
+	http.Handle("/", handler)
+	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/healthcheck", api.HealthCheckHandler)
+
+	//start HTTP server
+	apiListenAddress := os.Getenv("TENSO_API_LISTEN_ADDRESS")
+	if apiListenAddress == "" {
+		apiListenAddress = ":8080"
+	}
+	logg.Info("listening on " + apiListenAddress)
+	err := httpee.ListenAndServeContext(ctx, apiListenAddress, nil)
+	if err != nil {
+		logg.Fatal("error returned from httpee.ListenAndServeContext(): %s", err.Error())
+	}
+}
+
+func runWorker(cfg tenso.Configuration, db *tenso.DB) {
+	//TODO implement
+	select {}
 }
 
 func must(err error) {
