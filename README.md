@@ -27,3 +27,9 @@ The following environment variables are only understood by the API:
 | Variable | Default | Explanation |
 | -------- | ------- | ----------- |
 | `TENSO_API_LISTEN_ADDRESS` | `:8080` | Listen address for HTTP server. |
+
+The following environment variables are only understood by the worker:
+
+| Variable | Default | Explanation |
+| -------- | ------- | ----------- |
+| `TENSO_WORKER_LISTEN_ADDRESS` | `:8080` | Listen address for HTTP server (only for healthcheck and Prometheus metrics). |

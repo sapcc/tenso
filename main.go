@@ -81,8 +81,20 @@ func runAPI(cfg tenso.Configuration, db *tenso.DB) {
 }
 
 func runWorker(cfg tenso.Configuration, db *tenso.DB) {
-	//TODO implement
-	select {}
+	ctx := httpee.ContextWithSIGINT(context.Background(), 10*time.Second)
+
+	//start HTTP server for Prometheus metrics and health check
+	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/healthcheck", api.HealthCheckHandler)
+	listenAddress := os.Getenv("TENSO_WORKER_LISTEN_ADDRESS")
+	if listenAddress == "" {
+		listenAddress = ":8080"
+	}
+	logg.Info("listening on " + listenAddress)
+	err := httpee.ListenAndServeContext(ctx, listenAddress, nil)
+	if err != nil {
+		logg.Fatal("error returned from httpee.ListenAndServeContext(): %s", err.Error())
+	}
 }
 
 func must(err error) {
