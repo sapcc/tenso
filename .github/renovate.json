@@ -13,10 +13,10 @@
     "SuperSandro2000"
   ],
   "constraints": {
-    "go": "1.18"
+    "go": "1.17"
   },
   "postUpdateOptions": [
-    "gomodTidy",
+    "gomodTidy1.17",
     "gomodUpdateImportPaths"
   ],
   "packageRules": [
