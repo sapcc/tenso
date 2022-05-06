@@ -24,21 +24,105 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/sapcc/go-bits/logg"
 )
 
 //Configuration contains all configuration values that we collect from the environment.
 type Configuration struct {
-	DatabaseURL url.URL
+	DatabaseURL   url.URL
+	EnabledRoutes []Route
 }
+
+var (
+	routeSpecRx = regexp.MustCompile(`^([a-zA-Z0-9.-]+)\s*->\s*([a-zA-Z0-9.-]+)$`)
+)
 
 //ParseConfiguration obtains a tenso.Configuration instance from the
 //corresponding environment variables. Aborts on error.
 func ParseConfiguration() Configuration {
-	return Configuration{
+	cfg := Configuration{
 		DatabaseURL: getDBURL(),
 	}
+
+	//parse routes
+	for _, routeSpec := range strings.Split(os.Getenv("TENSO_ROUTES"), ",") {
+		routeSpec = strings.TrimSpace(routeSpec)
+		if routeSpec == "" {
+			//be lenient e.g. when the list of routes has a trailing comma
+			continue
+		}
+
+		match := routeSpecRx.FindStringSubmatch(routeSpec)
+		if match == nil {
+			logg.Fatal("route specification %q is invalid: syntax error", routeSpec)
+		}
+		route := Route{
+			SourcePayloadFormat: match[1],
+			TargetPayloadFormat: match[2],
+		}
+
+		//select validation handler
+		for _, handler := range allValidationHandlers {
+			if route.SourcePayloadFormat == handler.PayloadFormat() {
+				route.ValidationHandler = handler
+				break
+			}
+		}
+		if route.ValidationHandler == nil {
+			logg.Fatal("route specification %q is invalid: cannot validate %s",
+				routeSpec, route.SourcePayloadFormat)
+		}
+		err := route.ValidationHandler.Init()
+		if err != nil {
+			logg.Fatal("while parsing route specification %q: cannot initialize validation for %s: %s",
+				routeSpec, route.SourcePayloadFormat, err.Error())
+		}
+
+		//select translation handler
+		for _, handler := range allTranslationHandlers {
+			if route.SourcePayloadFormat == handler.SourcePayloadFormat() &&
+				route.TargetPayloadFormat == handler.TargetPayloadFormat() {
+				route.TranslationHandler = handler
+				break
+			}
+		}
+		if route.TranslationHandler == nil {
+			logg.Fatal("route specification %q is invalid: do not know how to translate from %s to %s",
+				routeSpec, route.SourcePayloadFormat, route.TargetPayloadFormat)
+		}
+		err = route.TranslationHandler.Init()
+		if err != nil {
+			logg.Fatal("while parsing route specification %q: cannot initialize translation from %s to %s: %s",
+				routeSpec, route.SourcePayloadFormat, route.TargetPayloadFormat, err.Error())
+		}
+
+		//select delivery handler
+		for _, handler := range allDeliveryHandlers {
+			if route.TargetPayloadFormat == handler.PayloadFormat() {
+				route.DeliveryHandler = handler
+				break
+			}
+		}
+		if route.DeliveryHandler == nil {
+			logg.Fatal("route specification %q is invalid: cannot deliver %s",
+				routeSpec, route.TargetPayloadFormat)
+		}
+		err = route.DeliveryHandler.Init()
+		if err != nil {
+			logg.Fatal("while parsing route specification %q: cannot initialize delivery for %s: %s",
+				routeSpec, route.TargetPayloadFormat, err.Error())
+		}
+
+		cfg.EnabledRoutes = append(cfg.EnabledRoutes, route)
+	}
+	if len(cfg.EnabledRoutes) == 0 {
+		logg.Fatal("missing required environment variable: TENSO_ROUTES")
+	}
+
+	return cfg
 }
 
 //GetenvOrDefault is like os.Getenv but it also takes a default value which is

@@ -33,7 +33,10 @@ import (
 	"github.com/sapcc/go-bits/logg"
 
 	"github.com/sapcc/tenso/internal/api"
+	_ "github.com/sapcc/tenso/internal/delivery" //must be imported to register the DeliveryHandlers
 	"github.com/sapcc/tenso/internal/tenso"
+	_ "github.com/sapcc/tenso/internal/translation" //must be imported to register the TranslationHandlers
+	_ "github.com/sapcc/tenso/internal/validation"  //must be imported to register the ValidationHandlers
 )
 
 func main() {
