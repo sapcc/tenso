@@ -42,6 +42,12 @@ import (
 )
 
 func main() {
+	commandWord := ""
+	if len(os.Args) == 2 {
+		commandWord = os.Args[1]
+		tenso.Component = "tenso-" + commandWord
+	}
+
 	logg.ShowDebug = getenvBool("TENSO_DEBUG")
 
 	//The TENSO_INSECURE flag can be used to get Tenso to work through mitmproxy
@@ -59,13 +65,8 @@ func main() {
 	cfg := tenso.ParseConfiguration()
 	db, err := tenso.InitDB(cfg.DatabaseURL)
 	must(err)
-
 	prometheus.MustRegister(sqlstats.NewStatsCollector("tenso", db.Db))
 
-	commandWord := ""
-	if len(os.Args) == 2 {
-		commandWord = os.Args[1]
-	}
 	switch commandWord {
 	case "api":
 		runAPI(cfg, db)
@@ -107,6 +108,8 @@ func runAPI(cfg tenso.Configuration, db *tenso.DB) {
 func runWorker(cfg tenso.Configuration, db *tenso.DB) {
 	ctx := httpee.ContextWithSIGINT(context.Background(), 10*time.Second)
 
+	//TODO start worker job loops
+
 	//start HTTP server for Prometheus metrics and health check
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/healthcheck", api.HealthCheckHandler)
@@ -141,6 +144,6 @@ type userAgentInjector struct {
 
 //RoundTrip implements the http.RoundTripper interface.
 func (uai userAgentInjector) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("User-Agent", "tenso/rolling")
+	req.Header.Set("User-Agent", tenso.Component+"/rolling")
 	return uai.Inner.RoundTrip(req)
 }

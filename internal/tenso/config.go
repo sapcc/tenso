@@ -148,9 +148,9 @@ func getDBURL() url.URL {
 	}
 	hostname, err := os.Hostname()
 	if err == nil {
-		dbConnOpts.Set("application_name", fmt.Sprintf("tenso@%s", hostname))
+		dbConnOpts.Set("application_name", fmt.Sprintf("%s@%s", Component, hostname))
 	} else {
-		dbConnOpts.Set("application_name", "tenso")
+		dbConnOpts.Set("application_name", Component)
 	}
 
 	return url.URL{
