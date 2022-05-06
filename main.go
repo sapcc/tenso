@@ -27,6 +27,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dlmiddlecote/sqlstats"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/sapcc/go-bits/httpee"
@@ -57,6 +59,8 @@ func main() {
 	cfg := tenso.ParseConfiguration()
 	db, err := tenso.InitDB(cfg.DatabaseURL)
 	must(err)
+
+	prometheus.MustRegister(sqlstats.NewStatsCollector("tenso", db.Db))
 
 	commandWord := ""
 	if len(os.Args) == 2 {
