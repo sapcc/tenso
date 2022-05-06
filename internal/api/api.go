@@ -28,9 +28,20 @@ import (
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
+type API struct {
+	cfg tenso.Configuration
+	db  *tenso.DB
+}
+
+func NewAPI(cfg tenso.Configuration, db *tenso.DB) *API {
+	a := &API{cfg, db}
+	return a
+}
+
 //Handler generates a HTTP handler for all main API endpoints.
-func Handler(cfg tenso.Configuration, db *tenso.DB) http.Handler {
+func (a *API) Handler() http.Handler {
 	r := mux.NewRouter()
+	r.Methods("POST").Path("/v1/events/new").HandlerFunc(a.handlePostNewEvent)
 	//TODO: add API endpoints
 	return sre.Instrument(r)
 }

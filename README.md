@@ -60,13 +60,44 @@ The following environment variables are only understood by the API:
 
 | Variable | Default | Explanation |
 | -------- | ------- | ----------- |
+| `OS_...` | *(required)* | A full set of OpenStack auth environment variables for Tenso's service user. See [documentation for openstackclient][os-env] for details. |
 | `TENSO_API_LISTEN_ADDRESS` | `:8080` | Listen address for HTTP server. |
+| `TENSO_OSLO_POLICY_PATH` | *(required)* | Path to the `policy.[json|yaml]` file for this service. [See below](#api-specification) for details. |
 
 The following environment variables are only understood by the worker:
 
 | Variable | Default | Explanation |
 | -------- | ------- | ----------- |
 | `TENSO_WORKER_LISTEN_ADDRESS` | `:8080` | Listen address for HTTP server (only for healthcheck and Prometheus metrics). |
+
+## API specification
+
+Tenso has an OpenStack-style API, so a Keystone token must be supplied in the
+`X-Auth-Token` header of all requests. The Tenso API can be discovered as
+service type "tenso" in the Keystone catalog.
+
+To control API access, Tenso understands access rules in the
+[`oslo.policy` JSON][os-pol-json] and [`oslo.policy` YAML][os-pol-yaml]
+formats.
+
+See also: [List of available API attributes](https://github.com/sapcc/go-bits/blob/53eeb20fde03c3d0a35e76cf9c9a06b63a415e6b/gopherpolicy/pkg.go#L151-L164)
+
+### `POST /v1/events/new`
+
+Submits an event to Tenso for delivery. The event payload must be supplied in
+the request body, in whatever format is appropriate for that payload type. On
+success, 202 (Accepted) is returned.
+
+| Query parameter | Explanation |
+| --------------- | ----------- |
+| `payload_type` | **Required.** The payload type for this event. [See below](#supported-payload-types) for supported payload types. |
+
+The corresponding policy rule is `event:create`. The object attribute
+`%(target.payload_type)s` can be used in this policy rule.
+
+[os-env]: https://docs.openstack.org/python-openstackclient/latest/cli/man/openstack.html
+[os-pol-json]: https://docs.openstack.org/oslo.policy/latest/admin/policy-json-file.html
+[os-pol-yaml]: https://docs.openstack.org/oslo.policy/latest/admin/policy-yaml-file.html
 
 ## Supported payload types
 

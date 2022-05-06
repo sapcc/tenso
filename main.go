@@ -80,7 +80,7 @@ func runAPI(cfg tenso.Configuration, db *tenso.DB) {
 	ctx := httpee.ContextWithSIGINT(context.Background(), 10*time.Second)
 
 	//wire up HTTP handlers
-	handler := api.Handler(cfg, db)
+	handler := api.NewAPI(cfg, db).Handler()
 	handler = logg.Middleware{}.Wrap(handler)
 	handler = cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
