@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/prometheus/client_golang v1.12.1
 	github.com/rs/cors v1.8.2
-	github.com/sapcc/go-bits v0.0.0-20220506113623-52eeaae77c14
+	github.com/sapcc/go-bits v0.0.0-20220506231902-df94414a6255
 	gopkg.in/gorp.v2 v2.2.0
 )
 
