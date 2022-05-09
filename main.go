@@ -28,9 +28,12 @@ import (
 	"time"
 
 	"github.com/dlmiddlecote/sqlstats"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
+	"github.com/sapcc/go-bits/gopherpolicy"
 	"github.com/sapcc/go-bits/httpee"
 	"github.com/sapcc/go-bits/logg"
 
@@ -62,14 +65,14 @@ func main() {
 		http.DefaultClient.Transport = userAgentInjector{http.DefaultTransport}
 	}
 
-	cfg := tenso.ParseConfiguration()
+	cfg, provider, eo := tenso.ParseConfiguration()
 	db, err := tenso.InitDB(cfg.DatabaseURL)
 	must(err)
 	prometheus.MustRegister(sqlstats.NewStatsCollector("tenso", db.Db))
 
 	switch commandWord {
 	case "api":
-		runAPI(cfg, db)
+		runAPI(cfg, db, provider, eo)
 	case "worker":
 		runWorker(cfg, db)
 	default:
@@ -77,11 +80,28 @@ func main() {
 	}
 }
 
-func runAPI(cfg tenso.Configuration, db *tenso.DB) {
+func runAPI(cfg tenso.Configuration, db *tenso.DB, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
 	ctx := httpee.ContextWithSIGINT(context.Background(), 10*time.Second)
 
+	identityV3, err := openstack.NewIdentityV3(provider, eo)
+	if err != nil {
+		logg.Fatal("cannot find Keystone V3 API: " + err.Error())
+	}
+	tv := gopherpolicy.TokenValidator{
+		IdentityV3: identityV3,
+		Cacher:     gopherpolicy.InMemoryCacher(),
+	}
+	osloPolicyPath := os.Getenv("TENSO_OSLO_POLICY_PATH")
+	if osloPolicyPath == "" {
+		logg.Fatal("missing required environment variable: TENSO_OSLO_POLICY_PATH")
+	}
+	err = tv.LoadPolicyFile(osloPolicyPath)
+	if err != nil {
+		logg.Fatal("cannot load oslo.policy: " + err.Error())
+	}
+
 	//wire up HTTP handlers
-	handler := api.NewAPI(cfg, db).Handler()
+	handler := api.NewAPI(cfg, db, &tv).Handler()
 	handler = logg.Middleware{}.Wrap(handler)
 	handler = cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
@@ -98,7 +118,7 @@ func runAPI(cfg tenso.Configuration, db *tenso.DB) {
 		apiListenAddress = ":8080"
 	}
 	logg.Info("listening on " + apiListenAddress)
-	err := httpee.ListenAndServeContext(ctx, apiListenAddress, nil)
+	err = httpee.ListenAndServeContext(ctx, apiListenAddress, nil)
 	if err != nil {
 		logg.Fatal("error returned from httpee.ListenAndServeContext(): %s", err.Error())
 	}

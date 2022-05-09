@@ -23,26 +23,27 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/sapcc/go-bits/gopherpolicy"
+	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/sre"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
 type API struct {
-	cfg tenso.Configuration
-	db  *tenso.DB
+	Config    tenso.Configuration
+	DB        *tenso.DB
+	Validator gopherpolicy.Validator
 }
 
-func NewAPI(cfg tenso.Configuration, db *tenso.DB) *API {
-	a := &API{cfg, db}
-	return a
+func NewAPI(cfg tenso.Configuration, db *tenso.DB, validator gopherpolicy.Validator) *API {
+	return &API{cfg, db, validator}
 }
 
 //Handler generates a HTTP handler for all main API endpoints.
 func (a *API) Handler() http.Handler {
 	r := mux.NewRouter()
 	r.Methods("POST").Path("/v1/events/new").HandlerFunc(a.handlePostNewEvent)
-	//TODO: add API endpoints
 	return sre.Instrument(r)
 }
 
@@ -56,4 +57,12 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("not found"))
 	}
+}
+
+func (a *API) CheckToken(r *http.Request) *gopherpolicy.Token {
+	token := a.Validator.CheckToken(r)
+	token.Context.Logger = logg.Debug
+	logg.Debug("token has auth = %v", token.Context.Auth)
+	logg.Debug("token has roles = %v", token.Context.Roles)
+	return token
 }

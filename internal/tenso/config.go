@@ -22,11 +22,15 @@ package tenso
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
 
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/utils/openstack/clientconfig"
 	"github.com/sapcc/go-bits/logg"
 )
 
@@ -37,14 +41,37 @@ type Configuration struct {
 }
 
 var (
-	routeSpecRx = regexp.MustCompile(`^([a-zA-Z0-9.-]+)\s*->\s*([a-zA-Z0-9.-]+)$`)
+	payloadTypePattern = `[a-zA-Z0-9.-]+`
+	payloadTypeRx      = regexp.MustCompile(fmt.Sprintf(`^%s$`, payloadTypePattern))
+	routeSpecRx        = regexp.MustCompile(fmt.Sprintf(`^(%[1]s)\s*->\s*(%[1]s)$`, payloadTypePattern))
 )
 
 //ParseConfiguration obtains a tenso.Configuration instance from the
 //corresponding environment variables. Aborts on error.
-func ParseConfiguration() Configuration {
+func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gophercloud.EndpointOpts) {
 	cfg := Configuration{
 		DatabaseURL: getDBURL(),
+	}
+
+	//initialize OpenStack connection
+	ao, err := clientconfig.AuthOptions(nil)
+	if err != nil {
+		logg.Fatal("cannot find OpenStack credentials: " + err.Error())
+	}
+	ao.AllowReauth = true
+	provider, err := openstack.NewClient(ao.IdentityEndpoint)
+	if err == nil {
+		//use http.DefaultClient, esp. to pick up the TENSO_INSECURE flag
+		provider.HTTPClient = *http.DefaultClient
+		err = openstack.Authenticate(provider, *ao)
+	}
+	if err != nil {
+		logg.Fatal("cannot connect to OpenStack: " + err.Error())
+	}
+	eo := gophercloud.EndpointOpts{
+		//note that empty values are acceptable in both fields
+		Region:       os.Getenv("OS_REGION_NAME"),
+		Availability: gophercloud.Availability(os.Getenv("OS_INTERFACE")),
 	}
 
 	//parse routes
@@ -122,7 +149,7 @@ func ParseConfiguration() Configuration {
 		logg.Fatal("missing required environment variable: TENSO_ROUTES")
 	}
 
-	return cfg
+	return cfg, provider, eo
 }
 
 //GetenvOrDefault is like os.Getenv but it also takes a default value which is
@@ -160,4 +187,8 @@ func getDBURL() url.URL {
 		Path:     dbName,
 		RawQuery: dbConnOpts.Encode(),
 	}
+}
+
+func IsWellformedPayloadType(val string) bool {
+	return payloadTypeRx.MatchString(val)
 }
