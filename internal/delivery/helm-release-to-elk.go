@@ -36,7 +36,7 @@ func (h *helmReleaseToElkDeliverer) Init() error {
 	return nil
 }
 
-func (h *helmReleaseToElkDeliverer) PayloadFormat() string {
+func (h *helmReleaseToElkDeliverer) PayloadType() string {
 	return "helm-release-to-elk.v1"
 }
 

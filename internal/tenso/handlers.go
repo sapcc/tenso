@@ -19,36 +19,37 @@
 
 package tenso
 
-//ValidationHandler is an object that validates an incoming payload format.
+//ValidationHandler is an object that validates incoming payloads of a specific
+//payload type.
 type ValidationHandler interface {
 	//Init will be called at least once during startup if this ValidationHandler
 	//is enabled in the configuration.
 	Init() error
 
-	PayloadFormat() string
+	PayloadType() string
 	ValidatePayload(payload []byte) error
 }
 
 //TranslationHandler is an object that can translate payloads from one specific
-//format into a different format.
+//payload type into a different payload type.
 type TranslationHandler interface {
 	//Init will be called at least once during startup if this TranslationHandler
 	//is enabled in the configuration.
 	Init() error
 
-	SourcePayloadFormat() string
-	TargetPayloadFormat() string
+	SourcePayloadType() string
+	TargetPayloadType() string
 	TranslatePayload(payload []byte) ([]byte, error)
 }
 
-//DeliveryHandler is an object that can deliver payloads that are available in
-//one specific format to a target in some way.
+//DeliveryHandler is an object that can deliver payloads of one specific
+//payload type to a target in some way.
 type DeliveryHandler interface {
 	//Init will be called at least once during startup if this DeliveryHandler
 	//is enabled in the configuration.
 	Init() error
 
-	PayloadFormat() string
+	PayloadType() string
 	DeliverPayload(payload []byte) error
 }
 
@@ -76,11 +77,13 @@ func RegisterDeliveryHandler(h DeliveryHandler) {
 	allDeliveryHandlers = append(allDeliveryHandlers, h)
 }
 
-//DeliveryPath describes a complete delivery path for events: An event gets submitted to us in an initial format, gets translated into a different format, and then the translated payload gets delivered.
+//Route describes a complete delivery path for events: An event gets submitted
+//to us with an initial payload type, gets translated into a different payload
+//type, and then the translated payload gets delivered.
 type Route struct {
-	SourcePayloadFormat string
-	TargetPayloadFormat string
-	ValidationHandler   ValidationHandler
-	TranslationHandler  TranslationHandler
-	DeliveryHandler     DeliveryHandler
+	SourcePayloadType  string
+	TargetPayloadType  string
+	ValidationHandler  ValidationHandler
+	TranslationHandler TranslationHandler
+	DeliveryHandler    DeliveryHandler
 }

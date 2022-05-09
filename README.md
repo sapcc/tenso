@@ -54,7 +54,7 @@ The following environment variables are understood by both API and worker:
 | `TENSO_DB_HOSTNAME` | `localhost` | Hostname of the database server. |
 | `TENSO_DB_PORT` | `5432` | Port on which the PostgreSQL service is running on. |
 | `TENSO_DB_CONNECTION_OPTIONS` | *(optional)* | Database connection options. |
-| `TENSO_ROUTES` | *(required)* | Comma-separated list of enabled delivery routes. Each route is a pair of payload formats, separated by `->`. For example, `foo.v1 -> bar.v2` means that events with payload type `foo.v1` will be accepted by Tenso's API and then converted into payload type `bar.v2` for delivery. [See below](#supported-payload-types) for supported payload types. |
+| `TENSO_ROUTES` | *(required)* | Comma-separated list of enabled delivery routes. Each route is a pair of payload types, separated by `->`. For example, `foo.v1 -> bar.v2` means that events with payload type `foo.v1` will be accepted by Tenso's API and then converted into payload type `bar.v2` for delivery. [See below](#supported-payload-types) for supported payload types. |
 
 The following environment variables are only understood by the API:
 

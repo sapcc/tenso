@@ -27,20 +27,20 @@ func init() {
 
 //dummyTranslator is a tenso.TranslationHandler for no-op translations.
 type dummyTranslator struct {
-	sourcePayloadFormat string
-	targetPayloadFormat string
+	sourcePayloadType string
+	targetPayloadType string
 }
 
 func (h *dummyTranslator) Init() error {
 	return nil
 }
 
-func (h *dummyTranslator) SourcePayloadFormat() string {
-	return h.sourcePayloadFormat
+func (h *dummyTranslator) SourcePayloadType() string {
+	return h.sourcePayloadType
 }
 
-func (h *dummyTranslator) TargetPayloadFormat() string {
-	return h.targetPayloadFormat
+func (h *dummyTranslator) TargetPayloadType() string {
+	return h.targetPayloadType
 }
 
 func (h *dummyTranslator) TranslatePayload(payload []byte) ([]byte, error) {

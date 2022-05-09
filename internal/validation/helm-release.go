@@ -37,7 +37,7 @@ func (h *helmReleaseValidator) Init() error {
 	return nil
 }
 
-func (h *helmReleaseValidator) PayloadFormat() string {
+func (h *helmReleaseValidator) PayloadType() string {
 	return "helm-release-from-concourse.v1"
 }
 

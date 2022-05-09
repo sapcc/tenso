@@ -60,60 +60,60 @@ func ParseConfiguration() Configuration {
 			logg.Fatal("route specification %q is invalid: syntax error", routeSpec)
 		}
 		route := Route{
-			SourcePayloadFormat: match[1],
-			TargetPayloadFormat: match[2],
+			SourcePayloadType: match[1],
+			TargetPayloadType: match[2],
 		}
 
 		//select validation handler
 		for _, handler := range allValidationHandlers {
-			if route.SourcePayloadFormat == handler.PayloadFormat() {
+			if route.SourcePayloadType == handler.PayloadType() {
 				route.ValidationHandler = handler
 				break
 			}
 		}
 		if route.ValidationHandler == nil {
 			logg.Fatal("route specification %q is invalid: cannot validate %s",
-				routeSpec, route.SourcePayloadFormat)
+				routeSpec, route.SourcePayloadType)
 		}
 		err := route.ValidationHandler.Init()
 		if err != nil {
 			logg.Fatal("while parsing route specification %q: cannot initialize validation for %s: %s",
-				routeSpec, route.SourcePayloadFormat, err.Error())
+				routeSpec, route.SourcePayloadType, err.Error())
 		}
 
 		//select translation handler
 		for _, handler := range allTranslationHandlers {
-			if route.SourcePayloadFormat == handler.SourcePayloadFormat() &&
-				route.TargetPayloadFormat == handler.TargetPayloadFormat() {
+			if route.SourcePayloadType == handler.SourcePayloadType() &&
+				route.TargetPayloadType == handler.TargetPayloadType() {
 				route.TranslationHandler = handler
 				break
 			}
 		}
 		if route.TranslationHandler == nil {
 			logg.Fatal("route specification %q is invalid: do not know how to translate from %s to %s",
-				routeSpec, route.SourcePayloadFormat, route.TargetPayloadFormat)
+				routeSpec, route.SourcePayloadType, route.TargetPayloadType)
 		}
 		err = route.TranslationHandler.Init()
 		if err != nil {
 			logg.Fatal("while parsing route specification %q: cannot initialize translation from %s to %s: %s",
-				routeSpec, route.SourcePayloadFormat, route.TargetPayloadFormat, err.Error())
+				routeSpec, route.SourcePayloadType, route.TargetPayloadType, err.Error())
 		}
 
 		//select delivery handler
 		for _, handler := range allDeliveryHandlers {
-			if route.TargetPayloadFormat == handler.PayloadFormat() {
+			if route.TargetPayloadType == handler.PayloadType() {
 				route.DeliveryHandler = handler
 				break
 			}
 		}
 		if route.DeliveryHandler == nil {
 			logg.Fatal("route specification %q is invalid: cannot deliver %s",
-				routeSpec, route.TargetPayloadFormat)
+				routeSpec, route.TargetPayloadType)
 		}
 		err = route.DeliveryHandler.Init()
 		if err != nil {
 			logg.Fatal("while parsing route specification %q: cannot initialize delivery for %s: %s",
-				routeSpec, route.TargetPayloadFormat, err.Error())
+				routeSpec, route.TargetPayloadType, err.Error())
 		}
 
 		cfg.EnabledRoutes = append(cfg.EnabledRoutes, route)
