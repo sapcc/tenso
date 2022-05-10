@@ -26,6 +26,7 @@ import (
 
 	"github.com/sapcc/go-bits/assert"
 	"github.com/sapcc/go-bits/easypg"
+
 	"github.com/sapcc/tenso/internal/test"
 )
 

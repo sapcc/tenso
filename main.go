@@ -24,7 +24,6 @@ import (
 	"crypto/tls"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/dlmiddlecote/sqlstats"
@@ -51,14 +50,14 @@ func main() {
 		tenso.Component = "tenso-" + commandWord
 	}
 
-	logg.ShowDebug = getenvBool("TENSO_DEBUG")
+	logg.ShowDebug = tenso.ParseBool(os.Getenv("TENSO_DEBUG"))
 
 	//The TENSO_INSECURE flag can be used to get Tenso to work through mitmproxy
 	//(which is very useful for development and debugging). (It's very important
 	//that this is not the standard "TENSO_DEBUG" variable. That one is meant to
 	//be useful for production systems, where you definitely don't want to turn
 	//off certificate verification.)
-	if getenvBool("TENSO_INSECURE") {
+	if tenso.ParseBool(os.Getenv("TENSO_INSECURE")) {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
 		}
@@ -148,14 +147,6 @@ func must(err error) {
 	if err != nil {
 		logg.Fatal(err.Error())
 	}
-}
-
-func getenvBool(key string) bool {
-	val, err := strconv.ParseBool(key)
-	if err != nil {
-		return false
-	}
-	return val
 }
 
 type userAgentInjector struct {

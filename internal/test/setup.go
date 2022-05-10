@@ -24,10 +24,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/sapcc/go-bits/logg"
+
 	"github.com/sapcc/tenso/internal/api"
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -66,7 +66,7 @@ type Setup struct {
 //NewSetup prepares most or all pieces of Tenso for a test.
 func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	t.Helper()
-	logg.ShowDebug, _ = strconv.ParseBool(os.Getenv("KEPPEL_DEBUG"))
+	logg.ShowDebug = tenso.ParseBool(os.Getenv("TENSO_DEBUG"))
 	var params setupParams
 	for _, option := range opts {
 		option(&params)

@@ -70,7 +70,7 @@ func (h *fooBarTranslationHandler) TranslatePayload(payload []byte) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(barPayload{Value: src.Value})
+	return json.Marshal(barPayload(src))
 }
 
 type barDeliveryHandler struct{}

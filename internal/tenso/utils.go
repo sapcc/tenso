@@ -19,5 +19,10 @@
 
 package tenso
 
-//Component is set at startup time to identify which component of Tenso is running (e.g. "tenso-api" or "tenso-worker").
-var Component = "tenso"
+import "strconv"
+
+//ParseBool is like strconv.ParseBool, but just returns false on error.
+func ParseBool(s string) bool {
+	val, err := strconv.ParseBool(s)
+	return val && err == nil
+}
