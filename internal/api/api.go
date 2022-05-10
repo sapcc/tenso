@@ -42,6 +42,7 @@ func NewAPI(cfg tenso.Configuration, db *tenso.DB, validator gopherpolicy.Valida
 	return &API{cfg, db, validator, time.Now}
 }
 
+//OverrideTimeNow is used by unit tests to inject a mock clock.
 func (a *API) OverrideTimeNow(now func() time.Time) *API {
 	a.timeNow = now
 	return a

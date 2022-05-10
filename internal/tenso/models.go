@@ -50,6 +50,7 @@ type PendingDelivery struct {
 	Payload               *string    `db:"payload"`
 	ConvertedAt           *time.Time `db:"converted_at"`
 	FailedConversionCount int64      `db:"failed_conversions"`
+	NextConversionAt      time.Time  `db:"next_conversion_at"`
 	FailedDeliveryCount   int64      `db:"failed_deliveries"`
 	NextDeliveryAt        time.Time  `db:"next_delivery_at"`
 }

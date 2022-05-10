@@ -52,15 +52,16 @@ var sqlMigrations = map[string]string{
 			payload            TEXT        DEFAULT NULL,
 			converted_at       TIMESTAMPTZ DEFAULT NULL,
 			failed_conversions INT         NOT NULL DEFAULT 0,
+			next_conversion_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			failed_deliveries  INT         NOT NULL DEFAULT 0,
 			next_delivery_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			PRIMARY KEY (event_id, payload_type)
 		);
 	`,
 	"001_initial.down.sql": `
-		DROP TABLE users;
-		DROP TABLE events;
 		DROP TABLE pending_deliveries;
+		DROP TABLE events;
+		DROP TABLE users;
 	`,
 }
 

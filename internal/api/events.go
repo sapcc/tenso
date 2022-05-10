@@ -128,6 +128,7 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 			ConvertedAt:           nil, //to be converted later
 			FailedConversionCount: 0,
 			FailedDeliveryCount:   0,
+			NextConversionAt:      requestTime, //convert immediately
 			NextDeliveryAt:        requestTime, //deliver immediately once converted
 		})
 		if respondwith.ErrorText(w, err) {
