@@ -114,6 +114,12 @@ func (j payloadConvertJob) Execute() (returnedError error) {
 		return err
 	}
 
+	//when running in a unit test, wait for the test harness to unblock us
+	if c.Blocker != nil {
+		for range c.Blocker {
+		}
+	}
+
 	//find the translation handler
 	var th tenso.TranslationHandler
 	for _, route := range c.Config.EnabledRoutes {

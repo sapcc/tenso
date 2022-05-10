@@ -34,10 +34,14 @@ type Context struct {
 	//dependency injection slots (usually filled by ApplyDefaults(), but filled
 	//with doubles in tests)
 	timeNow func() time.Time
+
+	//When Blocker is not nil, tasks that support concurrent operation will
+	//withhold operations until this channel is closed.
+	Blocker <-chan struct{}
 }
 
 func NewContext(cfg tenso.Configuration, db *tenso.DB) *Context {
-	return &Context{cfg, db, time.Now}
+	return &Context{cfg, db, time.Now, nil}
 }
 
 //OverrideTimeNow is used by unit tests to inject a mock clock.
