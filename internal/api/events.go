@@ -60,7 +60,7 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 
 	//check authorization
 	token := a.CheckToken(r)
-	token.Context.Request["target.payload_type"] = payloadType
+	token.Context.Request = map[string]string{"target.payload_type": payloadType}
 	if !token.Require(w, "event:create") {
 		return
 	}
