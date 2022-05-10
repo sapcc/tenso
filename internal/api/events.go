@@ -20,6 +20,7 @@
 package api
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -79,7 +80,7 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if validationHandler == nil {
-		http.Error(w, "no such payload_type: "+payloadType, http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("cannot accept events with payload_type %q", payloadType), http.StatusBadRequest)
 		return
 	}
 
@@ -91,6 +92,7 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 	err = validationHandler.ValidatePayload(payloadBytes)
 	if err != nil {
 		http.Error(w, "invalid event payload: "+err.Error(), http.StatusUnprocessableEntity)
+		return
 	}
 
 	//find or create user account

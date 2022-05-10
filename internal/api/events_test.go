@@ -39,7 +39,53 @@ func TestPostNewEvent(t *testing.T) {
 	tr, tr0 := easypg.NewTracker(t, s.DB.Db)
 	tr0.AssertEmpty()
 
-	//TODO test error cases
+	//test error cases: invalid payload type
+	assert.HTTPRequest{
+		Method:       "POST",
+		Path:         "/v1/events/new",
+		Body:         assert.JSONObject{"foo": 42},
+		ExpectStatus: http.StatusBadRequest,
+		ExpectBody:   assert.StringData("need exactly one value for query parameter \"payload_type\"\n"),
+	}.Check(t, s.Handler)
+	assert.HTTPRequest{
+		Method:       "POST",
+		Path:         "/v1/events/new?payload_type=test-foo.v1&payload_type=test-bar.v1",
+		Body:         assert.JSONObject{"foo": 42},
+		ExpectStatus: http.StatusBadRequest,
+		ExpectBody:   assert.StringData("need exactly one value for query parameter \"payload_type\"\n"),
+	}.Check(t, s.Handler)
+	assert.HTTPRequest{
+		Method:       "POST",
+		Path:         "/v1/events/new?payload_type=what!?",
+		Body:         assert.JSONObject{"foo": 42},
+		ExpectStatus: http.StatusBadRequest,
+		ExpectBody:   assert.StringData("invalid value provided for query parameter \"payload_type\"\n"),
+	}.Check(t, s.Handler)
+	assert.HTTPRequest{
+		Method:       "POST",
+		Path:         "/v1/events/new?payload_type=test-bar.v1",
+		Body:         assert.JSONObject{"foo": 42},
+		ExpectStatus: http.StatusBadRequest,
+		ExpectBody:   assert.StringData("cannot accept events with payload_type \"test-bar.v1\"\n"),
+	}.Check(t, s.Handler)
+
+	//test error cases: invalid payload
+	assert.HTTPRequest{
+		Method:       "POST",
+		Path:         "/v1/events/new?payload_type=test-foo.v1",
+		Body:         assert.JSONObject{"bar": 42},
+		ExpectStatus: http.StatusUnprocessableEntity,
+		ExpectBody:   assert.StringData("invalid event payload: json: unknown field \"bar\"\n"),
+	}.Check(t, s.Handler)
+
+	//test error cases: no permission
+	s.Validator.Forbid("event:create")
+	assert.HTTPRequest{
+		Method:       "POST",
+		Path:         "/v1/events/new?payload_type=test-foo.v1",
+		Body:         assert.JSONObject{"foo": 42},
+		ExpectStatus: http.StatusForbidden,
+	}.Check(t, s.Handler)
 
 	//test successful event ingestion
 	s.Clock.StepBy(1 * time.Minute)
