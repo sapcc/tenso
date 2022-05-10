@@ -22,6 +22,8 @@ package test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -33,48 +35,77 @@ import (
 //renames the field, the value remains the same.
 
 func init() {
-	tenso.RegisterValidationHandler(&fooValidationHandler{})
-	tenso.RegisterTranslationHandler(&fooBarTranslationHandler{})
-	tenso.RegisterDeliveryHandler(&barDeliveryHandler{})
+	tenso.RegisterValidationHandler(&testValidationHandler{"foo"})
+	tenso.RegisterTranslationHandler(&testTranslationHandler{"foo", "bar"})
+	tenso.RegisterTranslationHandler(&testTranslationHandler{"foo", "baz"})
+	tenso.RegisterDeliveryHandler(&testDeliveryHandler{"bar"})
+	tenso.RegisterDeliveryHandler(&testDeliveryHandler{"baz"})
 }
 
-type fooPayload struct {
-	Value int `json:"foo"`
+type testPayload struct {
+	Event string `json:"event"`
+	Value int    `json:"value"`
 }
 
-type barPayload struct {
-	Value int `json:"bar"`
-}
-
-type fooValidationHandler struct{}
-
-func (h *fooValidationHandler) Init() error         { return nil }
-func (h *fooValidationHandler) PayloadType() string { return "test-foo.v1" }
-func (h *fooValidationHandler) ValidatePayload(payload []byte) error {
-	dec := json.NewDecoder(bytes.NewReader(payload))
+func parseTestPayload(data []byte, expectedType string) (p testPayload, err error) {
+	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
-	var val fooPayload
-	return dec.Decode(&val)
+	err = dec.Decode(&p)
+	if err != nil {
+		return testPayload{}, err
+	}
+	if p.Event != expectedType {
+		return testPayload{}, fmt.Errorf("expected event = %q, but got %q", expectedType, p.Event)
+	}
+	return p, nil
 }
 
-type fooBarTranslationHandler struct{}
+type testValidationHandler struct {
+	Type string
+}
 
-func (h *fooBarTranslationHandler) Init() error               { return nil }
-func (h *fooBarTranslationHandler) SourcePayloadType() string { return "test-foo.v1" }
-func (h *fooBarTranslationHandler) TargetPayloadType() string { return "test-bar.v1" }
-func (h *fooBarTranslationHandler) TranslatePayload(payload []byte) ([]byte, error) {
-	dec := json.NewDecoder(bytes.NewReader(payload))
-	dec.DisallowUnknownFields()
-	var src fooPayload
-	err := dec.Decode(&src)
+func (h *testValidationHandler) Init() error         { return nil }
+func (h *testValidationHandler) PayloadType() string { return fmt.Sprintf("test-%s.v1", h.Type) }
+
+func (h *testValidationHandler) ValidatePayload(data []byte) error {
+	_, err := parseTestPayload(data, h.Type)
+	return err
+}
+
+type testTranslationHandler struct {
+	SourceType string
+	TargetType string
+}
+
+func (h *testTranslationHandler) Init() error { return nil }
+func (h *testTranslationHandler) SourcePayloadType() string {
+	return fmt.Sprintf("test-%s.v1", h.SourceType)
+}
+func (h *testTranslationHandler) TargetPayloadType() string {
+	return fmt.Sprintf("test-%s.v1", h.TargetType)
+}
+
+func (h *testTranslationHandler) TranslatePayload(data []byte) ([]byte, error) {
+	p, err := parseTestPayload(data, h.SourceType)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(barPayload(src))
+	p.Event = h.TargetType
+	return json.Marshal(p)
 }
 
-type barDeliveryHandler struct{}
+type testDeliveryHandler struct {
+	Type string
+}
 
-func (h *barDeliveryHandler) Init() error                         { return nil }
-func (h *barDeliveryHandler) PayloadType() string                 { return "test-bar.v1" }
-func (h *barDeliveryHandler) DeliverPayload(payload []byte) error { return nil } //TODO stub
+func (h *testDeliveryHandler) Init() error         { return nil }
+func (h *testDeliveryHandler) PayloadType() string { return fmt.Sprintf("test-%s.v1", h.Type) }
+
+func (h *testDeliveryHandler) DeliverPayload(data []byte) error {
+	//We don't actually deliver anywhere, but by giving us an invalid payload, tests can "simulate" a delivery failure.
+	_, err := parseTestPayload(data, h.Type)
+	if err != nil {
+		return errors.New("simulating failed delivery because of invalid payload")
+	}
+	return nil
+}

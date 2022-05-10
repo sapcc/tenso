@@ -29,17 +29,24 @@ import (
 	"github.com/sapcc/go-bits/logg"
 
 	"github.com/sapcc/tenso/internal/api"
+	"github.com/sapcc/tenso/internal/tasks"
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
 type setupParams struct {
-	RouteSpecs []string
-	WithAPI    bool
+	RouteSpecs      []string
+	WithAPI         bool
+	WithTaskContext bool
 }
 
 //WithAPI is a SetupOption that provides a http.Handler with the Tenso API.
 func WithAPI(params *setupParams) {
 	params.WithAPI = true
+}
+
+//WithTaskContext is a SetupOption that provides a tasks.Context object for testing worker tasks.
+func WithTaskContext(params *setupParams) {
+	params.WithTaskContext = true
 }
 
 //WithRoute is a SetupOption that adds a route to the configuration.
@@ -61,6 +68,8 @@ type Setup struct {
 	//fields that are set if WithAPI is included
 	Validator *MockValidator
 	Handler   http.Handler
+	//fields that are set if WithTaskContext is included
+	TaskContext *tasks.Context
 }
 
 //NewSetup prepares most or all pieces of Tenso for a test.
@@ -75,7 +84,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	//connect to DB
 	postgresURL := "postgres://postgres:postgres@localhost:54321/tenso?sslmode=disable"
 	dbURL, err := url.Parse(postgresURL)
-	must(t, err)
+	Must(t, err)
 	db, err := tenso.InitDB(*dbURL)
 	if err != nil {
 		t.Error(err)
@@ -87,7 +96,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	//(the table order is chosen to respect all "ON DELETE RESTRICT" constraints)
 	for _, tableName := range []string{"pending_deliveries", "events", "users"} {
 		_, err := db.Exec("DELETE FROM " + tableName)
-		must(t, err)
+		Must(t, err)
 	}
 
 	//reset all primary key sequences for reproducible row IDs
@@ -95,16 +104,16 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 		nextID, err := db.SelectInt(fmt.Sprintf(
 			"SELECT 1 + COALESCE(MAX(id), 0) FROM %s", tableName,
 		))
-		must(t, err)
+		Must(t, err)
 
 		query := fmt.Sprintf(`ALTER SEQUENCE %s_id_seq RESTART WITH %d`, tableName, nextID)
 		_, err = db.Exec(query)
-		must(t, err)
+		Must(t, err)
 	}
 
 	//build configuration
 	routes, err := tenso.BuildRoutes(params.RouteSpecs)
-	must(t, err)
+	Must(t, err)
 	s := Setup{
 		Clock: &Clock{},
 		Config: tenso.Configuration{
@@ -114,18 +123,14 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 		DB: db,
 	}
 
-	//build HTTP handler if requested
+	//satisfy additional requests
 	if params.WithAPI {
 		s.Validator = &MockValidator{}
 		s.Handler = api.NewAPI(s.Config, s.DB, s.Validator).OverrideTimeNow(s.Clock.Now).Handler()
 	}
+	if params.WithTaskContext {
+		s.TaskContext = tasks.NewContext(s.Config, s.DB).OverrideTimeNow(s.Clock.Now)
+	}
 
 	return s
-}
-
-func must(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 }

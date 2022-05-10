@@ -34,6 +34,7 @@ func TestPostNewEvent(t *testing.T) {
 	s := test.NewSetup(t,
 		test.WithAPI,
 		test.WithRoute("test-foo.v1 -> test-bar.v1"),
+		test.WithRoute("test-foo.v1 -> test-baz.v1"),
 	)
 
 	tr, tr0 := easypg.NewTracker(t, s.DB.Db)
@@ -43,28 +44,28 @@ func TestPostNewEvent(t *testing.T) {
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new",
-		Body:         assert.JSONObject{"foo": 42},
+		Body:         assert.JSONObject{"event": "foo", "value": 42},
 		ExpectStatus: http.StatusBadRequest,
 		ExpectBody:   assert.StringData("need exactly one value for query parameter \"payload_type\"\n"),
 	}.Check(t, s.Handler)
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=test-foo.v1&payload_type=test-bar.v1",
-		Body:         assert.JSONObject{"foo": 42},
+		Body:         assert.JSONObject{"event": "foo", "value": 42},
 		ExpectStatus: http.StatusBadRequest,
 		ExpectBody:   assert.StringData("need exactly one value for query parameter \"payload_type\"\n"),
 	}.Check(t, s.Handler)
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=what!?",
-		Body:         assert.JSONObject{"foo": 42},
+		Body:         assert.JSONObject{"event": "foo", "value": 42},
 		ExpectStatus: http.StatusBadRequest,
 		ExpectBody:   assert.StringData("invalid value provided for query parameter \"payload_type\"\n"),
 	}.Check(t, s.Handler)
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=test-bar.v1",
-		Body:         assert.JSONObject{"foo": 42},
+		Body:         assert.JSONObject{"event": "foo", "value": 42},
 		ExpectStatus: http.StatusBadRequest,
 		ExpectBody:   assert.StringData("cannot accept events with payload_type \"test-bar.v1\"\n"),
 	}.Check(t, s.Handler)
@@ -73,9 +74,9 @@ func TestPostNewEvent(t *testing.T) {
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=test-foo.v1",
-		Body:         assert.JSONObject{"bar": 42},
+		Body:         assert.JSONObject{"event": "bar", "value": 42},
 		ExpectStatus: http.StatusUnprocessableEntity,
-		ExpectBody:   assert.StringData("invalid event payload: json: unknown field \"bar\"\n"),
+		ExpectBody:   assert.StringData("invalid event payload: expected event = \"foo\", but got \"bar\"\n"),
 	}.Check(t, s.Handler)
 
 	//test error cases: no permission
@@ -83,7 +84,7 @@ func TestPostNewEvent(t *testing.T) {
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=test-foo.v1",
-		Body:         assert.JSONObject{"foo": 42},
+		Body:         assert.JSONObject{"event": "foo", "value": 42},
 		ExpectStatus: http.StatusForbidden,
 	}.Check(t, s.Handler)
 
@@ -93,13 +94,14 @@ func TestPostNewEvent(t *testing.T) {
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=test-foo.v1",
-		Body:         assert.JSONObject{"foo": 42},
+		Body:         assert.JSONObject{"event": "foo", "value": 42},
 		ExpectStatus: http.StatusAccepted,
 	}.Check(t, s.Handler)
 
 	tr.DBChanges().AssertEqualf(`
-		INSERT INTO events (id, creator_id, created_at, payload_type, payload) VALUES (1, 1, %[1]d, 'test-foo.v1', '{"foo":42}');
+		INSERT INTO events (id, creator_id, created_at, payload_type, payload) VALUES (1, 1, %[1]d, 'test-foo.v1', '{"event":"foo","value":42}');
 		INSERT INTO pending_deliveries (event_id, payload_type, payload, converted_at, failed_conversions, next_conversion_at, failed_deliveries, next_delivery_at) VALUES (1, 'test-bar.v1', NULL, NULL, 0, %[1]d, 0, %[1]d);
+		INSERT INTO pending_deliveries (event_id, payload_type, payload, converted_at, failed_conversions, next_conversion_at, failed_deliveries, next_delivery_at) VALUES (1, 'test-baz.v1', NULL, NULL, 0, %[1]d, 0, %[1]d);
 		INSERT INTO users (id, uuid, name, domain_name) VALUES (1, 'testuserid', 'testusername', 'testdomainname');
 	`, s.Clock.Now().Unix())
 
@@ -108,12 +110,13 @@ func TestPostNewEvent(t *testing.T) {
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=test-foo.v1",
-		Body:         assert.JSONObject{"foo": 44},
+		Body:         assert.JSONObject{"event": "foo", "value": 44},
 		ExpectStatus: http.StatusAccepted,
 	}.Check(t, s.Handler)
 
 	tr.DBChanges().AssertEqualf(`
-		INSERT INTO events (id, creator_id, created_at, payload_type, payload) VALUES (2, 1, %[1]d, 'test-foo.v1', '{"foo":44}');
+		INSERT INTO events (id, creator_id, created_at, payload_type, payload) VALUES (2, 1, %[1]d, 'test-foo.v1', '{"event":"foo","value":44}');
 		INSERT INTO pending_deliveries (event_id, payload_type, payload, converted_at, failed_conversions, next_conversion_at, failed_deliveries, next_delivery_at) VALUES (2, 'test-bar.v1', NULL, NULL, 0, %[1]d, 0, %[1]d);
+		INSERT INTO pending_deliveries (event_id, payload_type, payload, converted_at, failed_conversions, next_conversion_at, failed_deliveries, next_delivery_at) VALUES (2, 'test-baz.v1', NULL, NULL, 0, %[1]d, 0, %[1]d);
 	`, s.Clock.Now().Unix())
 }
