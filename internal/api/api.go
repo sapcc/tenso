@@ -21,6 +21,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sapcc/go-bits/gopherpolicy"
@@ -34,10 +35,16 @@ type API struct {
 	Config    tenso.Configuration
 	DB        *tenso.DB
 	Validator gopherpolicy.Validator
+	timeNow   func() time.Time
 }
 
 func NewAPI(cfg tenso.Configuration, db *tenso.DB, validator gopherpolicy.Validator) *API {
-	return &API{cfg, db, validator}
+	return &API{cfg, db, validator, time.Now}
+}
+
+func (a *API) OverrideTimeNow(now func() time.Time) *API {
+	a.timeNow = now
+	return a
 }
 
 //Handler generates a HTTP handler for all main API endpoints.

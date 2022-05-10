@@ -74,8 +74,24 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		Availability: gophercloud.Availability(os.Getenv("OS_INTERFACE")),
 	}
 
+	cfg.EnabledRoutes, err = BuildRoutes(strings.Split(os.Getenv("TENSO_ROUTES"), ","))
+	if err != nil {
+		logg.Fatal(err.Error())
+	}
+	if len(cfg.EnabledRoutes) == 0 {
+		logg.Fatal("missing required environment variable: TENSO_ROUTES")
+	}
+
+	return cfg, provider, eo
+}
+
+//BuildRoutes is used by ParseConfiguration to process the TENSO_ROUTES env
+//variable. It is an exported function to make it accessible in unit tests.
+func BuildRoutes(routeSpecs []string) ([]Route, error) {
+	var result []Route
+
 	//parse routes
-	for _, routeSpec := range strings.Split(os.Getenv("TENSO_ROUTES"), ",") {
+	for _, routeSpec := range routeSpecs {
 		routeSpec = strings.TrimSpace(routeSpec)
 		if routeSpec == "" {
 			//be lenient e.g. when the list of routes has a trailing comma
@@ -84,7 +100,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 
 		match := routeSpecRx.FindStringSubmatch(routeSpec)
 		if match == nil {
-			logg.Fatal("route specification %q is invalid: syntax error", routeSpec)
+			return nil, fmt.Errorf("route specification %q is invalid: syntax error", routeSpec)
 		}
 		route := Route{
 			SourcePayloadType: match[1],
@@ -99,12 +115,12 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 			}
 		}
 		if route.ValidationHandler == nil {
-			logg.Fatal("route specification %q is invalid: cannot validate %s",
+			return nil, fmt.Errorf("route specification %q is invalid: cannot validate %s",
 				routeSpec, route.SourcePayloadType)
 		}
 		err := route.ValidationHandler.Init()
 		if err != nil {
-			logg.Fatal("while parsing route specification %q: cannot initialize validation for %s: %s",
+			return nil, fmt.Errorf("while parsing route specification %q: cannot initialize validation for %s: %s",
 				routeSpec, route.SourcePayloadType, err.Error())
 		}
 
@@ -117,12 +133,12 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 			}
 		}
 		if route.TranslationHandler == nil {
-			logg.Fatal("route specification %q is invalid: do not know how to translate from %s to %s",
+			return nil, fmt.Errorf("route specification %q is invalid: do not know how to translate from %s to %s",
 				routeSpec, route.SourcePayloadType, route.TargetPayloadType)
 		}
 		err = route.TranslationHandler.Init()
 		if err != nil {
-			logg.Fatal("while parsing route specification %q: cannot initialize translation from %s to %s: %s",
+			return nil, fmt.Errorf("while parsing route specification %q: cannot initialize translation from %s to %s: %s",
 				routeSpec, route.SourcePayloadType, route.TargetPayloadType, err.Error())
 		}
 
@@ -134,22 +150,19 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 			}
 		}
 		if route.DeliveryHandler == nil {
-			logg.Fatal("route specification %q is invalid: cannot deliver %s",
+			return nil, fmt.Errorf("route specification %q is invalid: cannot deliver %s",
 				routeSpec, route.TargetPayloadType)
 		}
 		err = route.DeliveryHandler.Init()
 		if err != nil {
-			logg.Fatal("while parsing route specification %q: cannot initialize delivery for %s: %s",
+			return nil, fmt.Errorf("while parsing route specification %q: cannot initialize delivery for %s: %s",
 				routeSpec, route.TargetPayloadType, err.Error())
 		}
 
-		cfg.EnabledRoutes = append(cfg.EnabledRoutes, route)
-	}
-	if len(cfg.EnabledRoutes) == 0 {
-		logg.Fatal("missing required environment variable: TENSO_ROUTES")
+		result = append(result, route)
 	}
 
-	return cfg, provider, eo
+	return result, nil
 }
 
 //GetenvOrDefault is like os.Getenv but it also takes a default value which is

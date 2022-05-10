@@ -22,7 +22,6 @@ package api
 import (
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/sapcc/go-bits/respondwith"
 	"github.com/sapcc/go-bits/sre"
@@ -37,14 +36,14 @@ const (
 var (
 	findOrCreateUserQuery = tenso.SimplifyWhitespaceInSQL(`
 		INSERT INTO users (uuid, name, domain_name) VALUES ($1, $2, $3)
-		ON CONFLICT DO UPDATE SET name = EXCLUDED.name, domain_name = EXCLUDED.domain_name
+		ON CONFLICT (uuid) DO UPDATE SET name = EXCLUDED.name, domain_name = EXCLUDED.domain_name
 		RETURNING id
 	`)
 )
 
 func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 	sre.IdentifyEndpoint(r, "/v1/events/new")
-	requestTime := time.Now()
+	requestTime := a.timeNow()
 
 	//collect required query parameters
 	query := r.URL.Query()

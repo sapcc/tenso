@@ -48,7 +48,7 @@ type PendingDelivery struct {
 	PayloadType string `db:"payload_type"`
 	//Payload and ConvertedAt are nil when the payload has not been converted from event.Payload yet.
 	Payload               *string    `db:"payload"`
-	ConvertedAt           *time.Time `db:"generated_at"`
+	ConvertedAt           *time.Time `db:"converted_at"`
 	FailedConversionCount int64      `db:"failed_conversions"`
 	FailedDeliveryCount   int64      `db:"failed_deliveries"`
 	NextDeliveryAt        time.Time  `db:"next_delivery_at"`
