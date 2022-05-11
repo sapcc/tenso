@@ -1,0 +1,28 @@
+{
+  "region": "qa-de-1",
+  "git": {
+    "qa-de-1": {
+      "commit-id": "72351994edec8e599d392985b3c88ffd883a19d8"
+    }
+  },
+  "helm-release": [
+    {
+      "name": "kube-system-metal",
+      "outcome": "succeeded",
+      "chart-id": "kube-system-metal-3.2.3",
+      "chart-path": "",
+      "cluster": "qa-de-1",
+      "kubernetes-namespace": "kube-system",
+      "started-at": "2022-05-05T14:48:06Z",
+      "finished-at": "2022-05-05T14:48:18Z",
+      "duration": 12
+    }
+  ],
+  "pipeline": {
+    "build-number": "134",
+    "build-url": "https://concourse.example.org/teams/services/pipelines/kube-system-metal/jobs/qa-de-1-deploy/builds/134",
+    "job": "qa-de-1-deploy",
+    "name": "kube-system-metal",
+    "team": "services"
+  }
+}

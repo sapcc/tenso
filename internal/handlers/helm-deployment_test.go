@@ -17,32 +17,28 @@
 *
 *******************************************************************************/
 
-package handlers
+package handlers_test
 
-import "github.com/sapcc/tenso/internal/tenso"
+import (
+	"fmt"
+	"os"
+	"testing"
 
-func init() {
-	tenso.RegisterTranslationHandler(&dummyTranslator{"helm-deployment-from-concourse.v1", "helm-deployment-to-elk.v1"})
+	_ "github.com/sapcc/tenso/internal/handlers"
+	"github.com/sapcc/tenso/internal/test"
+)
+
+func TestHelmDeploymentValidationSuccess(t *testing.T) {
+	s := test.NewSetup(t,
+		test.WithRoute("helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1"),
+	)
+	vh := s.Config.EnabledRoutes[0].ValidationHandler
+
+	for _, releaseName := range []string{"kube-system-metal", "swift"} {
+		sourcePayloadBytes, err := os.ReadFile(fmt.Sprintf("fixtures/helm-deployment-from-concourse.v1.%s.json", releaseName))
+		test.Must(t, err)
+		test.Must(t, vh.ValidatePayload(sourcePayloadBytes))
+	}
 }
 
-//dummyTranslator is a tenso.TranslationHandler for no-op translations.
-type dummyTranslator struct {
-	sourcePayloadType string
-	targetPayloadType string
-}
-
-func (h *dummyTranslator) Init() error {
-	return nil
-}
-
-func (h *dummyTranslator) SourcePayloadType() string {
-	return h.sourcePayloadType
-}
-
-func (h *dummyTranslator) TargetPayloadType() string {
-	return h.targetPayloadType
-}
-
-func (h *dummyTranslator) TranslatePayload(payload []byte) ([]byte, error) {
-	return payload, nil
-}
+//TODO test validation errors

@@ -1,0 +1,45 @@
+{
+  "region": "qa-de-1",
+  "git": {
+    "helm-charts": {
+      "commit-id": "b3c7f910ab7b0d303d0190b420316a6a2c7f3c66"
+    },
+    "secrets": {
+      "commit-id": "ff74360ef4e10bd6c434b61ccb6049376fc45a8d"
+    }
+  },
+  "helm-release": [
+    {
+      "name": "swift",
+      "outcome": "succeeded",
+      "chart-id": "",
+      "chart-path": "openstack/swift",
+      "cluster": "qa-de-1",
+      "image-version": "xena-20220511084452",
+      "kubernetes-namespace": "swift",
+      "started-at": "2022-05-11T08:51:47Z",
+      "finished-at": "2022-05-11T08:56:38Z",
+      "duration": 291
+    },
+    {
+      "name": "swift-utils",
+      "outcome": "succeeded",
+      "chart-id": "",
+      "chart-path": "openstack/swift-utils",
+      "cluster": "qa-de-1",
+      "image-version": "xena-20220511084452",
+      "kubernetes-namespace": "swift",
+      "started-at": "2022-05-11T08:57:33Z",
+      "finished-at": "2022-05-11T09:00:56Z",
+      "duration": 203
+    }
+  ],
+  "pipeline": {
+    "build-number": "82",
+    "build-url": "https://concourse.example.org/teams/services/pipelines/swift/jobs/qa-de-1/builds/82",
+    "created-by": "I012345",
+    "job": "qa-de-1",
+    "name": "swift",
+    "team": "services"
+  }
+}
