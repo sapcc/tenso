@@ -24,7 +24,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -213,9 +215,20 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) error {
 // DeliveryHandler for ELK
 
 //helmDeploymentToElkDeliverer is a tenso.DeliveryHandler.
-type helmDeploymentToElkDeliverer struct{}
+type helmDeploymentToElkDeliverer struct {
+	LogstashHost string
+}
 
 func (h *helmDeploymentToElkDeliverer) Init() error {
+	h.LogstashHost = os.Getenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST")
+	if h.LogstashHost == "" {
+		return errors.New("missing required environment variable: TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST")
+	}
+	_, _, err := net.SplitHostPort(h.LogstashHost)
+	if err != nil {
+		return fmt.Errorf(`expected TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST to look like "host:port", but got %q`,
+			h.LogstashHost)
+	}
 	return nil
 }
 
@@ -224,5 +237,25 @@ func (h *helmDeploymentToElkDeliverer) PayloadType() string {
 }
 
 func (h *helmDeploymentToElkDeliverer) DeliverPayload(payload []byte) error {
-	return errors.New("TODO: implement delivery")
+	//Logstash wants everything on one line, so ensure we don't have unnecessary whitespace inbetween
+	var buf bytes.Buffer
+	err := json.Compact(&buf, payload)
+	if err != nil {
+		return err
+	}
+	err = buf.WriteByte('\n')
+	if err != nil {
+		return err
+	}
+
+	//deliver payload to Logstash
+	conn, err := net.Dial("tcp", h.LogstashHost)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Write(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	return conn.Close()
 }
