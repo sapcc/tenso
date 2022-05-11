@@ -79,7 +79,7 @@ const (
 	//HdOutcomeNotDeployed describes a Helm release that was not deployed because
 	//of an unexpected error before `helm upgrade`.
 	HdOutcomeNotDeployed HdOutcome = "not-deployed"
-	//HdOutcomeSucceeded describes a Helm release that succeded.
+	//HdOutcomeSucceeded describes a Helm release that succeeded.
 	HdOutcomeSucceeded HdOutcome = "succeeded"
 	//HdOutcomeHelmUpgradeFailed describes a Helm release that failed during
 	//`helm upgrade` or because some deployed pods did not come up correctly.
