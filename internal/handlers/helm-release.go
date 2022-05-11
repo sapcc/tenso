@@ -17,7 +17,7 @@
 *
 *******************************************************************************/
 
-package validation
+package handlers
 
 import (
 	"errors"
@@ -27,9 +27,12 @@ import (
 
 func init() {
 	tenso.RegisterValidationHandler(&helmReleaseValidator{})
+	tenso.RegisterDeliveryHandler(&helmReleaseToElkDeliverer{})
 }
 
-//helmReleaseValidator is a tenso.ValidationHandler.
+////////////////////////////////////////////////////////////////////////////////
+// ValidationHandler
+
 type helmReleaseValidator struct {
 }
 
@@ -43,4 +46,22 @@ func (h *helmReleaseValidator) PayloadType() string {
 
 func (h *helmReleaseValidator) ValidatePayload(payload []byte) error {
 	return errors.New("TODO: implement validation")
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// DeliveryHandler for ELK
+
+//helmReleaseToElkDeliverer is a tenso.DeliveryHandler.
+type helmReleaseToElkDeliverer struct{}
+
+func (h *helmReleaseToElkDeliverer) Init() error {
+	return nil
+}
+
+func (h *helmReleaseToElkDeliverer) PayloadType() string {
+	return "helm-release-to-elk.v1"
+}
+
+func (h *helmReleaseToElkDeliverer) DeliverPayload(payload []byte) error {
+	return errors.New("TODO: implement delivery")
 }

@@ -17,7 +17,7 @@
 *
 *******************************************************************************/
 
-package translation
+package handlers
 
 import "github.com/sapcc/tenso/internal/tenso"
 
