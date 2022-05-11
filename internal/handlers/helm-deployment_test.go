@@ -29,6 +29,9 @@ import (
 )
 
 func TestHelmDeploymentValidationSuccess(t *testing.T) {
+	//we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
+	os.Setenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST", "localhost:1")
+
 	s := test.NewSetup(t,
 		test.WithRoute("helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1"),
 	)

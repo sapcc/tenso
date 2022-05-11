@@ -237,7 +237,7 @@ func (h *helmDeploymentToElkDeliverer) PayloadType() string {
 }
 
 func (h *helmDeploymentToElkDeliverer) DeliverPayload(payload []byte) error {
-	//Logstash wants everything on one line, so ensure we don't have unnecessary whitespace inbetween
+	//Logstash wants everything on one line, so ensure we don't have unnecessary whitespace in the payload
 	var buf bytes.Buffer
 	err := json.Compact(&buf, payload)
 	if err != nil {
@@ -247,13 +247,14 @@ func (h *helmDeploymentToElkDeliverer) DeliverPayload(payload []byte) error {
 	if err != nil {
 		return err
 	}
+	payload = buf.Bytes()
 
 	//deliver payload to Logstash
 	conn, err := net.Dial("tcp", h.LogstashHost)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Write(buf.Bytes())
+	_, err = conn.Write(payload)
 	if err != nil {
 		return err
 	}
