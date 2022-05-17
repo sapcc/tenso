@@ -74,7 +74,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		Availability: gophercloud.Availability(os.Getenv("OS_INTERFACE")),
 	}
 
-	cfg.EnabledRoutes, err = BuildRoutes(strings.Split(os.Getenv("TENSO_ROUTES"), ","))
+	cfg.EnabledRoutes, err = BuildRoutes(strings.Split(os.Getenv("TENSO_ROUTES"), ","), provider, eo)
 	if err != nil {
 		logg.Fatal(err.Error())
 	}
@@ -87,7 +87,9 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 
 //BuildRoutes is used by ParseConfiguration to process the TENSO_ROUTES env
 //variable. It is an exported function to make it accessible in unit tests.
-func BuildRoutes(routeSpecs []string) ([]Route, error) {
+//
+//The `pc` and `eo` args are passed to the handlers' Init() methods verbatim.
+func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) ([]Route, error) {
 	var result []Route
 
 	//parse routes
@@ -118,7 +120,7 @@ func BuildRoutes(routeSpecs []string) ([]Route, error) {
 			return nil, fmt.Errorf("route specification %q is invalid: cannot validate %s",
 				routeSpec, route.SourcePayloadType)
 		}
-		err := route.ValidationHandler.Init()
+		err := route.ValidationHandler.Init(pc, eo)
 		if err != nil {
 			return nil, fmt.Errorf("while parsing route specification %q: cannot initialize validation for %s: %s",
 				routeSpec, route.SourcePayloadType, err.Error())
@@ -136,7 +138,7 @@ func BuildRoutes(routeSpecs []string) ([]Route, error) {
 			return nil, fmt.Errorf("route specification %q is invalid: do not know how to translate from %s to %s",
 				routeSpec, route.SourcePayloadType, route.TargetPayloadType)
 		}
-		err = route.TranslationHandler.Init()
+		err = route.TranslationHandler.Init(pc, eo)
 		if err != nil {
 			return nil, fmt.Errorf("while parsing route specification %q: cannot initialize translation from %s to %s: %s",
 				routeSpec, route.SourcePayloadType, route.TargetPayloadType, err.Error())
@@ -153,7 +155,7 @@ func BuildRoutes(routeSpecs []string) ([]Route, error) {
 			return nil, fmt.Errorf("route specification %q is invalid: cannot deliver %s",
 				routeSpec, route.TargetPayloadType)
 		}
-		err = route.DeliveryHandler.Init()
+		err = route.DeliveryHandler.Init(pc, eo)
 		if err != nil {
 			return nil, fmt.Errorf("while parsing route specification %q: cannot initialize delivery for %s: %s",
 				routeSpec, route.TargetPayloadType, err.Error())

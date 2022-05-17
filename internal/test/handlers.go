@@ -25,6 +25,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gophercloud/gophercloud"
+
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
@@ -64,8 +66,12 @@ type testValidationHandler struct {
 	Type string
 }
 
-func (h *testValidationHandler) Init() error         { return nil }
-func (h *testValidationHandler) PayloadType() string { return fmt.Sprintf("test-%s.v1", h.Type) }
+func (h *testValidationHandler) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+	return nil
+}
+func (h *testValidationHandler) PayloadType() string {
+	return fmt.Sprintf("test-%s.v1", h.Type)
+}
 
 func (h *testValidationHandler) ValidatePayload(data []byte) error {
 	_, err := parseTestPayload(data, h.Type)
@@ -77,7 +83,9 @@ type testTranslationHandler struct {
 	TargetType string
 }
 
-func (h *testTranslationHandler) Init() error { return nil }
+func (h *testTranslationHandler) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+	return nil
+}
 func (h *testTranslationHandler) SourcePayloadType() string {
 	return fmt.Sprintf("test-%s.v1", h.SourceType)
 }
@@ -98,8 +106,12 @@ type testDeliveryHandler struct {
 	Type string
 }
 
-func (h *testDeliveryHandler) Init() error         { return nil }
-func (h *testDeliveryHandler) PayloadType() string { return fmt.Sprintf("test-%s.v1", h.Type) }
+func (h *testDeliveryHandler) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+	return nil
+}
+func (h *testDeliveryHandler) PayloadType() string {
+	return fmt.Sprintf("test-%s.v1", h.Type)
+}
 
 func (h *testDeliveryHandler) DeliverPayload(data []byte) error {
 	//We don't actually deliver anywhere, but by giving us an invalid payload, tests can "simulate" a delivery failure.

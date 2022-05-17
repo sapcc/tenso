@@ -19,12 +19,17 @@
 
 package tenso
 
+import "github.com/gophercloud/gophercloud"
+
 //ValidationHandler is an object that validates incoming payloads of a specific
 //payload type.
 type ValidationHandler interface {
 	//Init will be called at least once during startup if this ValidationHandler
 	//is enabled in the configuration.
-	Init() error
+	//
+	//A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
+	//talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
+	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	PayloadType() string
 	ValidatePayload(payload []byte) error
@@ -35,7 +40,10 @@ type ValidationHandler interface {
 type TranslationHandler interface {
 	//Init will be called at least once during startup if this TranslationHandler
 	//is enabled in the configuration.
-	Init() error
+	//
+	//A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
+	//talk to OpenStack. During unit tests, (nil, {}) will be provided instead.
+	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	SourcePayloadType() string
 	TargetPayloadType() string
@@ -47,7 +55,10 @@ type TranslationHandler interface {
 type DeliveryHandler interface {
 	//Init will be called at least once during startup if this DeliveryHandler
 	//is enabled in the configuration.
-	Init() error
+	//
+	//A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
+	//talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
+	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	PayloadType() string
 	DeliverPayload(payload []byte) error

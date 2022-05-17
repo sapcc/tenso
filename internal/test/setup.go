@@ -26,6 +26,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/gophercloud/gophercloud"
 	"github.com/sapcc/go-bits/logg"
 
 	"github.com/sapcc/tenso/internal/api"
@@ -112,7 +113,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	}
 
 	//build configuration
-	routes, err := tenso.BuildRoutes(params.RouteSpecs)
+	routes, err := tenso.BuildRoutes(params.RouteSpecs, nil, gophercloud.EndpointOpts{})
 	Must(t, err)
 	s := Setup{
 		Clock: &Clock{},

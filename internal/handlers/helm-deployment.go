@@ -31,12 +31,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/majewsky/schwift"
+	"github.com/majewsky/schwift/gopherschwift"
+
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
 func init() {
 	tenso.RegisterValidationHandler(&helmDeploymentValidator{})
 	tenso.RegisterDeliveryHandler(&helmDeploymentToElkDeliverer{})
+	tenso.RegisterDeliveryHandler(&helmDeploymentToSwiftDeliverer{})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -115,7 +121,7 @@ type HdPipeline struct {
 type helmDeploymentValidator struct {
 }
 
-func (h *helmDeploymentValidator) Init() error {
+func (h *helmDeploymentValidator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
@@ -219,7 +225,7 @@ type helmDeploymentToElkDeliverer struct {
 	LogstashHost string
 }
 
-func (h *helmDeploymentToElkDeliverer) Init() error {
+func (h *helmDeploymentToElkDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	h.LogstashHost = os.Getenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST")
 	if h.LogstashHost == "" {
 		return errors.New("missing required environment variable: TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST")
@@ -259,4 +265,41 @@ func (h *helmDeploymentToElkDeliverer) DeliverPayload(payload []byte) error {
 		return err
 	}
 	return conn.Close()
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// DeliveryHandler for Swift
+
+type helmDeploymentToSwiftDeliverer struct {
+	Container *schwift.Container
+}
+
+func (h *helmDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
+	containerName := os.Getenv("TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
+	if containerName == "" {
+		return errors.New("missing required environment variable: TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
+	}
+
+	client, err := openstack.NewObjectStorageV1(pc, eo)
+	if err != nil {
+		return err
+	}
+
+	swiftAccount, err := gopherschwift.Wrap(client, &gopherschwift.Options{
+		UserAgent: fmt.Sprintf("%s/rolling", tenso.Component),
+	})
+	if err != nil {
+		return err
+	}
+
+	h.Container, err = swiftAccount.Container(containerName).EnsureExists()
+	return err
+}
+
+func (h *helmDeploymentToSwiftDeliverer) PayloadType() string {
+	return "helm-deployment-to-swift.v1"
+}
+
+func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) error {
+	return errors.New("TODO: unimplemented")
 }

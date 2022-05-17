@@ -19,7 +19,11 @@
 
 package handlers
 
-import "github.com/sapcc/tenso/internal/tenso"
+import (
+	"github.com/gophercloud/gophercloud"
+
+	"github.com/sapcc/tenso/internal/tenso"
+)
 
 func init() {
 	tenso.RegisterTranslationHandler(&dummyTranslator{"helm-deployment-from-concourse.v1", "helm-deployment-to-elk.v1"})
@@ -31,7 +35,7 @@ type dummyTranslator struct {
 	targetPayloadType string
 }
 
-func (h *dummyTranslator) Init() error {
+func (h *dummyTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
