@@ -11,7 +11,7 @@ require (
 	github.com/majewsky/schwift v1.1.0
 	github.com/prometheus/client_golang v1.12.2
 	github.com/rs/cors v1.8.2
-	github.com/sapcc/go-bits v0.0.0-20220513163648-283c57b10c36
+	github.com/sapcc/go-bits v0.0.0-20220517080651-baba74caa927
 	gopkg.in/gorp.v2 v2.2.0
 )
 
@@ -25,7 +25,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
-	github.com/lib/pq v1.10.5 // indirect
+	github.com/lib/pq v1.10.6 // indirect
 	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
