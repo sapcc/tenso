@@ -35,8 +35,8 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
-
 	"github.com/sapcc/go-bits/logg"
+
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
