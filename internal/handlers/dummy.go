@@ -27,6 +27,7 @@ import (
 
 func init() {
 	tenso.RegisterTranslationHandler(&dummyTranslator{"helm-deployment-from-concourse.v1", "helm-deployment-to-elk.v1"})
+	tenso.RegisterTranslationHandler(&dummyTranslator{"helm-deployment-from-concourse.v1", "helm-deployment-to-swift.v1"})
 }
 
 //dummyTranslator is a tenso.TranslationHandler for no-op translations.
