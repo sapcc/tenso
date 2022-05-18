@@ -36,6 +36,7 @@ import (
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
 
+	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
@@ -156,6 +157,9 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) error {
 		}
 	}
 
+	if len(event.HelmReleases) == 0 {
+		return errors.New("helm-release[] may not be empty")
+	}
 	for _, relInfo := range event.HelmReleases {
 		//TODO: Can we do regex matches to validate the contents of Name, Namespace, ChartID, ChartPath?
 		if relInfo.Name == "" {
@@ -301,5 +305,34 @@ func (h *helmDeploymentToSwiftDeliverer) PayloadType() string {
 }
 
 func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) error {
-	return errors.New("TODO: unimplemented")
+	var event HdEvent
+	dec := json.NewDecoder(bytes.NewReader(payload))
+	dec.DisallowUnknownFields()
+	err := dec.Decode(&event)
+	if err != nil {
+		return err
+	}
+
+	var releaseIDs []string
+	var maxFinishedAt time.Time
+	for _, hr := range event.HelmReleases {
+		//only record deployments that succeeded fully
+		if hr.Outcome != HdOutcomeSucceeded {
+			logg.Info("not recording Helm deployment %s in Swift because Helm release %q had outcome %q",
+				event.Pipeline.BuildURL, hr.Name, string(hr.Outcome))
+			return nil
+		}
+		//compute overall finish timestamp
+		if maxFinishedAt.IsZero() || maxFinishedAt.Before(*hr.FinishedAt) {
+			maxFinishedAt = *hr.FinishedAt
+		}
+		//format release names and targets for object name
+		releaseIDs = append(releaseIDs, fmt.Sprintf("%s->%s", hr.Name, hr.Cluster))
+	}
+
+	objectName := fmt.Sprintf("%s/%s/%s/%s.json",
+		event.Pipeline.TeamName, event.Pipeline.PipelineName, strings.Join(releaseIDs, ","),
+		maxFinishedAt.Format(time.RFC3339),
+	)
+	return h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
 }
