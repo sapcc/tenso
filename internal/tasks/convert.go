@@ -102,6 +102,7 @@ func (j payloadConvertJob) Execute() (returnedError error) {
 		}
 		if returnedError == nil {
 			eventConversionSuccessCounter.With(labels).Inc()
+			logg.Info("converted payload for event %d into %s", pd.EventID, pd.PayloadType)
 		} else {
 			eventConversionFailedCounter.With(labels).Inc()
 			returnedError = fmt.Errorf("while trying to convert payload for event %d into %s: %w", pd.EventID, pd.PayloadType, returnedError)
