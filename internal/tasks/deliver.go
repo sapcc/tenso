@@ -99,10 +99,10 @@ func (j payloadDeliverJob) Execute() (returnedError error) {
 		labels := prometheus.Labels{"payload_type": pd.PayloadType}
 		if returnedError == nil {
 			eventDeliverySuccessCounter.With(labels).Inc()
-			logg.Info("delivered %s payload for event %d", pd.PayloadType, pd.EventID)
+			logg.Info("delivered %s payload for event %d (%q)", pd.PayloadType, pd.EventID, event.Description)
 		} else {
 			eventDeliveryFailedCounter.With(labels).Inc()
-			returnedError = fmt.Errorf("while trying to deliver %s payload for event %d: %w", pd.PayloadType, pd.EventID, returnedError)
+			returnedError = fmt.Errorf("while trying to deliver %s payload for event %d (%q): %w", pd.PayloadType, pd.EventID, event.Description, returnedError)
 		}
 	}()
 

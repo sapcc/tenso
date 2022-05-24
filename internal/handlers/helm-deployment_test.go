@@ -24,6 +24,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sapcc/go-bits/assert"
+
 	_ "github.com/sapcc/tenso/internal/handlers"
 	"github.com/sapcc/tenso/internal/test"
 )
@@ -37,10 +39,26 @@ func TestHelmDeploymentValidationSuccess(t *testing.T) {
 	)
 	vh := s.Config.EnabledRoutes[0].ValidationHandler
 
-	for _, releaseName := range []string{"kube-system-metal", "swift"} {
-		sourcePayloadBytes, err := os.ReadFile(fmt.Sprintf("fixtures/helm-deployment-from-concourse.v1.%s.json", releaseName))
+	testCases := []struct {
+		ReleaseName         string
+		ExpectedDescription string
+	}{
+		{
+			ReleaseName:         "kube-system-metal",
+			ExpectedDescription: "services/kube-system-metal: deploy kube-system-metal->qa-de-1",
+		},
+		{
+			ReleaseName:         "swift",
+			ExpectedDescription: "services/swift: deploy swift->qa-de-1 and swift-utils->qa-de-1",
+		},
+	}
+
+	for _, tc := range testCases {
+		sourcePayloadBytes, err := os.ReadFile(fmt.Sprintf("fixtures/helm-deployment-from-concourse.v1.%s.json", tc.ReleaseName))
 		test.Must(t, err)
-		test.Must(t, vh.ValidatePayload(sourcePayloadBytes))
+		payloadInfo, err := vh.ValidatePayload(sourcePayloadBytes)
+		test.Must(t, err)
+		assert.DeepEqual(t, "event description", payloadInfo.Description, tc.ExpectedDescription)
 	}
 }
 

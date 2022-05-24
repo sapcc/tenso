@@ -56,6 +56,13 @@ type HdEvent struct {
 	Pipeline     HdPipeline           `json:"pipeline"`
 }
 
+func (event HdEvent) ReleaseDescriptors() (result []string) {
+	for _, hr := range event.HelmReleases {
+		result = append(result, fmt.Sprintf("%s->%s", hr.Name, hr.Cluster))
+	}
+	return
+}
+
 type HdGitRepo struct {
 	CommitID string `json:"commit-id"`
 }
@@ -138,87 +145,92 @@ var (
 	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)                   //e.g. "D123456" or "C1234567"
 )
 
-func (h *helmDeploymentValidator) ValidatePayload(payload []byte) error {
+func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
 	var event HdEvent
 	dec := json.NewDecoder(bytes.NewReader(payload))
 	dec.DisallowUnknownFields()
 	err := dec.Decode(&event)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !regionRx.MatchString(event.Region) {
-		return fmt.Errorf(`value for field region is invalid: %q`, event.Region)
+		return nil, fmt.Errorf(`value for field region is invalid: %q`, event.Region)
 	}
 
 	for repoName, repoInfo := range event.GitRepos {
 		if !gitCommitRx.MatchString(repoInfo.CommitID) {
-			return fmt.Errorf(`value for field git[%q].commit-id is invalid: %q`, repoName, repoInfo.CommitID)
+			return nil, fmt.Errorf(`value for field git[%q].commit-id is invalid: %q`, repoName, repoInfo.CommitID)
 		}
 	}
 
 	if len(event.HelmReleases) == 0 {
-		return errors.New("helm-release[] may not be empty")
+		return nil, errors.New("helm-release[] may not be empty")
 	}
 	for _, relInfo := range event.HelmReleases {
 		//TODO: Can we do regex matches to validate the contents of Name, Namespace, ChartID, ChartPath?
 		if relInfo.Name == "" {
-			return fmt.Errorf(`invalid value for field helm-release[].name: %q`, relInfo.Name)
+			return nil, fmt.Errorf(`invalid value for field helm-release[].name: %q`, relInfo.Name)
 		}
 		if !relInfo.Outcome.IsKnownValue() {
-			return fmt.Errorf(`in helm-release %q: invalid value for field outcome: %q`, relInfo.Name, relInfo.Outcome)
+			return nil, fmt.Errorf(`in helm-release %q: invalid value for field outcome: %q`, relInfo.Name, relInfo.Outcome)
 		}
 		if relInfo.ChartID == "" && relInfo.ChartPath == "" {
-			return fmt.Errorf(`in helm-release %q: chart-id and chart-path can not both be empty`, relInfo.Name)
+			return nil, fmt.Errorf(`in helm-release %q: chart-id and chart-path can not both be empty`, relInfo.Name)
 		}
 		if relInfo.ChartID != "" && relInfo.ChartPath != "" {
-			return fmt.Errorf(`in helm-release %q: chart-id and chart-path can not both be set`, relInfo.Name)
+			return nil, fmt.Errorf(`in helm-release %q: chart-id and chart-path can not both be set`, relInfo.Name)
 		}
 		if !clusterRx.MatchString(relInfo.Cluster) {
-			return fmt.Errorf(`in helm-release %q: invalid value for field cluster: %q`, relInfo.Name, relInfo.Cluster)
+			return nil, fmt.Errorf(`in helm-release %q: invalid value for field cluster: %q`, relInfo.Name, relInfo.Cluster)
 		}
 		if !strings.HasSuffix(relInfo.Cluster, event.Region) {
-			return fmt.Errorf(`in helm-release %q: cluster %q is not in region %q`, relInfo.Name, relInfo.Cluster, event.Region)
+			return nil, fmt.Errorf(`in helm-release %q: cluster %q is not in region %q`, relInfo.Name, relInfo.Cluster, event.Region)
 		}
 		if relInfo.Namespace == "" {
-			return fmt.Errorf(`in helm-release %q: invalid value for field namespace: %q`, relInfo.Name, relInfo.Namespace)
+			return nil, fmt.Errorf(`in helm-release %q: invalid value for field namespace: %q`, relInfo.Name, relInfo.Namespace)
 		}
 		if relInfo.StartedAt == nil && relInfo.Outcome != HdOutcomeNotDeployed {
-			return fmt.Errorf(`in helm-release %q: field started-at must be set for outcome %q`, relInfo.Name, relInfo.Outcome)
+			return nil, fmt.Errorf(`in helm-release %q: field started-at must be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
 		if relInfo.StartedAt != nil && relInfo.Outcome == HdOutcomeNotDeployed {
-			return fmt.Errorf(`in helm-release %q: field started-at may not be set for outcome %q`, relInfo.Name, relInfo.Outcome)
+			return nil, fmt.Errorf(`in helm-release %q: field started-at may not be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
 		if relInfo.FinishedAt == nil && (relInfo.Outcome != HdOutcomeNotDeployed && relInfo.Outcome != HdOutcomeHelmUpgradeFailed) {
-			return fmt.Errorf(`in helm-release %q: field finished-at must be set for outcome %q`, relInfo.Name, relInfo.Outcome)
+			return nil, fmt.Errorf(`in helm-release %q: field finished-at must be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
 		if relInfo.FinishedAt != nil && (relInfo.Outcome == HdOutcomeNotDeployed || relInfo.Outcome == HdOutcomeHelmUpgradeFailed) {
-			return fmt.Errorf(`in helm-release %q: field finished-at may not be set for outcome %q`, relInfo.Name, relInfo.Outcome)
+			return nil, fmt.Errorf(`in helm-release %q: field finished-at may not be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
 	}
 
 	//TODO: Can we validate values for TeamName by providing a set of valid values in env?
 	if !buildNumberRx.MatchString(event.Pipeline.BuildNumber) {
-		return fmt.Errorf("field pipeline.build-number is invalid: %q", event.Pipeline.BuildNumber)
+		return nil, fmt.Errorf("field pipeline.build-number is invalid: %q", event.Pipeline.BuildNumber)
 	}
 	_, err = url.Parse(event.Pipeline.BuildURL)
 	if err != nil {
-		return fmt.Errorf("field pipeline.build-url is invalid: %q", event.Pipeline.BuildURL)
+		return nil, fmt.Errorf("field pipeline.build-url is invalid: %q", event.Pipeline.BuildURL)
 	}
 	if event.Pipeline.JobName == "" {
-		return fmt.Errorf("field pipeline.job is invalid: %q", event.Pipeline.JobName)
+		return nil, fmt.Errorf("field pipeline.job is invalid: %q", event.Pipeline.JobName)
 	}
 	if event.Pipeline.PipelineName == "" {
-		return fmt.Errorf("field pipeline.name is invalid: %q", event.Pipeline.PipelineName)
+		return nil, fmt.Errorf("field pipeline.name is invalid: %q", event.Pipeline.PipelineName)
 	}
 	if event.Pipeline.TeamName == "" {
-		return fmt.Errorf("field pipeline.team is invalid: %q", event.Pipeline.TeamName)
+		return nil, fmt.Errorf("field pipeline.team is invalid: %q", event.Pipeline.TeamName)
 	}
 	if event.Pipeline.CreatedBy != "" && !sapUserIDRx.MatchString(event.Pipeline.CreatedBy) {
-		return fmt.Errorf("field pipeline.created-by is invalid: %q", event.Pipeline.CreatedBy)
+		return nil, fmt.Errorf("field pipeline.created-by is invalid: %q", event.Pipeline.CreatedBy)
 	}
 
-	return nil
+	return &tenso.PayloadInfo{
+		Description: fmt.Sprintf("%s/%s: deploy %s",
+			event.Pipeline.TeamName, event.Pipeline.PipelineName,
+			strings.Join(event.ReleaseDescriptors(), " and "),
+		),
+	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -313,7 +325,6 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) error {
 		return err
 	}
 
-	var releaseIDs []string
 	var maxFinishedAt time.Time
 	for _, hr := range event.HelmReleases {
 		//only record deployments that succeeded fully
@@ -326,12 +337,11 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) error {
 		if maxFinishedAt.IsZero() || maxFinishedAt.Before(*hr.FinishedAt) {
 			maxFinishedAt = *hr.FinishedAt
 		}
-		//format release names and targets for object name
-		releaseIDs = append(releaseIDs, fmt.Sprintf("%s->%s", hr.Name, hr.Cluster))
 	}
 
 	objectName := fmt.Sprintf("%s/%s/%s/%s.json",
-		event.Pipeline.TeamName, event.Pipeline.PipelineName, strings.Join(releaseIDs, ","),
+		event.Pipeline.TeamName, event.Pipeline.PipelineName,
+		strings.Join(event.ReleaseDescriptors(), ","),
 		maxFinishedAt.Format(time.RFC3339),
 	)
 	return h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)

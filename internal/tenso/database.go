@@ -63,6 +63,12 @@ var sqlMigrations = map[string]string{
 		DROP TABLE events;
 		DROP TABLE users;
 	`,
+	"002_add_events_description.up.sql": `
+		ALTER TABLE events ADD COLUMN description TEXT NOT NULL DEFAULT '';
+	`,
+	"002_add_events_description.down.sql": `
+		ALTER TABLE events DROP COLUMN description;
+	`,
 }
 
 //DB adds convenience functions on top of gorp.DbMap.

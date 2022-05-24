@@ -32,6 +32,7 @@ type Event struct {
 	CreatedAt   time.Time `db:"created_at"`
 	PayloadType string    `db:"payload_type"`
 	Payload     string    `db:"payload"`
+	Description string    `db:"description"` //a short summary that appears in log messages
 }
 
 //User contains a record from the `users` table.

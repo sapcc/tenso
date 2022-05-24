@@ -99,7 +99,7 @@ func TestPostNewEvent(t *testing.T) {
 	}.Check(t, s.Handler)
 
 	tr.DBChanges().AssertEqualf(`
-		INSERT INTO events (id, creator_id, created_at, payload_type, payload) VALUES (1, 1, %[1]d, 'test-foo.v1', '{"event":"foo","value":42}');
+		INSERT INTO events (id, creator_id, created_at, payload_type, payload, description) VALUES (1, 1, %[1]d, 'test-foo.v1', '{"event":"foo","value":42}', 'foo event with value 42');
 		INSERT INTO pending_deliveries (event_id, payload_type, payload, converted_at, failed_conversions, next_conversion_at, failed_deliveries, next_delivery_at) VALUES (1, 'test-bar.v1', NULL, NULL, 0, %[1]d, 0, %[1]d);
 		INSERT INTO pending_deliveries (event_id, payload_type, payload, converted_at, failed_conversions, next_conversion_at, failed_deliveries, next_delivery_at) VALUES (1, 'test-baz.v1', NULL, NULL, 0, %[1]d, 0, %[1]d);
 		INSERT INTO users (id, uuid, name, domain_name) VALUES (1, 'testuserid', 'testusername', 'testdomainname');
@@ -115,7 +115,7 @@ func TestPostNewEvent(t *testing.T) {
 	}.Check(t, s.Handler)
 
 	tr.DBChanges().AssertEqualf(`
-		INSERT INTO events (id, creator_id, created_at, payload_type, payload) VALUES (2, 1, %[1]d, 'test-foo.v1', '{"event":"foo","value":44}');
+		INSERT INTO events (id, creator_id, created_at, payload_type, payload, description) VALUES (2, 1, %[1]d, 'test-foo.v1', '{"event":"foo","value":44}', 'foo event with value 44');
 		INSERT INTO pending_deliveries (event_id, payload_type, payload, converted_at, failed_conversions, next_conversion_at, failed_deliveries, next_delivery_at) VALUES (2, 'test-bar.v1', NULL, NULL, 0, %[1]d, 0, %[1]d);
 		INSERT INTO pending_deliveries (event_id, payload_type, payload, converted_at, failed_conversions, next_conversion_at, failed_deliveries, next_delivery_at) VALUES (2, 'test-baz.v1', NULL, NULL, 0, %[1]d, 0, %[1]d);
 	`, s.Clock.Now().Unix())

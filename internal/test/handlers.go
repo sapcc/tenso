@@ -73,9 +73,14 @@ func (h *testValidationHandler) PayloadType() string {
 	return fmt.Sprintf("test-%s.v1", h.Type)
 }
 
-func (h *testValidationHandler) ValidatePayload(data []byte) error {
-	_, err := parseTestPayload(data, h.Type)
-	return err
+func (h *testValidationHandler) ValidatePayload(data []byte) (*tenso.PayloadInfo, error) {
+	p, err := parseTestPayload(data, h.Type)
+	if err != nil {
+		return nil, err
+	}
+	return &tenso.PayloadInfo{
+		Description: fmt.Sprintf("%s event with value %d", p.Event, p.Value),
+	}, nil
 }
 
 type testTranslationHandler struct {

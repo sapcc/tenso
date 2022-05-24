@@ -32,7 +32,15 @@ type ValidationHandler interface {
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	PayloadType() string
-	ValidatePayload(payload []byte) error
+	ValidatePayload(payload []byte) (*PayloadInfo, error)
+}
+
+//PayloadInfo contains structured information about a payload. It is returned
+//by ValidationHandler.ValidatePayload().
+type PayloadInfo struct {
+	//Description is a short summary of the event with this payload. It is used
+	//to identify the event in log messages.
+	Description string
 }
 
 //TranslationHandler is an object that can translate payloads from one specific

@@ -94,7 +94,7 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 	if respondwith.ErrorText(w, err) {
 		return
 	}
-	err = validationHandler.ValidatePayload(payloadBytes)
+	payloadInfo, err := validationHandler.ValidatePayload(payloadBytes)
 	if err != nil {
 		http.Error(w, "invalid event payload: "+err.Error(), http.StatusUnprocessableEntity)
 		return
@@ -120,6 +120,7 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:   requestTime,
 		PayloadType: payloadType,
 		Payload:     string(payloadBytes),
+		Description: payloadInfo.Description,
 	}
 	err = tx.Insert(&event)
 	if respondwith.ErrorText(w, err) {

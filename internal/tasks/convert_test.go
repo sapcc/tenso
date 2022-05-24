@@ -54,6 +54,7 @@ func TestConversionCommon(t *testing.T) {
 		CreatedAt:   s.Clock.Now(),
 		PayloadType: "test-foo.v1",
 		Payload:     `{"event":"invalid","value":42}`, //see below for why "invalid"
+		Description: "foo event with value 42",
 	}
 	test.Must(t, s.DB.Insert(&event))
 	for _, targetPayloadType := range []string{"test-bar.v1", "test-baz.v1"} {
@@ -73,7 +74,7 @@ func TestConversionCommon(t *testing.T) {
 	s.Clock.StepBy(5 * time.Minute)
 	test.MustFail(t,
 		tasks.ExecuteOne(s.TaskContext.PollForPendingConversions),
-		`while trying to convert payload for event 1 into test-bar.v1: translation failed: expected event = "foo", but got "invalid"`,
+		`while trying to convert payload for event 1 ("foo event with value 42") into test-bar.v1: translation failed: expected event = "foo", but got "invalid"`,
 	)
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET failed_conversions = 1, next_conversion_at = %[1]d WHERE event_id = 1 AND payload_type = 'test-bar.v1';

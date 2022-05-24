@@ -54,6 +54,7 @@ func TestDeliveryCommon(t *testing.T) {
 		CreatedAt:   s.Clock.Now(),
 		PayloadType: "test-foo.v1",
 		Payload:     `{"event":"foo","value":42}`,
+		Description: "foo event with value 42",
 	}
 	test.Must(t, s.DB.Insert(&event))
 	for _, targetPayloadType := range []string{"test-bar.v1", "test-baz.v1"} {
@@ -88,7 +89,7 @@ func TestDeliveryCommon(t *testing.T) {
 	s.Clock.StepBy(5 * time.Minute)
 	test.MustFail(t,
 		tasks.ExecuteOne(s.TaskContext.PollForPendingDeliveries),
-		`while trying to deliver test-bar.v1 payload for event 1: delivery failed: simulating failed delivery because of invalid payload`,
+		`while trying to deliver test-bar.v1 payload for event 1 ("foo event with value 42"): delivery failed: simulating failed delivery because of invalid payload`,
 	)
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET failed_deliveries = 1, next_delivery_at = %[1]d WHERE event_id = 1 AND payload_type = 'test-bar.v1';
