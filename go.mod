@@ -12,6 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/rs/cors v1.8.2
 	github.com/sapcc/go-bits v0.0.0-20220517080651-baba74caa927
+	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	gopkg.in/gorp.v2 v2.2.0
 )
 
@@ -36,8 +37,10 @@ require (
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/ziutek/mymysql v1.5.4 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.6 // indirect
+	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

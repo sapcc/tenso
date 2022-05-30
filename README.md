@@ -115,6 +115,8 @@ event signaling process:
 * `helm-deployment-to-swift.v1` forwards the payload from Concourse into
   OpenStack Swift for archival purposes. For each particular Helm release, only
   the latest successful deployment is stored.
+* `helm-deployment-to-servicenow.v1` forwards the payload from Concourse into
+  the Change Management area of our ServiceNow instance.
 
 To configure these delivery paths, the following environment variables are inspected:
 
@@ -122,3 +124,5 @@ To configure these delivery paths, the following environment variables are inspe
 | -------- | ------- | ----------- |
 | `TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST` | *(required)* | The host:port pair of the Logstash service for `helm-deployment-to-elk.v1` delivery. |
 | `TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER` | *(required)* | The name of the target Swift container for `helm-deployment-to-swift.v1` delivery. |
+| `TENSO_SERVICENOW_TOKEN_URL`<br>`TENSO_SERVICENOW_USERNAME`<br>`TENSO_SERVICENOW_PASSWORD` | *(required)* | OAuth2 credentials for authentication with the ServiceNow API. |
+| `TENSO_SERVICENOW_CREATE_CHANGE_URL` | *(required)* | Endpoint URL for creating change objects in ServiceNow. |

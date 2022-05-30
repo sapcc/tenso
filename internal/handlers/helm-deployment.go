@@ -24,7 +24,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"regexp"
@@ -37,6 +39,7 @@ import (
 	"github.com/majewsky/schwift/gopherschwift"
 	"github.com/sapcc/go-bits/logg"
 
+	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
@@ -44,6 +47,8 @@ func init() {
 	tenso.RegisterValidationHandler(&helmDeploymentValidator{})
 	tenso.RegisterDeliveryHandler(&helmDeploymentToElkDeliverer{})
 	tenso.RegisterDeliveryHandler(&helmDeploymentToSwiftDeliverer{})
+	tenso.RegisterTranslationHandler(&helmDeploymentToSNowTranslator{})
+	tenso.RegisterDeliveryHandler(&helmDeploymentToSNowDeliverer{})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -345,4 +350,70 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) error {
 		maxFinishedAt.Format(time.RFC3339),
 	)
 	return h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// TranslationHandler for SNow
+
+type helmDeploymentToSNowTranslator struct{}
+
+func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
+	return nil
+}
+
+func (h *helmDeploymentToSNowTranslator) SourcePayloadType() string {
+	return "helm-deployment-from-concourse.v1"
+}
+
+func (h *helmDeploymentToSNowTranslator) TargetPayloadType() string {
+	return "helm-deployment-to-servicenow.v1"
+}
+
+func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
+	return nil, errors.New("TODO unimplemented")
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// DeliveryHandler for SNow
+
+type helmDeploymentToSNowDeliverer struct {
+	EndpointURL string
+	HTTPClient  *http.Client
+}
+
+func (h *helmDeploymentToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+	h.EndpointURL = os.Getenv("TENSO_SERVICENOW_CREATE_CHANGE_URL")
+	if h.EndpointURL == "" {
+		return errors.New("missing required environment variable: TENSO_SERVICENOW_CREATE_CHANGE_URL")
+	}
+	h.HTTPClient, err = servicenow.NewClientWithOAuth("TENSO_SERVICENOW")
+	return err
+}
+
+func (h *helmDeploymentToSNowDeliverer) PayloadType() string {
+	return "helm-deployment-to-servicenow.v1"
+}
+
+func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) error {
+	req, err := http.NewRequest("POST", h.EndpointURL, bytes.NewReader(payload))
+	if err != nil {
+		return fmt.Errorf("while preparing request for POST %s: %w", h.EndpointURL, err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := h.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("during POST %s: %w", h.EndpointURL, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 400 {
+		return nil
+	}
+
+	//unexpected error -> log response body
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("while reading response body for failed POST %s: %w", h.EndpointURL, err)
+	}
+	return fmt.Errorf("POST failed with status %d and response: %q", resp.StatusCode, string(bodyBytes))
 }
