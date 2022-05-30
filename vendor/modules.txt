@@ -21,7 +21,7 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/gophercloud/gophercloud v0.24.0
+# github.com/gophercloud/gophercloud v0.25.0
 ## explicit; go 1.14
 github.com/gophercloud/gophercloud
 github.com/gophercloud/gophercloud/openstack
@@ -95,7 +95,7 @@ github.com/prometheus/procfs/internal/util
 # github.com/rs/cors v1.8.2
 ## explicit; go 1.13
 github.com/rs/cors
-# github.com/sapcc/go-bits v0.0.0-20220517080651-baba74caa927
+# github.com/sapcc/go-bits v0.0.0-20220530163628-4dafc5c6baa2
 ## explicit; go 1.17
 github.com/sapcc/go-bits/assert
 github.com/sapcc/go-bits/easypg
