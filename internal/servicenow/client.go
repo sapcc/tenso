@@ -20,6 +20,7 @@
 package servicenow
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -50,7 +51,7 @@ func NewClientWithOAuth(envPrefix string) (*http.Client, error) {
 		ClientSecret: password,
 		AuthStyle:    oauth2.AuthStyleInParams,
 	}
-	return cfg.Client(nil), nil
+	return cfg.Client(context.Background()), nil
 }
 
 func mustGetenv(key string) (string, error) {
