@@ -143,11 +143,11 @@ func (h *helmDeploymentValidator) PayloadType() string {
 }
 
 var (
-	regionRx      = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9]$`)                      //e.g. "qa-de-1"
-	clusterRx     = regexp.MustCompile(`^(?:|[a-z]-|ci[0-9]-)?[a-z]{2}-[a-z]{2}-[0-9]$`) //e.g. "qa-de-1" or "s-qa-de-1" or "ci1-eu-de-2"
-	gitCommitRx   = regexp.MustCompile(`^[0-9a-f]{40}$`)                                 //SHA-1 digest with lower-case digits
-	buildNumberRx = regexp.MustCompile(`^[1-9][0-9]*(?:\.[1-9][0-9]*)?$`)                //e.g. "23" or "42.1"
-	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)                   //e.g. "D123456" or "C1234567"
+	regionRx      = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9]$`)                       //e.g. "qa-de-1"
+	clusterRx     = regexp.MustCompile(`^(?:|[a-z]-|ci[0-9]?-)?[a-z]{2}-[a-z]{2}-[0-9]$`) //e.g. "qa-de-1" or "s-qa-de-1" or "ci-eu-de-2"
+	gitCommitRx   = regexp.MustCompile(`^[0-9a-f]{40}$`)                                  //SHA-1 digest with lower-case digits
+	buildNumberRx = regexp.MustCompile(`^[1-9][0-9]*(?:\.[1-9][0-9]*)?$`)                 //e.g. "23" or "42.1"
+	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)                    //e.g. "D123456" or "C1234567"
 )
 
 func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
