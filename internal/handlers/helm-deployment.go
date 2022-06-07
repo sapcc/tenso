@@ -56,6 +56,7 @@ func init() {
 
 type HdEvent struct {
 	Region       string               `json:"region"`
+	RecordedAt   *time.Time           `json:"recorded_at"` //TODO start consuming this once concourse-release-resource has started emitting it
 	GitRepos     map[string]HdGitRepo `json:"git"`
 	HelmReleases []*HdHelmRelease     `json:"helm-release"`
 	Pipeline     HdPipeline           `json:"pipeline"`
