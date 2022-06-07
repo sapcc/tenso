@@ -1,5 +1,8 @@
 # Configuration file for <https://github.com/sapcc/go-makefile-maker>
 
+metadata:
+  url: https://github.com/sapcc/tenso
+
 binaries:
   - name:        tenso
     fromPackage: .
@@ -10,6 +13,9 @@ coverageTest:
   except: '/delivery'
 
 vendoring:
+  enabled: true
+
+dockerfile:
   enabled: true
 
 golangciLint:
