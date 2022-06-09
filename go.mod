@@ -11,7 +11,7 @@ require (
 	github.com/majewsky/schwift v1.1.0
 	github.com/prometheus/client_golang v1.12.2
 	github.com/rs/cors v1.8.2
-	github.com/sapcc/go-bits v0.0.0-20220608080142-64d2fde627f9
+	github.com/sapcc/go-bits v0.0.0-20220609133230-ebdc392bcda3
 	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb
 	gopkg.in/gorp.v2 v2.2.0
 )
