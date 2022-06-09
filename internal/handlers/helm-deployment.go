@@ -62,9 +62,9 @@ type HdEvent struct {
 	Pipeline     HdPipeline           `json:"pipeline"`
 }
 
-func (event HdEvent) ReleaseDescriptors() (result []string) {
+func (event HdEvent) ReleaseDescriptors(sep string) (result []string) {
 	for _, hr := range event.HelmReleases {
-		result = append(result, fmt.Sprintf("%s->%s", hr.Name, hr.Cluster))
+		result = append(result, fmt.Sprintf("%s%s%s", hr.Name, sep, hr.Cluster))
 	}
 	return
 }
@@ -234,7 +234,7 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 	return &tenso.PayloadInfo{
 		Description: fmt.Sprintf("%s/%s: deploy %s",
 			event.Pipeline.TeamName, event.Pipeline.PipelineName,
-			strings.Join(event.ReleaseDescriptors(), " and "),
+			strings.Join(event.ReleaseDescriptors(" to "), " and "),
 		),
 	}, nil
 }
@@ -347,7 +347,7 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) error {
 
 	objectName := fmt.Sprintf("%s/%s/%s/%s.json",
 		event.Pipeline.TeamName, event.Pipeline.PipelineName,
-		strings.Join(event.ReleaseDescriptors(), ","),
+		strings.Join(event.ReleaseDescriptors("_"), ","),
 		maxFinishedAt.Format(time.RFC3339),
 	)
 	return h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)

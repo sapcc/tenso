@@ -45,11 +45,11 @@ func TestHelmDeploymentValidationSuccess(t *testing.T) {
 	}{
 		{
 			ReleaseName:         "kube-system-metal",
-			ExpectedDescription: "services/kube-system-metal: deploy kube-system-metal->qa-de-1",
+			ExpectedDescription: "services/kube-system-metal: deploy kube-system-metal to qa-de-1",
 		},
 		{
 			ReleaseName:         "swift",
-			ExpectedDescription: "services/swift: deploy swift->qa-de-1 and swift-utils->qa-de-1",
+			ExpectedDescription: "services/swift: deploy swift to qa-de-1 and swift-utils to qa-de-1",
 		},
 	}
 
