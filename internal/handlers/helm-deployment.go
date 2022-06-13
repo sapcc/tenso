@@ -37,7 +37,6 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
-	"github.com/sapcc/go-bits/logg"
 
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -56,17 +55,10 @@ func init() {
 
 type HdEvent struct {
 	Region       string               `json:"region"`
-	RecordedAt   *time.Time           `json:"recorded_at"` //TODO start consuming this once concourse-release-resource has started emitting it
+	RecordedAt   *time.Time           `json:"recorded_at"`
 	GitRepos     map[string]HdGitRepo `json:"git"`
 	HelmReleases []*HdHelmRelease     `json:"helm-release"`
 	Pipeline     HdPipeline           `json:"pipeline"`
-}
-
-func (event HdEvent) ReleaseDescriptors(sep string) (result []string) {
-	for _, hr := range event.HelmReleases {
-		result = append(result, fmt.Sprintf("%s%s%s", hr.Name, sep, hr.Cluster))
-	}
-	return
 }
 
 type HdGitRepo struct {
@@ -109,12 +101,18 @@ const (
 	//HdOutcomeE2ETestFailed describes a Helm release that was deployed, but a
 	//subsequent end-to-end test failed.
 	HdOutcomeE2ETestFailed HdOutcome = "e2e-test-failed"
+	//HdOutcomePartiallyDeployed is returned by CombinedOutcome() when the event
+	//in question contains some releases that are "succeeded" and some that are
+	//"not-deployed". This value is not acceptable for an individual Helm release.
+	HdOutcomePartiallyDeployed HdOutcome = "partially-deployed"
 )
 
-func (o HdOutcome) IsKnownValue() bool {
+func (o HdOutcome) IsKnownInputValue() bool {
 	switch o {
 	case HdOutcomeNotDeployed, HdOutcomeSucceeded, HdOutcomeHelmUpgradeFailed, HdOutcomeE2ETestFailed:
 		return true
+	case HdOutcomePartiallyDeployed:
+		return false //not acceptable on an individual release, can only appear as result of HdEvent.CombinedOutcome()
 	default:
 		return false
 	}
@@ -127,6 +125,41 @@ type HdPipeline struct {
 	PipelineName string `json:"name"`
 	TeamName     string `json:"team"`
 	CreatedBy    string `json:"created-by"`
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// helper functions on HdEvent
+
+func (event HdEvent) ReleaseDescriptors(sep string) (result []string) {
+	for _, hr := range event.HelmReleases {
+		result = append(result, fmt.Sprintf("%s%s%s", hr.Name, sep, hr.Cluster))
+	}
+	return
+}
+
+func (event HdEvent) CombinedOutcome() HdOutcome {
+	hasSucceeded := false
+	hasUndeployed := false
+	for _, hr := range event.HelmReleases {
+		switch hr.Outcome {
+		case HdOutcomeHelmUpgradeFailed, HdOutcomeE2ETestFailed:
+			//specific failure forces the entire result to be that failure
+			return hr.Outcome
+		case HdOutcomeSucceeded:
+			hasSucceeded = true
+		case HdOutcomeNotDeployed:
+			hasUndeployed = true
+		}
+	}
+
+	switch {
+	case hasSucceeded && hasUndeployed:
+		return HdOutcomePartiallyDeployed
+	case hasSucceeded:
+		return HdOutcomeSucceeded
+	default:
+		return HdOutcomeNotDeployed
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -178,7 +211,7 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 		if relInfo.Name == "" {
 			return nil, fmt.Errorf(`invalid value for field helm-release[].name: %q`, relInfo.Name)
 		}
-		if !relInfo.Outcome.IsKnownValue() {
+		if !relInfo.Outcome.IsKnownInputValue() {
 			return nil, fmt.Errorf(`in helm-release %q: invalid value for field outcome: %q`, relInfo.Name, relInfo.Outcome)
 		}
 		if relInfo.ChartID == "" && relInfo.ChartPath == "" {
@@ -331,24 +364,11 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) error {
 		return err
 	}
 
-	var maxFinishedAt time.Time
-	for _, hr := range event.HelmReleases {
-		//only record deployments that succeeded fully
-		if hr.Outcome != HdOutcomeSucceeded {
-			logg.Info("not recording Helm deployment %s in Swift because Helm release %q had outcome %q",
-				event.Pipeline.BuildURL, hr.Name, string(hr.Outcome))
-			return nil
-		}
-		//compute overall finish timestamp
-		if maxFinishedAt.IsZero() || maxFinishedAt.Before(*hr.FinishedAt) {
-			maxFinishedAt = *hr.FinishedAt
-		}
-	}
-
-	objectName := fmt.Sprintf("%s/%s/%s/%s.json",
+	objectName := fmt.Sprintf("%s/%s/%s/%s/%s.json",
 		event.Pipeline.TeamName, event.Pipeline.PipelineName,
 		strings.Join(event.ReleaseDescriptors("_"), ","),
-		maxFinishedAt.Format(time.RFC3339),
+		string(event.CombinedOutcome()),
+		event.RecordedAt.Format(time.RFC3339),
 	)
 	return h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
 }
