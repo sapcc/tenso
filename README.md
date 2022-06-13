@@ -126,3 +126,14 @@ To configure these delivery paths, the following environment variables are inspe
 | `TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER` | *(required)* | The name of the target Swift container for `helm-deployment-to-swift.v1` delivery. |
 | `TENSO_SERVICENOW_TOKEN_URL`<br>`TENSO_SERVICENOW_USERNAME`<br>`TENSO_SERVICENOW_PASSWORD` | *(required)* | OAuth2 credentials for authentication with the ServiceNow API. |
 | `TENSO_SERVICENOW_CREATE_CHANGE_URL` | *(required)* | Endpoint URL for creating change objects in ServiceNow. |
+| `TENSO_SERVICENOW_MAPPING_CONFIG_PATH` | *(required)* | Path to a config file containing additional configuration for the mapping between Helm deployment events and ServiceNow change events. |
+
+The config file for `TENSO_SERVICENOW_MAPPING_CONFIG_PATH` must be a YAML document with the following fields:
+
+| Field | Data type | Explanation |
+| ----- | --------- | ----------- |
+| `fallbacks.assigned_to` | string | User ID of the user that we will put into `assigned_to` when we don't have a better option. |
+| `fallbacks.responsible_manager` | string | User name and ID of the user that we will put as `responsible_manager` when we don't have a better option. |
+| `fallbacks.service_offering` | string | Value that we will put as `service_offering` when we don't have a better option. |
+| `regions.<region>.datacenters` | list of strings | Data centers belonging to this region, using the names that ServiceNow expects. |
+| `regions.<region>.environment` | string | Either "Development" or "Production" (TODO: other options?). |

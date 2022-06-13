@@ -1,0 +1,12 @@
+fallbacks:
+  assigned_to: D123456
+  responsible_manager: John Doe (D123456)
+  service_offering: GCS-Network-Security
+
+regions:
+  qa-de-1:
+    environment: Development
+    datacenters:
+      - ROT 1
+      - ROT 2
+      - Walldorf 4

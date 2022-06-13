@@ -63,3 +63,25 @@ func TestHelmDeploymentValidationSuccess(t *testing.T) {
 }
 
 //TODO test validation errors
+
+func TestHelmDeploymentConversionToSNow(t *testing.T) {
+	//we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
+	os.Setenv("TENSO_SERVICENOW_CREATE_CHANGE_URL", "http://www.example.com")
+	os.Setenv("TENSO_SERVICENOW_TOKEN_URL", "http://www.example.com")
+	os.Setenv("TENSO_SERVICENOW_USERNAME", "foo")
+	os.Setenv("TENSO_SERVICENOW_PASSWORD", "bar")
+	//this one we actually need
+	os.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
+
+	s := test.NewSetup(t,
+		test.WithRoute("helm-deployment-from-concourse.v1 -> helm-deployment-to-servicenow.v1"),
+	)
+	th := s.Config.EnabledRoutes[0].TranslationHandler
+
+	sourcePayloadBytes, err := os.ReadFile("fixtures/helm-deployment-from-concourse.v1.swift.json")
+	test.Must(t, err)
+	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes)
+	test.Must(t, err)
+	assert.JSONFixtureFile("fixtures/helm-deployment-to-servicenow.v1.swift.json").
+		AssertResponseBody(t, "translated payload", targetPayloadBytes)
+}

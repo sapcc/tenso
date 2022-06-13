@@ -30,6 +30,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -37,6 +38,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -137,6 +139,23 @@ func (event HdEvent) ReleaseDescriptors(sep string) (result []string) {
 	return
 }
 
+func (event HdEvent) InputDescriptors() (result []string) {
+	var imageVersions []string
+	for _, rel := range event.HelmReleases {
+		if rel.ImageVersion != "" {
+			imageVersions = append(imageVersions, fmt.Sprintf("%s %s", rel.Name, rel.ImageVersion))
+		}
+	}
+
+	var gitVersions []string
+	for name, repo := range event.GitRepos {
+		gitVersions = append(gitVersions, fmt.Sprintf("%s.git %s", name, repo.CommitID))
+	}
+	sort.Strings(gitVersions) //for test reproducability
+
+	return append(imageVersions, gitVersions...)
+}
+
 func (event HdEvent) CombinedOutcome() HdOutcome {
 	hasSucceeded := false
 	hasUndeployed := false
@@ -160,6 +179,19 @@ func (event HdEvent) CombinedOutcome() HdOutcome {
 	default:
 		return HdOutcomeNotDeployed
 	}
+}
+
+func (event HdEvent) CombinedStartDate() *time.Time {
+	t := event.RecordedAt
+	for _, hr := range event.HelmReleases {
+		if hr.StartedAt == nil {
+			continue
+		}
+		if t.After(*hr.StartedAt) {
+			t = hr.StartedAt
+		}
+	}
+	return t
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -379,10 +411,41 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.
 ////////////////////////////////////////////////////////////////////////////////
 // TranslationHandler for SNow
 
-type helmDeploymentToSNowTranslator struct{}
+type helmDeploymentToSNowTranslator struct {
+	Mapping ServiceNowMappingConfig
+}
+
+var serviceNowCloseCodes = map[HdOutcome]string{
+	HdOutcomeNotDeployed:       "Failed - Rolled back",
+	HdOutcomePartiallyDeployed: "Partially Implemented",
+	HdOutcomeHelmUpgradeFailed: "Failed - Others", //TODO set Failure Category as well
+	HdOutcomeE2ETestFailed:     "Failed - Others", //TODO set Failure Category as well
+	HdOutcomeSucceeded:         "Implemented - Successfully",
+}
+
+type ServiceNowMappingConfig struct {
+	Fallbacks struct {
+		AssignedTo         string `yaml:"assigned_to"`
+		ResponsibleManager string `yaml:"responsible_manager"`
+		ServiceOffering    string `yaml:"service_offering"`
+	} `yaml:"fallbacks"`
+	Regions map[string]struct {
+		Datacenters []string `yaml:"datacenters"`
+		Environment string   `yaml:"environment"`
+	} `yaml:"regions"`
+}
 
 func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
-	return nil
+	filePath := os.Getenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
+	if filePath == "" {
+		return errors.New("missing required environment variable: TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
+	}
+
+	buf, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	return yaml.Unmarshal(buf, &h.Mapping)
 }
 
 func (h *helmDeploymentToSNowTranslator) SourcePayloadType() string {
@@ -394,7 +457,62 @@ func (h *helmDeploymentToSNowTranslator) TargetPayloadType() string {
 }
 
 func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
-	return nil, errors.New("TODO unimplemented")
+	var event HdEvent
+	dec := json.NewDecoder(bytes.NewReader(payload))
+	dec.DisallowUnknownFields()
+	err := dec.Decode(&event)
+	if err != nil {
+		return nil, err
+	}
+
+	//if we did not start deploying, we won't create a change object in ServiceNow
+	outcome := event.CombinedOutcome()
+	if outcome == HdOutcomeNotDeployed {
+		return []byte("skip"), nil
+	}
+
+	//map region to datacenters/environment
+	regionMapping, ok := h.Mapping.Regions[event.Region]
+	if !ok {
+		return nil, fmt.Errorf("region not found in mapping config: %q", event.Region)
+	}
+
+	//choose assignee
+	assignedTo := event.Pipeline.CreatedBy
+	if assignedTo == "" {
+		assignedTo = h.Mapping.Fallbacks.AssignedTo
+	}
+
+	//some more precomputations
+	releaseDesc := strings.Join(event.ReleaseDescriptors(" to "), ", ")
+	inputDesc := strings.Join(event.InputDescriptors(), ", ")
+
+	data := map[string]interface{}{
+		"chg_model":               "GCS CCloud Automated Standard Change",
+		"assigned_to":             assignedTo, //TODO if not created by user, derive from owner-info
+		"service_offering":        h.Mapping.Fallbacks.ServiceOffering,
+		"u_data_center":           strings.Join(regionMapping.Datacenters, ", "),
+		"u_customer_impact":       "No Impact",                            //TODO check possible values, consider mapping from outcome
+		"u_responsible_manager":   h.Mapping.Fallbacks.ResponsibleManager, //TODO derive from owner-info
+		"u_customer_notification": "No",
+		"u_impacted_lobs":         "Global Cloud Services",
+		"u_affected_environments": regionMapping.Environment,
+		"start_date":              sNowTimeStr(event.CombinedStartDate()),
+		"end_date":                sNowTimeStr(event.RecordedAt),
+		"close_code":              serviceNowCloseCodes[event.CombinedOutcome()],
+		//TODO maybe put the first line in "Internal Info" instead (what's the API field name for "Internal Info"?)
+		"close_notes": fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL),
+	}
+
+	if event.Pipeline.CreatedBy != "" {
+		data["requested_by"] = event.Pipeline.CreatedBy
+	}
+
+	return json.Marshal(data)
+}
+
+func sNowTimeStr(t *time.Time) string {
+	return t.UTC().Format("2006-01-02 15:04:05")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -419,6 +537,11 @@ func (h *helmDeploymentToSNowDeliverer) PayloadType() string {
 }
 
 func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
+	//if the TranslationHandler wants us to ignore this payload, skip the delivery
+	if string(payload) == "skip" {
+		return nil, nil
+	}
+
 	req, err := http.NewRequest("POST", h.EndpointURL, bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("while preparing request for POST %s: %w", h.EndpointURL, err)
@@ -430,7 +553,25 @@ func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.D
 		return nil, fmt.Errorf("during POST %s: %w", h.EndpointURL, err)
 	}
 	defer resp.Body.Close()
+
+	//on success, make a best-effort attempt to retrieve the object ID from the
+	//response...
 	if resp.StatusCode < 400 {
+		var respData struct {
+			Result struct {
+				Number struct {
+					Value string `json:"value"`
+				} `json:"number"`
+			} `json:"result"`
+		}
+		err := json.NewDecoder(resp.Body).Decode(&respData)
+		if err == nil && respData.Result.Number.Value != "" {
+			return &tenso.DeliveryLog{
+				Message: fmt.Sprintf("created %s in ServiceNow", respData.Result.Number.Value),
+			}, nil
+		}
+		//...but failure to retrieve it is not an error, because we want
+		//to avoid double delivery of the same payload if at all possible
 		return nil, nil
 	}
 
