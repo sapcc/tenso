@@ -147,6 +147,7 @@ func (j payloadDeliverJob) Execute() (returnedError error) {
 	if dlog != nil {
 		logg.Info("delivery of %s payload for event %d (%q) reported: %s", pd.PayloadType, pd.EventID, event.Description, dlog.Message)
 	}
+	logg.Debug("delivered %s payload for event %d (%q) was: %s", pd.PayloadType, pd.EventID, event.Description, *pd.Payload)
 
 	//on successful delivery, remove the PendingDelivery
 	_, err = tx.Delete(&pd)
