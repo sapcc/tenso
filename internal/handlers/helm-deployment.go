@@ -196,6 +196,9 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 	if !regionRx.MatchString(event.Region) {
 		return nil, fmt.Errorf(`value for field region is invalid: %q`, event.Region)
 	}
+	if event.RecordedAt == nil {
+		return nil, errors.New("value for field recorded_at is missing")
+	}
 
 	for repoName, repoInfo := range event.GitRepos {
 		if !gitCommitRx.MatchString(repoInfo.CommitID) {
