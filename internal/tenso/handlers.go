@@ -69,7 +69,14 @@ type DeliveryHandler interface {
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	PayloadType() string
-	DeliverPayload(payload []byte) error
+	DeliverPayload(payload []byte) (*DeliveryLog, error)
+}
+
+//DeliveryLog can be returned by DeliverPayload() to produce additional log
+//messages, e.g. to report the ID of an object that was created in the target
+//system.
+type DeliveryLog struct {
+	Message string
 }
 
 var (

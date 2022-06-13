@@ -131,7 +131,7 @@ func (j payloadDeliverJob) Execute() (returnedError error) {
 	}
 
 	//try to translate the payload, or set up a delayed retry on failure
-	err = dh.DeliverPayload([]byte(*pd.Payload))
+	dlog, err := dh.DeliverPayload([]byte(*pd.Payload))
 	if err != nil {
 		pd.NextDeliveryAt = c.timeNow().Add(DeliveryRetryInterval)
 		pd.FailedDeliveryCount++
@@ -143,6 +143,9 @@ func (j payloadDeliverJob) Execute() (returnedError error) {
 			return fmt.Errorf("delivery failed: %w (additional error during DB update: %s)", err, err2.Error())
 		}
 		return fmt.Errorf("delivery failed: %w", err)
+	}
+	if dlog != nil {
+		logg.Info("delivery of %s payload for event %d (%q) reported: %s", pd.PayloadType, pd.EventID, event.Description, dlog.Message)
 	}
 
 	//on successful delivery, remove the PendingDelivery

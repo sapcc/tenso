@@ -118,11 +118,11 @@ func (h *testDeliveryHandler) PayloadType() string {
 	return fmt.Sprintf("test-%s.v1", h.Type)
 }
 
-func (h *testDeliveryHandler) DeliverPayload(data []byte) error {
+func (h *testDeliveryHandler) DeliverPayload(data []byte) (*tenso.DeliveryLog, error) {
 	//We don't actually deliver anywhere, but by giving us an invalid payload, tests can "simulate" a delivery failure.
 	_, err := parseTestPayload(data, h.Type)
 	if err != nil {
-		return errors.New("simulating failed delivery because of invalid payload")
+		return nil, errors.New("simulating failed delivery because of invalid payload")
 	}
-	return nil
+	return &tenso.DeliveryLog{Message: "success"}, nil
 }

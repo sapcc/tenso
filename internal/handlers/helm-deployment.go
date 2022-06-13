@@ -300,29 +300,29 @@ func (h *helmDeploymentToElkDeliverer) PayloadType() string {
 	return "helm-deployment-to-elk.v1"
 }
 
-func (h *helmDeploymentToElkDeliverer) DeliverPayload(payload []byte) error {
+func (h *helmDeploymentToElkDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
 	//Logstash wants everything on one line, so ensure we don't have unnecessary whitespace in the payload
 	var buf bytes.Buffer
 	err := json.Compact(&buf, payload)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = buf.WriteByte('\n')
 	if err != nil {
-		return err
+		return nil, err
 	}
 	payload = buf.Bytes()
 
 	//deliver payload to Logstash
 	conn, err := net.Dial("tcp", h.LogstashHost)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	_, err = conn.Write(payload)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return conn.Close()
+	return nil, conn.Close()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -358,13 +358,13 @@ func (h *helmDeploymentToSwiftDeliverer) PayloadType() string {
 	return "helm-deployment-to-swift.v1"
 }
 
-func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) error {
+func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
 	var event HdEvent
 	dec := json.NewDecoder(bytes.NewReader(payload))
 	dec.DisallowUnknownFields()
 	err := dec.Decode(&event)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	objectName := fmt.Sprintf("%s/%s/%s/%s/%s.json",
@@ -373,7 +373,7 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) error {
 		string(event.CombinedOutcome()),
 		event.RecordedAt.Format(time.RFC3339),
 	)
-	return h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
+	return nil, h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -418,26 +418,26 @@ func (h *helmDeploymentToSNowDeliverer) PayloadType() string {
 	return "helm-deployment-to-servicenow.v1"
 }
 
-func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) error {
+func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
 	req, err := http.NewRequest("POST", h.EndpointURL, bytes.NewReader(payload))
 	if err != nil {
-		return fmt.Errorf("while preparing request for POST %s: %w", h.EndpointURL, err)
+		return nil, fmt.Errorf("while preparing request for POST %s: %w", h.EndpointURL, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := h.HTTPClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("during POST %s: %w", h.EndpointURL, err)
+		return nil, fmt.Errorf("during POST %s: %w", h.EndpointURL, err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 400 {
-		return nil
+		return nil, nil
 	}
 
 	//unexpected error -> log response body
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("while reading response body for failed POST %s: %w", h.EndpointURL, err)
+		return nil, fmt.Errorf("while reading response body for failed POST %s: %w", h.EndpointURL, err)
 	}
-	return fmt.Errorf("POST failed with status %d and response: %q", resp.StatusCode, string(bodyBytes))
+	return nil, fmt.Errorf("POST failed with status %d and response: %q", resp.StatusCode, string(bodyBytes))
 }
