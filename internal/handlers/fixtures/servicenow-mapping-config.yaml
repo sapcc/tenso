@@ -1,5 +1,6 @@
 fallbacks:
-  assigned_to: D123456
+  assignee: D123456
+  requester: D234567
   responsible_manager: John Doe (D123456)
   service_offering: GCS-Network-Security
 

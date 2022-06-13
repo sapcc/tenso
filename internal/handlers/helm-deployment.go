@@ -425,7 +425,8 @@ var serviceNowCloseCodes = map[HdOutcome]string{
 
 type ServiceNowMappingConfig struct {
 	Fallbacks struct {
-		AssignedTo         string `yaml:"assigned_to"`
+		Assignee           string `yaml:"assignee"`
+		Requester          string `yaml:"requester"`
 		ResponsibleManager string `yaml:"responsible_manager"`
 		ServiceOffering    string `yaml:"service_offering"`
 	} `yaml:"fallbacks"`
@@ -478,9 +479,12 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 	}
 
 	//choose assignee
-	assignedTo := event.Pipeline.CreatedBy
-	if assignedTo == "" {
-		assignedTo = h.Mapping.Fallbacks.AssignedTo
+	assignee := event.Pipeline.CreatedBy
+	requester := event.Pipeline.CreatedBy
+	if assignee == "" {
+		//TODO derive from owner-info if possible
+		assignee = h.Mapping.Fallbacks.Assignee
+		requester = h.Mapping.Fallbacks.Requester
 	}
 
 	//some more precomputations
@@ -489,7 +493,8 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 
 	data := map[string]interface{}{
 		"chg_model":               "GCS CCloud Automated Standard Change",
-		"assigned_to":             assignedTo, //TODO if not created by user, derive from owner-info
+		"assigned_to":             assignee,
+		"requested_by":            requester,
 		"service_offering":        h.Mapping.Fallbacks.ServiceOffering,
 		"u_data_center":           strings.Join(regionMapping.Datacenters, ", "),
 		"u_customer_impact":       "No Impact",                            //TODO check possible values, consider mapping from outcome
@@ -502,10 +507,6 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 		"close_code":              serviceNowCloseCodes[event.CombinedOutcome()],
 		//TODO maybe put the first line in "Internal Info" instead (what's the API field name for "Internal Info"?)
 		"close_notes": fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL),
-	}
-
-	if event.Pipeline.CreatedBy != "" {
-		data["requested_by"] = event.Pipeline.CreatedBy
 	}
 
 	return json.Marshal(data)
