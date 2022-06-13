@@ -1,5 +1,6 @@
 {
   "region": "qa-de-1",
+  "recorded_at": "2022-05-11T09:01:05Z",
   "git": {
     "helm-charts": {
       "commit-id": "b3c7f910ab7b0d303d0190b420316a6a2c7f3c66"

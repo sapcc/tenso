@@ -55,7 +55,7 @@ func init() {
 
 type HdEvent struct {
 	Region       string               `json:"region"`
-	RecordedAt   *time.Time           `json:"recorded_at"`
+	RecordedAt   *time.Time           `json:"recorded_at"` //TODO inconsistently named, rename to "recorded-at" if the opportunity arises
 	GitRepos     map[string]HdGitRepo `json:"git"`
 	HelmReleases []*HdHelmRelease     `json:"helm-release"`
 	Pipeline     HdPipeline           `json:"pipeline"`
