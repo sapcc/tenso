@@ -11,9 +11,10 @@ require (
 	github.com/majewsky/schwift v1.1.0
 	github.com/prometheus/client_golang v1.12.2
 	github.com/rs/cors v1.8.2
-	github.com/sapcc/go-bits v0.0.0-20220610155404-690aed13bb25
+	github.com/sapcc/go-bits v0.0.0-20220613112247-ad9f786fef57
 	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb
 	gopkg.in/gorp.v2 v2.2.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -42,5 +43,4 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
