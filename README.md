@@ -132,8 +132,10 @@ The config file for `TENSO_SERVICENOW_MAPPING_CONFIG_PATH` must be a YAML docume
 
 | Field | Data type | Explanation |
 | ----- | --------- | ----------- |
-| `fallbacks.assigned_to` | string | User ID of the user that we will put into `assigned_to` when we don't have a better option. |
+| `fallbacks.assignee` | string | User ID of the user that we will put into `assigned_to` when we don't have a better option. |
+| `fallbacks.requester` | string | User ID of the user that we will put into `requested_by` when we don't have a better option. |
 | `fallbacks.responsible_manager` | string | User name and ID of the user that we will put as `responsible_manager` when we don't have a better option. |
 | `fallbacks.service_offering` | string | Value that we will put as `service_offering` when we don't have a better option. |
+| `overrides.assignee` | string | If given, we will always put this into `assigned_to`. |
 | `regions.<region>.datacenters` | list of strings | Data centers belonging to this region, using the names that ServiceNow expects. |
 | `regions.<region>.environment` | string | Either "Development" or "Production" (TODO: other options?). |

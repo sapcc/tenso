@@ -430,6 +430,9 @@ type ServiceNowMappingConfig struct {
 		ResponsibleManager string `yaml:"responsible_manager"`
 		ServiceOffering    string `yaml:"service_offering"`
 	} `yaml:"fallbacks"`
+	Overrides struct {
+		Assignee string `yaml:"assignee"`
+	} `yaml:"overrides"`
 	Regions map[string]struct {
 		Datacenters []string `yaml:"datacenters"`
 		Environment string   `yaml:"environment"`
@@ -485,6 +488,9 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 		//TODO derive from owner-info if possible
 		assignee = h.Mapping.Fallbacks.Assignee
 		requester = h.Mapping.Fallbacks.Requester
+	}
+	if h.Mapping.Overrides.Assignee != "" {
+		assignee = h.Mapping.Overrides.Assignee
 	}
 
 	//some more precomputations
