@@ -61,11 +61,6 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 	//check authorization
 	token := a.CheckToken(r)
 	token.Context.Request = map[string]string{"target.payload_type": payloadType}
-	for k, v := range token.Context.Auth {
-		//HACK: without this, policy rules of the form "constant":%(variable)s will not work with auth variables
-		//TODO: fix this issue upstream in goslo.policy
-		token.Context.Request[k] = v
-	}
 	if !token.Require(w, "event:create") {
 		return
 	}
