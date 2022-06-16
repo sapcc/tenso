@@ -40,6 +40,7 @@ import (
 	"github.com/majewsky/schwift/gopherschwift"
 	"gopkg.in/yaml.v2"
 
+	"github.com/sapcc/go-api-declarations/bininfo"
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -376,7 +377,7 @@ func (h *helmDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo
 	}
 
 	swiftAccount, err := gopherschwift.Wrap(client, &gopherschwift.Options{
-		UserAgent: fmt.Sprintf("%s/rolling", tenso.Component),
+		UserAgent: fmt.Sprintf("%s/%s", bininfo.Component(), bininfo.VersionOr("rolling")),
 	})
 	if err != nil {
 		return err

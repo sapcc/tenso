@@ -23,6 +23,7 @@ import (
 	"context"
 	"crypto/tls"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -33,6 +34,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
+	"github.com/sapcc/go-api-declarations/bininfo"
 	"github.com/sapcc/go-bits/gopherpolicy"
 	"github.com/sapcc/go-bits/httpee"
 	"github.com/sapcc/go-bits/logg"
@@ -47,7 +49,7 @@ func main() {
 	commandWord := ""
 	if len(os.Args) == 2 {
 		commandWord = os.Args[1]
-		tenso.Component = "tenso-" + commandWord
+		bininfo.SetTaskName(commandWord)
 	}
 
 	logg.ShowDebug = tenso.ParseBool(os.Getenv("TENSO_DEBUG"))
@@ -213,6 +215,6 @@ type userAgentInjector struct {
 
 //RoundTrip implements the http.RoundTripper interface.
 func (uai userAgentInjector) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("User-Agent", tenso.Component+"/rolling")
+	req.Header.Set("User-Agent", fmt.Sprintf("%s/%s", bininfo.Component(), bininfo.VersionOr("rolling")))
 	return uai.Inner.RoundTrip(req)
 }
