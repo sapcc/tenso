@@ -41,6 +41,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/sapcc/go-api-declarations/bininfo"
+
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
 )
