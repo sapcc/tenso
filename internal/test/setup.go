@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/gophercloud/gophercloud"
+	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"
 
 	"github.com/sapcc/tenso/internal/api"
@@ -127,7 +128,10 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	//satisfy additional requests
 	if params.WithAPI {
 		s.Validator = &MockValidator{}
-		s.Handler = api.NewAPI(s.Config, s.DB, s.Validator).OverrideTimeNow(s.Clock.Now).Handler()
+		s.Handler = httpapi.Compose(
+			api.NewAPI(s.Config, s.DB, s.Validator).OverrideTimeNow(s.Clock.Now),
+			httpapi.WithoutLogging(),
+		)
 	}
 	if params.WithTaskContext {
 		s.TaskContext = tasks.NewContext(s.Config, s.DB).OverrideTimeNow(s.Clock.Now)

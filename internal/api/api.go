@@ -26,7 +26,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sapcc/go-bits/gopherpolicy"
 	"github.com/sapcc/go-bits/logg"
-	"github.com/sapcc/go-bits/sre"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -48,23 +47,9 @@ func (a *API) OverrideTimeNow(now func() time.Time) *API {
 	return a
 }
 
-//Handler generates a HTTP handler for all main API endpoints.
-func (a *API) Handler() http.Handler {
-	r := mux.NewRouter()
+//Handler implements the httpapi.API interface.
+func (a *API) AddTo(r *mux.Router) {
 	r.Methods("POST").Path("/v1/events/new").HandlerFunc(a.handlePostNewEvent)
-	return sre.Instrument(r)
-}
-
-//HealthCheckHandler provides the GET /healthcheck endpoint.
-func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	if r.URL.Path == "/healthcheck" && (r.Method == "GET" || r.Method == "HEAD") {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	} else {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("not found"))
-	}
 }
 
 func (a *API) CheckToken(r *http.Request) *gopherpolicy.Token {

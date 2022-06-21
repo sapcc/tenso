@@ -24,8 +24,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/respondwith"
-	"github.com/sapcc/go-bits/sre"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -43,7 +43,7 @@ var (
 )
 
 func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
-	sre.IdentifyEndpoint(r, "/v1/events/new")
+	httpapi.IdentifyEndpoint(r, "/v1/events/new")
 	requestTime := a.timeNow()
 
 	//collect required query parameters

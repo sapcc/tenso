@@ -36,7 +36,8 @@ import (
 	"github.com/rs/cors"
 	"github.com/sapcc/go-api-declarations/bininfo"
 	"github.com/sapcc/go-bits/gopherpolicy"
-	"github.com/sapcc/go-bits/httpee"
+	"github.com/sapcc/go-bits/httpapi"
+	"github.com/sapcc/go-bits/httpext"
 	"github.com/sapcc/go-bits/logg"
 
 	"github.com/sapcc/tenso/internal/api"
@@ -82,7 +83,7 @@ func main() {
 }
 
 func runAPI(cfg tenso.Configuration, db *tenso.DB, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
-	ctx := httpee.ContextWithSIGINT(context.Background(), 10*time.Second)
+	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
 
 	identityV3, err := openstack.NewIdentityV3(provider, eo)
 	if err != nil {
@@ -102,16 +103,18 @@ func runAPI(cfg tenso.Configuration, db *tenso.DB, provider *gophercloud.Provide
 	}
 
 	//wire up HTTP handlers
-	handler := api.NewAPI(cfg, db, &tv).Handler()
-	handler = logg.Middleware{}.Wrap(handler)
-	handler = cors.New(cors.Options{
+	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"HEAD", "GET", "POST", "PUT", "DELETE"},
 		AllowedHeaders: []string{"Content-Type", "User-Agent", "X-Auth-Token", "Authorization"},
-	}).Handler(handler)
+	})
+	handler := httpapi.Compose(
+		api.NewAPI(cfg, db, &tv),
+		httpapi.HealthCheckAPI{SkipRequestLog: true},
+		httpapi.WithGlobalMiddleware(corsMiddleware.Handler),
+	)
 	http.Handle("/", handler)
 	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/healthcheck", api.HealthCheckHandler)
 
 	//start HTTP server
 	apiListenAddress := os.Getenv("TENSO_API_LISTEN_ADDRESS")
@@ -119,15 +122,15 @@ func runAPI(cfg tenso.Configuration, db *tenso.DB, provider *gophercloud.Provide
 		apiListenAddress = ":8080"
 	}
 	logg.Info("listening on " + apiListenAddress)
-	err = httpee.ListenAndServeContext(ctx, apiListenAddress, nil)
+	err = httpext.ListenAndServeContext(ctx, apiListenAddress, nil)
 	if err != nil {
-		logg.Fatal("error returned from httpee.ListenAndServeContext(): %s", err.Error())
+		logg.Fatal("error returned from httpext.ListenAndServeContext(): %s", err.Error())
 	}
 }
 
 //nolint:unparam
 func runWorker(cfg tenso.Configuration, db *tenso.DB) {
-	ctx := httpee.ContextWithSIGINT(context.Background(), 10*time.Second)
+	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
 
 	//start worker loops (we have a budget of 16 DB connections, which we
 	//distribute between converting and delivering with some headroom to spare)
@@ -137,16 +140,17 @@ func runWorker(cfg tenso.Configuration, db *tenso.DB) {
 	go cronJobLoop(5*time.Minute, c.CollectGarbage)
 
 	//start HTTP server for Prometheus metrics and health check
+	handler := httpapi.Compose(httpapi.HealthCheckAPI{SkipRequestLog: true})
+	http.Handle("/", handler)
 	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/healthcheck", api.HealthCheckHandler)
 	listenAddress := os.Getenv("TENSO_WORKER_LISTEN_ADDRESS")
 	if listenAddress == "" {
 		listenAddress = ":8080"
 	}
 	logg.Info("listening on " + listenAddress)
-	err := httpee.ListenAndServeContext(ctx, listenAddress, nil)
+	err := httpext.ListenAndServeContext(ctx, listenAddress, nil)
 	if err != nil {
-		logg.Fatal("error returned from httpee.ListenAndServeContext(): %s", err.Error())
+		logg.Fatal("error returned from httpext.ListenAndServeContext(): %s", err.Error())
 	}
 }
 
