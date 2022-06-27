@@ -66,7 +66,11 @@ type HdEvent struct {
 }
 
 type HdGitRepo struct {
-	CommitID string `json:"commit-id"`
+	AuthoredAt  *time.Time `json:"authored-at"`
+	Branch      string     `json:"branch"`
+	CommittedAt *time.Time `json:"committed-at"`
+	CommitID    string     `json:"commit-id"`
+	RemoteURL   string     `json:"remote-url"`
 }
 
 type HdHelmRelease struct {
