@@ -26,6 +26,7 @@ import (
 
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/respondwith"
+	"github.com/sapcc/go-bits/sqlext"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -35,7 +36,7 @@ const (
 )
 
 var (
-	findOrCreateUserQuery = tenso.SimplifyWhitespaceInSQL(`
+	findOrCreateUserQuery = sqlext.SimplifyWhitespace(`
 		INSERT INTO users (uuid, name, domain_name) VALUES ($1, $2, $3)
 		ON CONFLICT (uuid) DO UPDATE SET name = EXCLUDED.name, domain_name = EXCLUDED.domain_name
 		RETURNING id
@@ -108,7 +109,7 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 	if respondwith.ErrorText(w, err) {
 		return
 	}
-	defer tenso.RollbackUnlessCommitted(tx)
+	defer sqlext.RollbackUnlessCommitted(tx)
 
 	event := tenso.Event{
 		CreatorID:   userID,

@@ -23,12 +23,11 @@ import (
 	"fmt"
 
 	"github.com/sapcc/go-bits/logg"
-
-	"github.com/sapcc/tenso/internal/tenso"
+	"github.com/sapcc/go-bits/sqlext"
 )
 
 var (
-	gcDeliveredEventsQuery = tenso.SimplifyWhitespaceInSQL(`
+	gcDeliveredEventsQuery = sqlext.SimplifyWhitespace(`
 		DELETE FROM events WHERE id NOT IN (SELECT event_id FROM pending_deliveries)
 	`)
 )

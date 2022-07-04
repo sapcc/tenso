@@ -29,6 +29,7 @@ import (
 	"github.com/gophercloud/gophercloud"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"
+	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/api"
 	"github.com/sapcc/tenso/internal/tasks"
@@ -66,7 +67,7 @@ type Setup struct {
 	//fields that are always set
 	Clock  *Clock
 	Config tenso.Configuration
-	DB     *tenso.DB
+	DB     *gorp.DbMap
 	//fields that are set if WithAPI is included
 	Validator *MockValidator
 	Handler   http.Handler

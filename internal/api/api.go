@@ -26,18 +26,19 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sapcc/go-bits/gopherpolicy"
 	"github.com/sapcc/go-bits/logg"
+	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
 type API struct {
 	Config    tenso.Configuration
-	DB        *tenso.DB
+	DB        *gorp.DbMap
 	Validator gopherpolicy.Validator
 	timeNow   func() time.Time
 }
 
-func NewAPI(cfg tenso.Configuration, db *tenso.DB, validator gopherpolicy.Validator) *API {
+func NewAPI(cfg tenso.Configuration, db *gorp.DbMap, validator gopherpolicy.Validator) *API {
 	return &API{cfg, db, validator, time.Now}
 }
 

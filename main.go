@@ -39,6 +39,7 @@ import (
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/httpext"
 	"github.com/sapcc/go-bits/logg"
+	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/api"
 	_ "github.com/sapcc/tenso/internal/handlers" //must be imported to register the handler implementations
@@ -82,7 +83,7 @@ func main() {
 	}
 }
 
-func runAPI(cfg tenso.Configuration, db *tenso.DB, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
+func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
 	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
 
 	identityV3, err := openstack.NewIdentityV3(provider, eo)
@@ -129,7 +130,7 @@ func runAPI(cfg tenso.Configuration, db *tenso.DB, provider *gophercloud.Provide
 }
 
 //nolint:unparam
-func runWorker(cfg tenso.Configuration, db *tenso.DB) {
+func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
 
 	//start worker loops (we have a budget of 16 DB connections, which we

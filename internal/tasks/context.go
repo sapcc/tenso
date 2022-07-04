@@ -22,6 +22,8 @@ package tasks
 import (
 	"time"
 
+	"gopkg.in/gorp.v2"
+
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
@@ -29,7 +31,7 @@ import (
 //package.
 type Context struct {
 	Config tenso.Configuration
-	DB     *tenso.DB
+	DB     *gorp.DbMap
 
 	//dependency injection slots (usually filled by ApplyDefaults(), but filled
 	//with doubles in tests)
@@ -40,7 +42,7 @@ type Context struct {
 	Blocker <-chan struct{}
 }
 
-func NewContext(cfg tenso.Configuration, db *tenso.DB) *Context {
+func NewContext(cfg tenso.Configuration, db *gorp.DbMap) *Context {
 	return &Context{cfg, db, time.Now, nil}
 }
 
