@@ -6,6 +6,7 @@
   "end_date": "2022-05-11 09:01:05",
   "requested_by": "I012345",
   "service_offering": "GCS-Network-Security",
+  "short_description": "Deploy swift to qa-de-1, swift-utils to qa-de-1",
   "start_date": "2022-05-11 08:51:47",
   "u_affected_environments": "Development",
   "u_customer_impact": "No Impact",
