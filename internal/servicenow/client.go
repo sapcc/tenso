@@ -21,10 +21,9 @@ package servicenow
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"os"
 
+	"github.com/sapcc/go-bits/osext"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -32,15 +31,15 @@ import (
 //NewClientWithOAuth returns a http.Client that obtains OAuth2 tokens as required.
 //Credentials are read from `${PREFIX}_{TOKEN_URL,USERNAME,PASSWORD}` env vars.
 func NewClientWithOAuth(envPrefix string) (*http.Client, error) {
-	tokenURL, err := mustGetenv(envPrefix + "_TOKEN_URL")
+	tokenURL, err := osext.NeedGetenv(envPrefix + "_TOKEN_URL")
 	if err != nil {
 		return nil, err
 	}
-	username, err := mustGetenv(envPrefix + "_USERNAME")
+	username, err := osext.NeedGetenv(envPrefix + "_USERNAME")
 	if err != nil {
 		return nil, err
 	}
-	password, err := mustGetenv(envPrefix + "_PASSWORD")
+	password, err := osext.NeedGetenv(envPrefix + "_PASSWORD")
 	if err != nil {
 		return nil, err
 	}
@@ -52,12 +51,4 @@ func NewClientWithOAuth(envPrefix string) (*http.Client, error) {
 		AuthStyle:    oauth2.AuthStyleInParams,
 	}
 	return cfg.Client(context.Background()), nil
-}
-
-func mustGetenv(key string) (string, error) {
-	val := os.Getenv(key)
-	if val == "" {
-		return "", fmt.Errorf("missing required environment variable: %s", key)
-	}
-	return val, nil
 }

@@ -39,6 +39,8 @@ import (
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/httpext"
 	"github.com/sapcc/go-bits/logg"
+	"github.com/sapcc/go-bits/must"
+	"github.com/sapcc/go-bits/osext"
 	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/api"
@@ -54,14 +56,14 @@ func main() {
 		bininfo.SetTaskName(commandWord)
 	}
 
-	logg.ShowDebug = tenso.ParseBool(os.Getenv("TENSO_DEBUG"))
+	logg.ShowDebug = osext.GetenvBool("TENSO_DEBUG")
 
 	//The TENSO_INSECURE flag can be used to get Tenso to work through mitmproxy
 	//(which is very useful for development and debugging). (It's very important
 	//that this is not the standard "TENSO_DEBUG" variable. That one is meant to
 	//be useful for production systems, where you definitely don't want to turn
 	//off certificate verification.)
-	if tenso.ParseBool(os.Getenv("TENSO_INSECURE")) {
+	if osext.GetenvBool("TENSO_INSECURE") {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
 		}
@@ -69,8 +71,7 @@ func main() {
 	}
 
 	cfg, provider, eo := tenso.ParseConfiguration()
-	db, err := tenso.InitDB(cfg.DatabaseURL)
-	must(err)
+	db := must.Return(tenso.InitDB(cfg.DatabaseURL))
 	prometheus.MustRegister(sqlstats.NewStatsCollector("tenso", db.Db))
 
 	switch commandWord {
@@ -94,14 +95,7 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 		IdentityV3: identityV3,
 		Cacher:     gopherpolicy.InMemoryCacher(),
 	}
-	osloPolicyPath := os.Getenv("TENSO_OSLO_POLICY_PATH")
-	if osloPolicyPath == "" {
-		logg.Fatal("missing required environment variable: TENSO_OSLO_POLICY_PATH")
-	}
-	err = tv.LoadPolicyFile(osloPolicyPath)
-	if err != nil {
-		logg.Fatal("cannot load oslo.policy: " + err.Error())
-	}
+	must.Succeed(tv.LoadPolicyFile(osext.MustGetenv("TENSO_OSLO_POLICY_PATH")))
 
 	//wire up HTTP handlers
 	corsMiddleware := cors.New(cors.Options{
@@ -118,10 +112,7 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 	http.Handle("/metrics", promhttp.Handler())
 
 	//start HTTP server
-	apiListenAddress := os.Getenv("TENSO_API_LISTEN_ADDRESS")
-	if apiListenAddress == "" {
-		apiListenAddress = ":8080"
-	}
+	apiListenAddress := osext.GetenvOrDefault("TENSO_API_LISTEN_ADDRESS", ":8080")
 	logg.Info("listening on " + apiListenAddress)
 	err = httpext.ListenAndServeContext(ctx, apiListenAddress, nil)
 	if err != nil {
@@ -144,10 +135,7 @@ func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	handler := httpapi.Compose(httpapi.HealthCheckAPI{SkipRequestLog: true})
 	http.Handle("/", handler)
 	http.Handle("/metrics", promhttp.Handler())
-	listenAddress := os.Getenv("TENSO_WORKER_LISTEN_ADDRESS")
-	if listenAddress == "" {
-		listenAddress = ":8080"
-	}
+	listenAddress := osext.GetenvOrDefault("TENSO_WORKER_LISTEN_ADDRESS", ":8080")
 	logg.Info("listening on " + listenAddress)
 	err := httpext.ListenAndServeContext(ctx, listenAddress, nil)
 	if err != nil {
@@ -205,12 +193,6 @@ func cronJobLoop(interval time.Duration, task func() error) {
 			logg.Error(err.Error())
 		}
 		time.Sleep(interval)
-	}
-}
-
-func must(err error) {
-	if err != nil {
-		logg.Fatal(err.Error())
 	}
 }
 

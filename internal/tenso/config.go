@@ -20,6 +20,7 @@
 package tenso
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -82,14 +83,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		Availability: gophercloud.Availability(os.Getenv("OS_INTERFACE")),
 	}
 
-	cfg.EnabledRoutes, err = BuildRoutes(strings.Split(os.Getenv("TENSO_ROUTES"), ","), provider, eo)
-	if err != nil {
-		logg.Fatal(err.Error())
-	}
-	if len(cfg.EnabledRoutes) == 0 {
-		logg.Fatal("missing required environment variable: TENSO_ROUTES")
-	}
-
+	cfg.EnabledRoutes = must.Return(BuildRoutes(strings.Split(osext.MustGetenv("TENSO_ROUTES"), ","), provider, eo))
 	return cfg, provider, eo
 }
 
@@ -172,17 +166,11 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 		result = append(result, route)
 	}
 
-	return result, nil
-}
-
-//GetenvOrDefault is like os.Getenv but it also takes a default value which is
-//returned if the given environment variable is missing or empty.
-func GetenvOrDefault(key, defaultVal string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		val = defaultVal
+	if len(result) == 0 {
+		return nil, errors.New("no routes specified")
 	}
-	return val
+
+	return result, nil
 }
 
 func IsWellformedPayloadType(val string) bool {

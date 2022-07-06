@@ -23,13 +23,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"testing"
 
 	"github.com/gophercloud/gophercloud"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/must"
+	"github.com/sapcc/go-bits/osext"
 	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/api"
@@ -79,7 +79,7 @@ type Setup struct {
 //NewSetup prepares most or all pieces of Tenso for a test.
 func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	t.Helper()
-	logg.ShowDebug = tenso.ParseBool(os.Getenv("TENSO_DEBUG"))
+	logg.ShowDebug = osext.GetenvBool("TENSO_DEBUG")
 	var params setupParams
 	for _, option := range opts {
 		option(&params)
