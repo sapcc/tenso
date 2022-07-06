@@ -29,6 +29,7 @@ import (
 	"github.com/gophercloud/gophercloud"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"
+	"github.com/sapcc/go-bits/must"
 	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/api"
@@ -85,10 +86,8 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	}
 
 	//connect to DB
-	postgresURL := "postgres://postgres:postgres@localhost:54321/tenso?sslmode=disable"
-	dbURL, err := url.Parse(postgresURL)
-	Must(t, err)
-	db, err := tenso.InitDB(*dbURL)
+	dbURL := must.Return(url.Parse("postgres://postgres:postgres@localhost:54321/tenso?sslmode=disable"))
+	db, err := tenso.InitDB(dbURL)
 	if err != nil {
 		t.Error(err)
 		t.Log("Try prepending ./testing/with-postgres-db.sh to your command.")
@@ -120,7 +119,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	s := Setup{
 		Clock: &Clock{},
 		Config: tenso.Configuration{
-			DatabaseURL:   *dbURL,
+			DatabaseURL:   dbURL,
 			EnabledRoutes: routes,
 		},
 		DB: db,
