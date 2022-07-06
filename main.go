@@ -67,7 +67,7 @@ func main() {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
 		}
-		http.DefaultClient.Transport = userAgentInjector{http.DefaultTransport}
+		http.DefaultTransport = userAgentInjector{http.DefaultTransport}
 	}
 
 	cfg, provider, eo := tenso.ParseConfiguration()

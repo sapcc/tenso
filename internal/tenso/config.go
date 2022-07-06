@@ -22,7 +22,6 @@ package tenso
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 	"regexp"
@@ -68,12 +67,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		logg.Fatal("cannot find OpenStack credentials: " + err.Error())
 	}
 	ao.AllowReauth = true
-	provider, err := openstack.NewClient(ao.IdentityEndpoint)
-	if err == nil {
-		//use http.DefaultClient, esp. to pick up the TENSO_INSECURE flag
-		provider.HTTPClient = *http.DefaultClient
-		err = openstack.Authenticate(provider, *ao)
-	}
+	provider, err := openstack.AuthenticatedClient(*ao)
 	if err != nil {
 		logg.Fatal("cannot connect to OpenStack: " + err.Error())
 	}
