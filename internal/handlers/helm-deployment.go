@@ -41,6 +41,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/sapcc/go-api-declarations/bininfo"
+	"github.com/sapcc/go-bits/osext"
 
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -322,11 +323,12 @@ type helmDeploymentToElkDeliverer struct {
 }
 
 func (h *helmDeploymentToElkDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
-	h.LogstashHost = os.Getenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST")
-	if h.LogstashHost == "" {
-		return errors.New("missing required environment variable: TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST")
+	var err error
+	h.LogstashHost, err = osext.NeedGetenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST")
+	if err != nil {
+		return err
 	}
-	_, _, err := net.SplitHostPort(h.LogstashHost)
+	_, _, err = net.SplitHostPort(h.LogstashHost)
 	if err != nil {
 		return fmt.Errorf(`expected TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST to look like "host:port", but got %q`,
 			h.LogstashHost)
@@ -371,9 +373,9 @@ type helmDeploymentToSwiftDeliverer struct {
 }
 
 func (h *helmDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
-	containerName := os.Getenv("TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
-	if containerName == "" {
-		return errors.New("missing required environment variable: TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
+	containerName, err := osext.NeedGetenv("TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
+	if err != nil {
+		return err
 	}
 
 	client, err := openstack.NewObjectStorageV1(pc, eo)
@@ -446,9 +448,9 @@ type ServiceNowMappingConfig struct {
 }
 
 func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
-	filePath := os.Getenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
-	if filePath == "" {
-		return errors.New("missing required environment variable: TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
+	filePath, err := osext.NeedGetenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
+	if err != nil {
+		return err
 	}
 
 	buf, err := os.ReadFile(filePath)
@@ -538,9 +540,9 @@ type helmDeploymentToSNowDeliverer struct {
 }
 
 func (h *helmDeploymentToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	h.EndpointURL = os.Getenv("TENSO_SERVICENOW_CREATE_CHANGE_URL")
-	if h.EndpointURL == "" {
-		return errors.New("missing required environment variable: TENSO_SERVICENOW_CREATE_CHANGE_URL")
+	h.EndpointURL, err = osext.NeedGetenv("TENSO_SERVICENOW_CREATE_CHANGE_URL")
+	if err != nil {
+		return err
 	}
 	h.HTTPClient, err = servicenow.NewClientWithOAuth("TENSO_SERVICENOW")
 	return err

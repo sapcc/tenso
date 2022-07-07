@@ -69,9 +69,9 @@ var sqlMigrations = map[string]string{
 }
 
 //InitDB connects to the Postgres database.
-func InitDB(dbURL url.URL) (*gorp.DbMap, error) {
+func InitDB(dbURL *url.URL) (*gorp.DbMap, error) {
 	db, err := easypg.Connect(easypg.Configuration{
-		PostgresURL: &dbURL,
+		PostgresURL: dbURL,
 		Migrations:  sqlMigrations,
 	})
 	if err != nil {

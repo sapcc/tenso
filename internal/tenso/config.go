@@ -20,9 +20,8 @@
 package tenso
 
 import (
+	"errors"
 	"fmt"
-	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"regexp"
@@ -31,13 +30,15 @@ import (
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/utils/openstack/clientconfig"
-	"github.com/sapcc/go-api-declarations/bininfo"
+	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/logg"
+	"github.com/sapcc/go-bits/must"
+	"github.com/sapcc/go-bits/osext"
 )
 
 //Configuration contains all configuration values that we collect from the environment.
 type Configuration struct {
-	DatabaseURL   url.URL
+	DatabaseURL   *url.URL
 	EnabledRoutes []Route
 }
 
@@ -50,9 +51,15 @@ var (
 //ParseConfiguration obtains a tenso.Configuration instance from the
 //corresponding environment variables. Aborts on error.
 func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gophercloud.EndpointOpts) {
-	cfg := Configuration{
-		DatabaseURL: getDBURL(),
-	}
+	var cfg Configuration
+	cfg.DatabaseURL = must.Return(easypg.URLFrom(easypg.URLParts{
+		HostName:          osext.GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost"),
+		Port:              osext.GetenvOrDefault("TENSO_DB_PORT", "5432"),
+		UserName:          osext.GetenvOrDefault("TENSO_DB_USERNAME", "postgres"),
+		Password:          os.Getenv("TENSO_DB_PASSWORD"),
+		ConnectionOptions: os.Getenv("TENSO_DB_CONNECTION_OPTIONS"),
+		DatabaseName:      osext.GetenvOrDefault("TENSO_DB_NAME", "tenso"),
+	}))
 
 	//initialize OpenStack connection
 	ao, err := clientconfig.AuthOptions(nil)
@@ -60,12 +67,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		logg.Fatal("cannot find OpenStack credentials: " + err.Error())
 	}
 	ao.AllowReauth = true
-	provider, err := openstack.NewClient(ao.IdentityEndpoint)
-	if err == nil {
-		//use http.DefaultClient, esp. to pick up the TENSO_INSECURE flag
-		provider.HTTPClient = *http.DefaultClient
-		err = openstack.Authenticate(provider, *ao)
-	}
+	provider, err := openstack.AuthenticatedClient(*ao)
 	if err != nil {
 		logg.Fatal("cannot connect to OpenStack: " + err.Error())
 	}
@@ -75,14 +77,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		Availability: gophercloud.Availability(os.Getenv("OS_INTERFACE")),
 	}
 
-	cfg.EnabledRoutes, err = BuildRoutes(strings.Split(os.Getenv("TENSO_ROUTES"), ","), provider, eo)
-	if err != nil {
-		logg.Fatal(err.Error())
-	}
-	if len(cfg.EnabledRoutes) == 0 {
-		logg.Fatal("missing required environment variable: TENSO_ROUTES")
-	}
-
+	cfg.EnabledRoutes = must.Return(BuildRoutes(strings.Split(osext.MustGetenv("TENSO_ROUTES"), ","), provider, eo))
 	return cfg, provider, eo
 }
 
@@ -165,44 +160,11 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 		result = append(result, route)
 	}
 
+	if len(result) == 0 {
+		return nil, errors.New("no routes specified")
+	}
+
 	return result, nil
-}
-
-//GetenvOrDefault is like os.Getenv but it also takes a default value which is
-//returned if the given environment variable is missing or empty.
-func GetenvOrDefault(key, defaultVal string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		val = defaultVal
-	}
-	return val
-}
-
-func getDBURL() url.URL {
-	dbName := GetenvOrDefault("TENSO_DB_NAME", "tenso")
-	dbUsername := GetenvOrDefault("TENSO_DB_USERNAME", "postgres")
-	dbPass := os.Getenv("TENSO_DB_PASSWORD")
-	dbHost := GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost")
-	dbPort := GetenvOrDefault("TENSO_DB_PORT", "5432")
-
-	dbConnOpts, err := url.ParseQuery(os.Getenv("TENSO_DB_CONNECTION_OPTIONS"))
-	if err != nil {
-		logg.Fatal("while parsing TENSO_DB_CONNECTION_OPTIONS: " + err.Error())
-	}
-	hostname, err := os.Hostname()
-	if err == nil {
-		dbConnOpts.Set("application_name", fmt.Sprintf("%s@%s", bininfo.Component(), hostname))
-	} else {
-		dbConnOpts.Set("application_name", bininfo.Component())
-	}
-
-	return url.URL{
-		Scheme:   "postgres",
-		User:     url.UserPassword(dbUsername, dbPass),
-		Host:     net.JoinHostPort(dbHost, dbPort),
-		Path:     dbName,
-		RawQuery: dbConnOpts.Encode(),
-	}
 }
 
 func IsWellformedPayloadType(val string) bool {
