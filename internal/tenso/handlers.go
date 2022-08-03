@@ -21,8 +21,8 @@ package tenso
 
 import "github.com/gophercloud/gophercloud"
 
-//ValidationHandler is an object that validates incoming payloads of a specific
-//payload type.
+// ValidationHandler is an object that validates incoming payloads of a specific
+// payload type.
 type ValidationHandler interface {
 	//Init will be called at least once during startup if this ValidationHandler
 	//is enabled in the configuration.
@@ -35,16 +35,16 @@ type ValidationHandler interface {
 	ValidatePayload(payload []byte) (*PayloadInfo, error)
 }
 
-//PayloadInfo contains structured information about a payload. It is returned
-//by ValidationHandler.ValidatePayload().
+// PayloadInfo contains structured information about a payload. It is returned
+// by ValidationHandler.ValidatePayload().
 type PayloadInfo struct {
 	//Description is a short summary of the event with this payload. It is used
 	//to identify the event in log messages.
 	Description string
 }
 
-//TranslationHandler is an object that can translate payloads from one specific
-//payload type into a different payload type.
+// TranslationHandler is an object that can translate payloads from one specific
+// payload type into a different payload type.
 type TranslationHandler interface {
 	//Init will be called at least once during startup if this TranslationHandler
 	//is enabled in the configuration.
@@ -58,8 +58,8 @@ type TranslationHandler interface {
 	TranslatePayload(payload []byte) ([]byte, error)
 }
 
-//DeliveryHandler is an object that can deliver payloads of one specific
-//payload type to a target in some way.
+// DeliveryHandler is an object that can deliver payloads of one specific
+// payload type to a target in some way.
 type DeliveryHandler interface {
 	//Init will be called at least once during startup if this DeliveryHandler
 	//is enabled in the configuration.
@@ -72,9 +72,9 @@ type DeliveryHandler interface {
 	DeliverPayload(payload []byte) (*DeliveryLog, error)
 }
 
-//DeliveryLog can be returned by DeliverPayload() to produce additional log
-//messages, e.g. to report the ID of an object that was created in the target
-//system.
+// DeliveryLog can be returned by DeliverPayload() to produce additional log
+// messages, e.g. to report the ID of an object that was created in the target
+// system.
 type DeliveryLog struct {
 	Message string
 }
@@ -85,27 +85,27 @@ var (
 	allDeliveryHandlers    []DeliveryHandler
 )
 
-//RegisterValidationHandler adds a ValidationHandler instance to the global
-//lookup table.
+// RegisterValidationHandler adds a ValidationHandler instance to the global
+// lookup table.
 func RegisterValidationHandler(h ValidationHandler) {
 	allValidationHandlers = append(allValidationHandlers, h)
 }
 
-//RegisterTranslationHandler adds a TranslationHandler instance to the global
-//lookup table.
+// RegisterTranslationHandler adds a TranslationHandler instance to the global
+// lookup table.
 func RegisterTranslationHandler(h TranslationHandler) {
 	allTranslationHandlers = append(allTranslationHandlers, h)
 }
 
-//RegisterDeliveryHandler adds a DeliveryHandler instance to the global lookup
-//table.
+// RegisterDeliveryHandler adds a DeliveryHandler instance to the global lookup
+// table.
 func RegisterDeliveryHandler(h DeliveryHandler) {
 	allDeliveryHandlers = append(allDeliveryHandlers, h)
 }
 
-//Route describes a complete delivery path for events: An event gets submitted
-//to us with an initial payload type, gets translated into a different payload
-//type, and then the translated payload gets delivered.
+// Route describes a complete delivery path for events: An event gets submitted
+// to us with an initial payload type, gets translated into a different payload
+// type, and then the translated payload gets delivered.
 type Route struct {
 	SourcePayloadType  string
 	TargetPayloadType  string

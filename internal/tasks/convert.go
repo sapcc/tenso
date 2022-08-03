@@ -32,8 +32,8 @@ import (
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
-//WARNING: This must be run in a transaction, or else `FOR UPDATE SKIP LOCKED`
-//will not work as expected.
+// WARNING: This must be run in a transaction, or else `FOR UPDATE SKIP LOCKED`
+// will not work as expected.
 var selectNextConversionQuery = sqlext.SimplifyWhitespace(`
 	SELECT * FROM pending_deliveries
 	 WHERE converted_at IS NULL AND next_conversion_at <= $1
@@ -45,8 +45,8 @@ const (
 	ConversionRetryInterval = 2 * time.Minute
 )
 
-//PollForPendingConversions is a JobPoller that finds the next pending
-//conversion job. The returned Job tries to execute the conversion.
+// PollForPendingConversions is a JobPoller that finds the next pending
+// conversion job. The returned Job tries to execute the conversion.
 func (c *Context) PollForPendingConversions() (j Job, returnedError error) {
 	defer func() {
 		if returnedError != nil && returnedError != sql.ErrNoRows {
@@ -88,7 +88,7 @@ type payloadConvertJob struct {
 	pd tenso.PendingDelivery
 }
 
-//Execute implements the Job interface.
+// Execute implements the Job interface.
 func (j payloadConvertJob) Execute() (returnedError error) {
 	c, tx, pd := j.c, j.tx, j.pd
 

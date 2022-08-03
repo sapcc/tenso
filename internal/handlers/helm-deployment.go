@@ -95,7 +95,7 @@ type HdHelmRelease struct {
 	DurationSeconds *uint64    `json:"duration,omitempty"`
 }
 
-//HdOutcome describes the final state of a Helm release.
+// HdOutcome describes the final state of a Helm release.
 type HdOutcome string
 
 const (
@@ -317,7 +317,7 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 ////////////////////////////////////////////////////////////////////////////////
 // DeliveryHandler for ELK
 
-//helmDeploymentToElkDeliverer is a tenso.DeliveryHandler.
+// helmDeploymentToElkDeliverer is a tenso.DeliveryHandler.
 type helmDeploymentToElkDeliverer struct {
 	LogstashHost string
 }

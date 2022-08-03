@@ -42,13 +42,13 @@ func NewAPI(cfg tenso.Configuration, db *gorp.DbMap, validator gopherpolicy.Vali
 	return &API{cfg, db, validator, time.Now}
 }
 
-//OverrideTimeNow is used by unit tests to inject a mock clock.
+// OverrideTimeNow is used by unit tests to inject a mock clock.
 func (a *API) OverrideTimeNow(now func() time.Time) *API {
 	a.timeNow = now
 	return a
 }
 
-//Handler implements the httpapi.API interface.
+// Handler implements the httpapi.API interface.
 func (a *API) AddTo(r *mux.Router) {
 	r.Methods("POST").Path("/v1/events/new").HandlerFunc(a.handlePostNewEvent)
 }

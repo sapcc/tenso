@@ -27,24 +27,24 @@ import (
 	"github.com/sapcc/go-bits/gopherpolicy"
 )
 
-//Clock is a deterministic clock for unit tests. It starts at the Unix epoch
-//and only advances when Clock.StepBy() is called.
+// Clock is a deterministic clock for unit tests. It starts at the Unix epoch
+// and only advances when Clock.StepBy() is called.
 type Clock struct {
 	currentTime int64
 }
 
-//Now reads the clock.
+// Now reads the clock.
 func (c *Clock) Now() time.Time {
 	return time.Unix(c.currentTime, 0).UTC()
 }
 
-//StepBy advances the clock by the given duration.
+// StepBy advances the clock by the given duration.
 func (c *Clock) StepBy(d time.Duration) {
 	c.currentTime += int64(d / time.Second)
 }
 
-//MockValidator implements the gopherpolicy.Enforcer and gopherpolicy.Validator
-//interfaces.
+// MockValidator implements the gopherpolicy.Enforcer and gopherpolicy.Validator
+// interfaces.
 type MockValidator struct {
 	ForbiddenRules map[string]bool
 }

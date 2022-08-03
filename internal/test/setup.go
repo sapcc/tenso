@@ -43,27 +43,27 @@ type setupParams struct {
 	WithTaskContext bool
 }
 
-//WithAPI is a SetupOption that provides a http.Handler with the Tenso API.
+// WithAPI is a SetupOption that provides a http.Handler with the Tenso API.
 func WithAPI(params *setupParams) {
 	params.WithAPI = true
 }
 
-//WithTaskContext is a SetupOption that provides a tasks.Context object for testing worker tasks.
+// WithTaskContext is a SetupOption that provides a tasks.Context object for testing worker tasks.
 func WithTaskContext(params *setupParams) {
 	params.WithTaskContext = true
 }
 
-//WithRoute is a SetupOption that adds a route to the configuration.
+// WithRoute is a SetupOption that adds a route to the configuration.
 func WithRoute(route string) SetupOption {
 	return func(params *setupParams) {
 		params.RouteSpecs = append(params.RouteSpecs, route)
 	}
 }
 
-//SetupOption is an option that can be given to NewSetup().
+// SetupOption is an option that can be given to NewSetup().
 type SetupOption func(*setupParams)
 
-//Setup contains all the pieces that are needed for most tests.
+// Setup contains all the pieces that are needed for most tests.
 type Setup struct {
 	//fields that are always set
 	Clock  *Clock
@@ -76,7 +76,7 @@ type Setup struct {
 	TaskContext *tasks.Context
 }
 
-//NewSetup prepares most or all pieces of Tenso for a test.
+// NewSetup prepares most or all pieces of Tenso for a test.
 func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	t.Helper()
 	logg.ShowDebug = osext.GetenvBool("TENSO_DEBUG")

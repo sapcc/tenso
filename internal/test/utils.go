@@ -20,7 +20,7 @@ package test
 
 import "testing"
 
-//Must is a test assertion to test for success.
+// Must is a test assertion to test for success.
 func Must(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
@@ -28,7 +28,7 @@ func Must(t *testing.T, err error) {
 	}
 }
 
-//MustFail is a test assertion to test for a specific error message.
+// MustFail is a test assertion to test for a specific error message.
 func MustFail(t *testing.T, actual error, expected string) {
 	t.Helper()
 	if actual == nil {

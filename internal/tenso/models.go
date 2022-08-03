@@ -25,7 +25,7 @@ import (
 	gorp "gopkg.in/gorp.v2"
 )
 
-//Event contains a record from the `events` table.
+// Event contains a record from the `events` table.
 type Event struct {
 	ID          int64     `db:"id"`
 	CreatorID   int64     `db:"creator_id"` //ID into the `users` table
@@ -35,7 +35,7 @@ type Event struct {
 	Description string    `db:"description"` //a short summary that appears in log messages
 }
 
-//User contains a record from the `users` table.
+// User contains a record from the `users` table.
 type User struct {
 	ID         int64  `db:"id"`
 	UUID       string `db:"uuid"`
@@ -43,7 +43,7 @@ type User struct {
 	DomainName string `db:"domain_name"`
 }
 
-//PendingDelivery contains a record from the `pending_deliveries` table.
+// PendingDelivery contains a record from the `pending_deliveries` table.
 type PendingDelivery struct {
 	EventID     int64  `db:"event_id"`
 	PayloadType string `db:"payload_type"`

@@ -30,7 +30,7 @@ func init() {
 	tenso.RegisterTranslationHandler(&dummyTranslator{"helm-deployment-from-concourse.v1", "helm-deployment-to-swift.v1"})
 }
 
-//dummyTranslator is a tenso.TranslationHandler for no-op translations.
+// dummyTranslator is a tenso.TranslationHandler for no-op translations.
 type dummyTranslator struct {
 	sourcePayloadType string
 	targetPayloadType string

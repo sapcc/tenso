@@ -143,9 +143,9 @@ func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	}
 }
 
-//Execute a task repeatedly, but slow down when sql.ErrNoRows is returned by it.
-//(Tasks use this error value to indicate that nothing needs scraping, so we
-//can back off a bit to avoid useless database load.)
+// Execute a task repeatedly, but slow down when sql.ErrNoRows is returned by it.
+// (Tasks use this error value to indicate that nothing needs scraping, so we
+// can back off a bit to avoid useless database load.)
 func goQueuedJobLoop(ctx context.Context, numGoroutines int, poll tasks.JobPoller) {
 	ch := make(chan tasks.Job) //unbuffered!
 
@@ -184,8 +184,8 @@ func goQueuedJobLoop(ctx context.Context, numGoroutines int, poll tasks.JobPolle
 	}
 }
 
-//Execute a task repeatedly, in set intervals. Unlike queuedJobLoop(), this
-//does not change pace when errors are returned.
+// Execute a task repeatedly, in set intervals. Unlike queuedJobLoop(), this
+// does not change pace when errors are returned.
 func cronJobLoop(interval time.Duration, task func() error) {
 	for {
 		err := task()
@@ -200,7 +200,7 @@ type userAgentInjector struct {
 	Inner http.RoundTripper
 }
 
-//RoundTrip implements the http.RoundTripper interface.
+// RoundTrip implements the http.RoundTripper interface.
 func (uai userAgentInjector) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", fmt.Sprintf("%s/%s", bininfo.Component(), bininfo.VersionOr("rolling")))
 	return uai.Inner.RoundTrip(req)

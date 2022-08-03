@@ -36,7 +36,7 @@ import (
 	"github.com/sapcc/go-bits/osext"
 )
 
-//Configuration contains all configuration values that we collect from the environment.
+// Configuration contains all configuration values that we collect from the environment.
 type Configuration struct {
 	DatabaseURL   *url.URL
 	EnabledRoutes []Route
@@ -48,8 +48,8 @@ var (
 	routeSpecRx        = regexp.MustCompile(fmt.Sprintf(`^(%[1]s)\s*->\s*(%[1]s)$`, payloadTypePattern))
 )
 
-//ParseConfiguration obtains a tenso.Configuration instance from the
-//corresponding environment variables. Aborts on error.
+// ParseConfiguration obtains a tenso.Configuration instance from the
+// corresponding environment variables. Aborts on error.
 func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gophercloud.EndpointOpts) {
 	var cfg Configuration
 	cfg.DatabaseURL = must.Return(easypg.URLFrom(easypg.URLParts{
@@ -81,10 +81,10 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 	return cfg, provider, eo
 }
 
-//BuildRoutes is used by ParseConfiguration to process the TENSO_ROUTES env
-//variable. It is an exported function to make it accessible in unit tests.
+// BuildRoutes is used by ParseConfiguration to process the TENSO_ROUTES env
+// variable. It is an exported function to make it accessible in unit tests.
 //
-//The `pc` and `eo` args are passed to the handlers' Init() methods verbatim.
+// The `pc` and `eo` args are passed to the handlers' Init() methods verbatim.
 func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) ([]Route, error) {
 	var result []Route
 

@@ -28,8 +28,8 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-//NewClientWithOAuth returns a http.Client that obtains OAuth2 tokens as required.
-//Credentials are read from `${PREFIX}_{TOKEN_URL,USERNAME,PASSWORD}` env vars.
+// NewClientWithOAuth returns a http.Client that obtains OAuth2 tokens as required.
+// Credentials are read from `${PREFIX}_{TOKEN_URL,USERNAME,PASSWORD}` env vars.
 func NewClientWithOAuth(envPrefix string) (*http.Client, error) {
 	tokenURL, err := osext.NeedGetenv(envPrefix + "_TOKEN_URL")
 	if err != nil {
