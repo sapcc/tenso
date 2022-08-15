@@ -40,7 +40,8 @@ else
 endif
 
 install: FORCE build/tenso
-	install -D -m 0755 build/tenso "$(DESTDIR)$(PREFIX)/bin/tenso"
+	install -d -m 0755 "$(DESTDIR)$(PREFIX)/bin"
+	install -m 0755 build/tenso "$(DESTDIR)$(PREFIX)/bin/tenso"
 
 # which packages to test with "go test"
 GO_TESTPKGS := $(shell go list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./...)
