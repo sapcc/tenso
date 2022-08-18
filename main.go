@@ -65,7 +65,7 @@ func main() {
 	//off certificate verification.)
 	if osext.GetenvBool("TENSO_INSECURE") {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, //nolint:gosec // only used in development environments
 		}
 		http.DefaultTransport = userAgentInjector{http.DefaultTransport}
 	}
@@ -120,7 +120,6 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 	}
 }
 
-//nolint:unparam
 func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
 

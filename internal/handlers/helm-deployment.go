@@ -558,7 +558,7 @@ func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.D
 		return nil, nil
 	}
 
-	req, err := http.NewRequest("POST", h.EndpointURL, bytes.NewReader(payload))
+	req, err := http.NewRequest(http.MethodPost, h.EndpointURL, bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("while preparing request for POST %s: %w", h.EndpointURL, err)
 	}
