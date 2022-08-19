@@ -40,7 +40,6 @@ import (
 	"github.com/majewsky/schwift/gopherschwift"
 	"gopkg.in/yaml.v2"
 
-	"github.com/sapcc/go-api-declarations/bininfo"
 	"github.com/sapcc/go-bits/osext"
 
 	"github.com/sapcc/tenso/internal/servicenow"
@@ -383,9 +382,7 @@ func (h *helmDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo
 		return err
 	}
 
-	swiftAccount, err := gopherschwift.Wrap(client, &gopherschwift.Options{
-		UserAgent: fmt.Sprintf("%s/%s", bininfo.Component(), bininfo.VersionOr("rolling")),
-	})
+	swiftAccount, err := gopherschwift.Wrap(client, nil)
 	if err != nil {
 		return err
 	}

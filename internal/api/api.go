@@ -20,12 +20,10 @@
 package api
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sapcc/go-bits/gopherpolicy"
-	"github.com/sapcc/go-bits/logg"
 	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/tenso"
@@ -51,12 +49,4 @@ func (a *API) OverrideTimeNow(now func() time.Time) *API {
 // Handler implements the httpapi.API interface.
 func (a *API) AddTo(r *mux.Router) {
 	r.Methods("POST").Path("/v1/events/new").HandlerFunc(a.handlePostNewEvent)
-}
-
-func (a *API) CheckToken(r *http.Request) *gopherpolicy.Token {
-	token := a.Validator.CheckToken(r)
-	token.Context.Logger = logg.Debug
-	logg.Debug("token has auth = %v", token.Context.Auth)
-	logg.Debug("token has roles = %v", token.Context.Roles)
-	return token
 }

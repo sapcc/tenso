@@ -21,9 +21,7 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"database/sql"
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -58,17 +56,9 @@ func main() {
 
 	logg.ShowDebug = osext.GetenvBool("TENSO_DEBUG")
 
-	//The TENSO_INSECURE flag can be used to get Tenso to work through mitmproxy
-	//(which is very useful for development and debugging). (It's very important
-	//that this is not the standard "TENSO_DEBUG" variable. That one is meant to
-	//be useful for production systems, where you definitely don't want to turn
-	//off certificate verification.)
-	if osext.GetenvBool("TENSO_INSECURE") {
-		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true, //nolint:gosec // only used in development environments
-		}
-		http.DefaultTransport = userAgentInjector{http.DefaultTransport}
-	}
+	wrap := httpext.WrapTransport(&http.DefaultTransport)
+	wrap.SetInsecureSkipVerify(osext.GetenvBool("TENSO_INSECURE")) //for debugging with mitmproxy etc. (DO NOT SET IN PRODUCTION)
+	wrap.SetOverrideUserAgent(bininfo.Component(), bininfo.VersionOr("rolling"))
 
 	cfg, provider, eo := tenso.ParseConfiguration()
 	db := must.Return(tenso.InitDB(cfg.DatabaseURL))
@@ -113,7 +103,6 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 
 	//start HTTP server
 	apiListenAddress := osext.GetenvOrDefault("TENSO_API_LISTEN_ADDRESS", ":8080")
-	logg.Info("listening on " + apiListenAddress)
 	err = httpext.ListenAndServeContext(ctx, apiListenAddress, nil)
 	if err != nil {
 		logg.Fatal("error returned from httpext.ListenAndServeContext(): %s", err.Error())
@@ -130,12 +119,13 @@ func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	goQueuedJobLoop(ctx, 7, c.PollForPendingDeliveries)
 	go cronJobLoop(5*time.Minute, c.CollectGarbage)
 
-	//start HTTP server for Prometheus metrics and health check
+	//wire up HTTP handlers for Prometheus metrics and health check
 	handler := httpapi.Compose(httpapi.HealthCheckAPI{SkipRequestLog: true})
 	http.Handle("/", handler)
 	http.Handle("/metrics", promhttp.Handler())
+
+	//start HTTP server
 	listenAddress := osext.GetenvOrDefault("TENSO_WORKER_LISTEN_ADDRESS", ":8080")
-	logg.Info("listening on " + listenAddress)
 	err := httpext.ListenAndServeContext(ctx, listenAddress, nil)
 	if err != nil {
 		logg.Fatal("error returned from httpext.ListenAndServeContext(): %s", err.Error())
@@ -193,14 +183,4 @@ func cronJobLoop(interval time.Duration, task func() error) {
 		}
 		time.Sleep(interval)
 	}
-}
-
-type userAgentInjector struct {
-	Inner http.RoundTripper
-}
-
-// RoundTrip implements the http.RoundTripper interface.
-func (uai userAgentInjector) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("User-Agent", fmt.Sprintf("%s/%s", bininfo.Component(), bininfo.VersionOr("rolling")))
-	return uai.Inner.RoundTrip(req)
 }
