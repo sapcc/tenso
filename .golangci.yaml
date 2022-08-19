@@ -44,7 +44,6 @@ linters-settings:
     enabled-checks:
       - boolExprSimplify
       - builtinShadow
-      - emptyFallthrough
       - emptyStringTest
       - evalOrder
       - httpNoBody
@@ -69,6 +68,9 @@ linters-settings:
   goimports:
     # Put local imports after 3rd-party packages.
     local-prefixes: github.com/sapcc/tenso
+  gosec:
+    excludes:
+      - G306
   govet:
     # Report about shadowed variables.
     check-shadowing: true
