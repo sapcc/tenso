@@ -38,9 +38,9 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
-	"gopkg.in/yaml.v2"
-
+	"github.com/sapcc/go-api-declarations/helmevent"
 	"github.com/sapcc/go-bits/osext"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -55,97 +55,16 @@ func init() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// data types ("Hd..." = Helm deployment)
+// helper functions
 
-type HdEvent struct {
-	Region       string               `json:"region"`
-	RecordedAt   *time.Time           `json:"recorded_at"` //TODO inconsistently named, rename to "recorded-at" if the opportunity arises
-	GitRepos     map[string]HdGitRepo `json:"git"`
-	HelmReleases []*HdHelmRelease     `json:"helm-release"`
-	Pipeline     HdPipeline           `json:"pipeline"`
-}
-
-type HdGitRepo struct {
-	AuthoredAt  *time.Time `json:"authored-at"`
-	Branch      string     `json:"branch"`
-	CommittedAt *time.Time `json:"committed-at"`
-	CommitID    string     `json:"commit-id"`
-	RemoteURL   string     `json:"remote-url"`
-}
-
-type HdHelmRelease struct {
-	Name    string    `json:"name"`
-	Outcome HdOutcome `json:"outcome"`
-
-	//ChartID contains "${name}-${version}" for charts pulled from Chartmuseum.
-	//ChartPath contains the path to that chart inside helm-charts.git for charts
-	//coming from helm-charts.git directly. Exactly one of those must be set.
-	ChartID   string `json:"chart-id"`
-	ChartPath string `json:"chart-path"`
-	Cluster   string `json:"cluster"`
-	//ImageVersion is only set for releases that take an image version produced by an earlier pipeline job.
-	ImageVersion string `json:"image-version,omitempty"`
-	Namespace    string `json:"kubernetes-namespace"`
-
-	//StartedAt is not set for HdOutcomeNotDeployed.
-	StartedAt *time.Time `json:"started-at"`
-	//FinishedAt is not set for HdOutcomeNotDeployed and HdOutcomeHelmUpgradeFailed.
-	FinishedAt      *time.Time `json:"finished-at,omitempty"`
-	DurationSeconds *uint64    `json:"duration,omitempty"`
-}
-
-// HdOutcome describes the final state of a Helm release.
-type HdOutcome string
-
-const (
-	//HdOutcomeNotDeployed describes a Helm release that was not deployed because
-	//of an unexpected error before `helm upgrade`.
-	HdOutcomeNotDeployed HdOutcome = "not-deployed"
-	//HdOutcomeSucceeded describes a Helm release that succeeded.
-	HdOutcomeSucceeded HdOutcome = "succeeded"
-	//HdOutcomeHelmUpgradeFailed describes a Helm release that failed during
-	//`helm upgrade` or because some deployed pods did not come up correctly.
-	HdOutcomeHelmUpgradeFailed HdOutcome = "helm-upgrade-failed"
-	//HdOutcomeE2ETestFailed describes a Helm release that was deployed, but a
-	//subsequent end-to-end test failed.
-	HdOutcomeE2ETestFailed HdOutcome = "e2e-test-failed"
-	//HdOutcomePartiallyDeployed is returned by CombinedOutcome() when the event
-	//in question contains some releases that are "succeeded" and some that are
-	//"not-deployed". This value is not acceptable for an individual Helm release.
-	HdOutcomePartiallyDeployed HdOutcome = "partially-deployed"
-)
-
-func (o HdOutcome) IsKnownInputValue() bool {
-	switch o {
-	case HdOutcomeNotDeployed, HdOutcomeSucceeded, HdOutcomeHelmUpgradeFailed, HdOutcomeE2ETestFailed:
-		return true
-	case HdOutcomePartiallyDeployed:
-		return false //not acceptable on an individual release, can only appear as result of HdEvent.CombinedOutcome()
-	default:
-		return false
-	}
-}
-
-type HdPipeline struct {
-	BuildNumber  string `json:"build-number"`
-	BuildURL     string `json:"build-url"`
-	JobName      string `json:"job"`
-	PipelineName string `json:"name"`
-	TeamName     string `json:"team"`
-	CreatedBy    string `json:"created-by"`
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// helper functions on HdEvent
-
-func (event HdEvent) ReleaseDescriptors(sep string) (result []string) {
+func releaseDescriptorsOf(event helmevent.Event, sep string) (result []string) {
 	for _, hr := range event.HelmReleases {
 		result = append(result, fmt.Sprintf("%s%s%s", hr.Name, sep, hr.Cluster))
 	}
 	return
 }
 
-func (event HdEvent) InputDescriptors() (result []string) {
+func inputDescriptorsOf(event helmevent.Event) (result []string) {
 	var imageVersions []string
 	for _, rel := range event.HelmReleases {
 		if rel.ImageVersion != "" {
@@ -160,44 +79,6 @@ func (event HdEvent) InputDescriptors() (result []string) {
 	sort.Strings(gitVersions) //for test reproducability
 
 	return append(imageVersions, gitVersions...)
-}
-
-func (event HdEvent) CombinedOutcome() HdOutcome {
-	hasSucceeded := false
-	hasUndeployed := false
-	for _, hr := range event.HelmReleases {
-		switch hr.Outcome {
-		case HdOutcomeHelmUpgradeFailed, HdOutcomeE2ETestFailed:
-			//specific failure forces the entire result to be that failure
-			return hr.Outcome
-		case HdOutcomeSucceeded:
-			hasSucceeded = true
-		case HdOutcomeNotDeployed:
-			hasUndeployed = true
-		}
-	}
-
-	switch {
-	case hasSucceeded && hasUndeployed:
-		return HdOutcomePartiallyDeployed
-	case hasSucceeded:
-		return HdOutcomeSucceeded
-	default:
-		return HdOutcomeNotDeployed
-	}
-}
-
-func (event HdEvent) CombinedStartDate() *time.Time {
-	t := event.RecordedAt
-	for _, hr := range event.HelmReleases {
-		if hr.StartedAt == nil {
-			continue
-		}
-		if t.After(*hr.StartedAt) {
-			t = hr.StartedAt
-		}
-	}
-	return t
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -223,7 +104,7 @@ var (
 )
 
 func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
-	var event HdEvent
+	var event helmevent.Event
 	dec := json.NewDecoder(bytes.NewReader(payload))
 	dec.DisallowUnknownFields()
 	err := dec.Decode(&event)
@@ -270,16 +151,16 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 		if relInfo.Namespace == "" {
 			return nil, fmt.Errorf(`in helm-release %q: invalid value for field namespace: %q`, relInfo.Name, relInfo.Namespace)
 		}
-		if relInfo.StartedAt == nil && relInfo.Outcome != HdOutcomeNotDeployed {
+		if relInfo.StartedAt == nil && relInfo.Outcome != helmevent.OutcomeNotDeployed {
 			return nil, fmt.Errorf(`in helm-release %q: field started-at must be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
-		if relInfo.StartedAt != nil && relInfo.Outcome == HdOutcomeNotDeployed {
+		if relInfo.StartedAt != nil && relInfo.Outcome == helmevent.OutcomeNotDeployed {
 			return nil, fmt.Errorf(`in helm-release %q: field started-at may not be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
-		if relInfo.FinishedAt == nil && (relInfo.Outcome != HdOutcomeNotDeployed && relInfo.Outcome != HdOutcomeHelmUpgradeFailed) {
+		if relInfo.FinishedAt == nil && (relInfo.Outcome != helmevent.OutcomeNotDeployed && relInfo.Outcome != helmevent.OutcomeHelmUpgradeFailed) {
 			return nil, fmt.Errorf(`in helm-release %q: field finished-at must be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
-		if relInfo.FinishedAt != nil && (relInfo.Outcome == HdOutcomeNotDeployed || relInfo.Outcome == HdOutcomeHelmUpgradeFailed) {
+		if relInfo.FinishedAt != nil && (relInfo.Outcome == helmevent.OutcomeNotDeployed || relInfo.Outcome == helmevent.OutcomeHelmUpgradeFailed) {
 			return nil, fmt.Errorf(`in helm-release %q: field finished-at may not be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
 	}
@@ -308,7 +189,7 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 	return &tenso.PayloadInfo{
 		Description: fmt.Sprintf("%s/%s: deploy %s",
 			event.Pipeline.TeamName, event.Pipeline.PipelineName,
-			strings.Join(event.ReleaseDescriptors(" to "), " and "),
+			strings.Join(releaseDescriptorsOf(event, " to "), " and "),
 		),
 	}, nil
 }
@@ -396,7 +277,7 @@ func (h *helmDeploymentToSwiftDeliverer) PayloadType() string {
 }
 
 func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	var event HdEvent
+	var event helmevent.Event
 	dec := json.NewDecoder(bytes.NewReader(payload))
 	dec.DisallowUnknownFields()
 	err := dec.Decode(&event)
@@ -406,7 +287,7 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.
 
 	objectName := fmt.Sprintf("%s/%s/%s/%s/%s.json",
 		event.Pipeline.TeamName, event.Pipeline.PipelineName,
-		strings.Join(event.ReleaseDescriptors("_"), ","),
+		strings.Join(releaseDescriptorsOf(event, "_"), ","),
 		string(event.CombinedOutcome()),
 		event.RecordedAt.Format(time.RFC3339),
 	)
@@ -420,12 +301,12 @@ type helmDeploymentToSNowTranslator struct {
 	Mapping ServiceNowMappingConfig
 }
 
-var serviceNowCloseCodes = map[HdOutcome]string{
-	HdOutcomeNotDeployed:       "Failed - Rolled back",
-	HdOutcomePartiallyDeployed: "Partially Implemented",
-	HdOutcomeHelmUpgradeFailed: "Failed - Others", //TODO set Failure Category as well
-	HdOutcomeE2ETestFailed:     "Failed - Others", //TODO set Failure Category as well
-	HdOutcomeSucceeded:         "Implemented - Successfully",
+var serviceNowCloseCodes = map[helmevent.Outcome]string{
+	helmevent.OutcomeNotDeployed:       "Failed - Rolled back",
+	helmevent.OutcomePartiallyDeployed: "Partially Implemented",
+	helmevent.OutcomeHelmUpgradeFailed: "Failed - Others", //TODO set Failure Category as well
+	helmevent.OutcomeE2ETestFailed:     "Failed - Others", //TODO set Failure Category as well
+	helmevent.OutcomeSucceeded:         "Implemented - Successfully",
 }
 
 type ServiceNowMappingConfig struct {
@@ -466,7 +347,7 @@ func (h *helmDeploymentToSNowTranslator) TargetPayloadType() string {
 }
 
 func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
-	var event HdEvent
+	var event helmevent.Event
 	dec := json.NewDecoder(bytes.NewReader(payload))
 	dec.DisallowUnknownFields()
 	err := dec.Decode(&event)
@@ -476,7 +357,7 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 
 	//if we did not start deploying, we won't create a change object in ServiceNow
 	outcome := event.CombinedOutcome()
-	if outcome == HdOutcomeNotDeployed {
+	if outcome == helmevent.OutcomeNotDeployed {
 		return []byte("skip"), nil
 	}
 
@@ -499,8 +380,8 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 	}
 
 	//some more precomputations
-	releaseDesc := strings.Join(event.ReleaseDescriptors(" to "), ", ")
-	inputDesc := strings.Join(event.InputDescriptors(), ", ")
+	releaseDesc := strings.Join(releaseDescriptorsOf(event, " to "), ", ")
+	inputDesc := strings.Join(inputDescriptorsOf(event), ", ")
 
 	data := map[string]interface{}{
 		"chg_model":               "GCS CCloud Automated Standard Change",
