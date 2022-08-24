@@ -450,7 +450,7 @@ func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.D
 
 	//on success, make a best-effort attempt to retrieve the object ID from the
 	//response...
-	if resp.StatusCode < 400 {
+	if resp.StatusCode < 400 { //nolint:usestdlibvars
 		var respData struct {
 			Result struct {
 				Number struct {
