@@ -51,7 +51,7 @@ github.com/hashicorp/golang-lru/simplelru
 # github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629
 ## explicit
 github.com/jpillora/longestcommon
-# github.com/lib/pq v1.10.6
+# github.com/lib/pq v1.10.7
 ## explicit; go 1.13
 github.com/lib/pq
 github.com/lib/pq/oid
@@ -94,7 +94,7 @@ github.com/rs/cors
 ## explicit; go 1.19
 github.com/sapcc/go-api-declarations/bininfo
 github.com/sapcc/go-api-declarations/helmevent
-# github.com/sapcc/go-bits v0.0.0-20220908182641-3f500a62345d
+# github.com/sapcc/go-bits v0.0.0-20220909131733-7e2aa654bf15
 ## explicit; go 1.19
 github.com/sapcc/go-bits/assert
 github.com/sapcc/go-bits/easypg
