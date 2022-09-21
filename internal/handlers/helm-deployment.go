@@ -302,10 +302,14 @@ type helmDeploymentToSNowTranslator struct {
 }
 
 var serviceNowCloseCodes = map[helmevent.Outcome]string{
-	helmevent.OutcomeNotDeployed:       "Failed - Rolled back",
-	helmevent.OutcomePartiallyDeployed: "Partially Implemented",
-	helmevent.OutcomeHelmUpgradeFailed: "Failed - Others", //TODO set Failure Category as well
-	helmevent.OutcomeE2ETestFailed:     "Failed - Others", //TODO set Failure Category as well
+	helmevent.OutcomeNotDeployed: "Failed - Rolled back",
+	//This used to be "Partially Implemented" and "Failed - Others", but it was
+	//all changed to "Closed without Implementation" because the former close
+	//codes are intended for problems that require human intervention and
+	//subsequent analysis, which we do not want.
+	helmevent.OutcomePartiallyDeployed: "Closed without Implementation",
+	helmevent.OutcomeHelmUpgradeFailed: "Closed without Implementation",
+	helmevent.OutcomeE2ETestFailed:     "Closed without Implementation",
 	helmevent.OutcomeSucceeded:         "Implemented - Successfully",
 }
 
