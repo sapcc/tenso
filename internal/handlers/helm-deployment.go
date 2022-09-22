@@ -64,6 +64,13 @@ func releaseDescriptorsOf(event helmevent.Event, sep string) (result []string) {
 	return
 }
 
+func releaseNamesOf(event helmevent.Event) (result []string) {
+	for _, hr := range event.HelmReleases {
+		result = append(result, hr.Name)
+	}
+	return
+}
+
 func inputDescriptorsOf(event helmevent.Event) (result []string) {
 	var imageVersions []string
 	for _, rel := range event.HelmReleases {
@@ -388,19 +395,21 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 	inputDesc := strings.Join(inputDescriptorsOf(event), ", ")
 
 	data := map[string]interface{}{
-		"chg_model":               "GCS CCloud Automated Standard Change",
-		"assigned_to":             assignee,
-		"requested_by":            requester,
-		"service_offering":        h.Mapping.Fallbacks.ServiceOffering,
-		"u_data_center":           strings.Join(regionMapping.Datacenters, ", "),
-		"u_customer_impact":       "No Impact",                            //TODO check possible values, consider mapping from outcome
-		"u_responsible_manager":   h.Mapping.Fallbacks.ResponsibleManager, //TODO derive from owner-info
-		"u_customer_notification": "No",
-		"u_impacted_lobs":         "Global Cloud Services",
-		"u_affected_environments": regionMapping.Environment,
-		"start_date":              sNowTimeStr(event.CombinedStartDate()),
-		"end_date":                sNowTimeStr(event.RecordedAt),
-		"close_code":              serviceNowCloseCodes[event.CombinedOutcome()],
+		"chg_model":                "GCS CCloud Automated Standard Change",
+		"assigned_to":              assignee,
+		"requested_by":             requester,
+		"u_implementation_contact": event.Pipeline.CreatedBy, //NOTE can be empty
+		"service_offering":         h.Mapping.Fallbacks.ServiceOffering,
+		"cmdb_ci":                  strings.Join(releaseNamesOf(event), ", "), //NOTE UI name = "Configuration Item"
+		"u_data_center":            strings.Join(regionMapping.Datacenters, ", "),
+		"u_customer_impact":        "No Impact",                            //TODO check possible values, consider mapping from outcome
+		"u_responsible_manager":    h.Mapping.Fallbacks.ResponsibleManager, //TODO derive from owner-info
+		"u_customer_notification":  "No",
+		"u_impacted_lobs":          "Global Cloud Services",
+		"u_affected_environments":  regionMapping.Environment,
+		"start_date":               sNowTimeStr(event.CombinedStartDate()),
+		"end_date":                 sNowTimeStr(event.RecordedAt),
+		"close_code":               serviceNowCloseCodes[event.CombinedOutcome()],
 		//TODO maybe put the first line in "Internal Info" instead (what's the API field name for "Internal Info"?)
 		"close_notes":       fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL),
 		"short_description": fmt.Sprintf("Deploy %s", releaseDesc),
