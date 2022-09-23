@@ -12,7 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rs/cors v1.8.2
 	github.com/sapcc/go-api-declarations v1.3.0
-	github.com/sapcc/go-bits v0.0.0-20220909131733-7e2aa654bf15
+	github.com/sapcc/go-bits v0.0.0-20220919133313-cbe76a8983ac
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 	gopkg.in/gorp.v2 v2.2.0
 	gopkg.in/yaml.v2 v2.4.0

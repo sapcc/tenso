@@ -94,7 +94,7 @@ github.com/rs/cors
 ## explicit; go 1.19
 github.com/sapcc/go-api-declarations/bininfo
 github.com/sapcc/go-api-declarations/helmevent
-# github.com/sapcc/go-bits v0.0.0-20220909131733-7e2aa654bf15
+# github.com/sapcc/go-bits v0.0.0-20220919133313-cbe76a8983ac
 ## explicit; go 1.19
 github.com/sapcc/go-bits/assert
 github.com/sapcc/go-bits/easypg
