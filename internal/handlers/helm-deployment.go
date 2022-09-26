@@ -64,13 +64,6 @@ func releaseDescriptorsOf(event helmevent.Event, sep string) (result []string) {
 	return
 }
 
-func releaseNamesOf(event helmevent.Event) (result []string) {
-	for _, hr := range event.HelmReleases {
-		result = append(result, hr.Name)
-	}
-	return
-}
-
 func inputDescriptorsOf(event helmevent.Event) (result []string) {
 	var imageVersions []string
 	for _, rel := range event.HelmReleases {
@@ -400,7 +393,6 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 		"requested_by":             requester,
 		"u_implementation_contact": event.Pipeline.CreatedBy, //NOTE can be empty
 		"service_offering":         h.Mapping.Fallbacks.ServiceOffering,
-		"cmdb_ci":                  strings.Join(releaseNamesOf(event), ", "), //NOTE UI name = "Configuration Item"
 		"u_data_center":            strings.Join(regionMapping.Datacenters, ", "),
 		"u_customer_impact":        "No Impact",                            //TODO check possible values, consider mapping from outcome
 		"u_responsible_manager":    h.Mapping.Fallbacks.ResponsibleManager, //TODO derive from owner-info
