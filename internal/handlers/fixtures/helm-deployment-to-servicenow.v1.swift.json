@@ -2,7 +2,7 @@
   "assigned_to": "I012345",
   "chg_model": "GCS CCloud Automated Standard Change",
   "close_code": "Implemented - Successfully",
-  "close_notes": "Deployed swift to qa-de-1, swift-utils to qa-de-1 with versions: swift xena-20220511084452, swift-utils xena-20220511084452, helm-charts.git b3c7f910ab7b0d303d0190b420316a6a2c7f3c66, secrets.git ff74360ef4e10bd6c434b61ccb6049376fc45a8d\nDeployment log: https://concourse.example.org/teams/services/pipelines/swift/jobs/qa-de-1/builds/82",
+  "close_notes": "Deployed swift to qa-de-1, swift-utils to qa-de-1 with versions: swift xena-20220511084452, swift-utils xena-20220511084452, helm-charts.git b3c7f910ab7b0d303d0190b420316a6a2c7f3c66, secrets.git ff74360ef4e10bd6c434b61ccb6049376fc45a8d\nDeployment log: https://concourse.example.org/teams/services/pipelines/swift/jobs/qa-de-1/builds/82\n\nOutcome: succeeded",
   "end_date": "2022-05-11 09:01:05",
   "requested_by": "I012345",
   "service_offering": "GCS-Network-Security",

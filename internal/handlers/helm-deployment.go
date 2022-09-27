@@ -403,7 +403,7 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 		"end_date":                 sNowTimeStr(event.RecordedAt),
 		"close_code":               serviceNowCloseCodes[event.CombinedOutcome()],
 		//TODO maybe put the first line in "Internal Info" instead (what's the API field name for "Internal Info"?)
-		"close_notes":       fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL),
+		"close_notes":       fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s\n\nOutcome: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL, string(event.CombinedOutcome())),
 		"short_description": fmt.Sprintf("Deploy %s", releaseDesc),
 	}
 
