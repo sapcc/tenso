@@ -8,8 +8,8 @@ require (
 	github.com/gophercloud/gophercloud v1.0.0
 	github.com/gophercloud/utils v0.0.0-20220927104426-4113af8d2663
 	github.com/gorilla/mux v1.8.0
-	github.com/majewsky/schwift v1.1.0
-	github.com/prometheus/client_golang v1.13.0
+	github.com/majewsky/schwift v1.2.0
+	github.com/prometheus/client_golang v1.13.1
 	github.com/rs/cors v1.8.2
 	github.com/sapcc/go-api-declarations v1.4.1
 	github.com/sapcc/go-bits v0.0.0-20221101210225-82a3f52a69ee
