@@ -86,7 +86,12 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 //
 // The `pc` and `eo` args are passed to the handlers' Init() methods verbatim.
 func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) ([]Route, error) {
-	var result []Route
+	var (
+		result              []Route
+		validationHandlers  = make(map[string]ValidationHandler)
+		translationHandlers = make(map[string]TranslationHandler)
+		deliveryHandlers    = make(map[string]DeliveryHandler)
+	)
 
 	//parse routes
 	for _, routeSpec := range routeSpecs {
@@ -105,57 +110,54 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 			TargetPayloadType: match[2],
 		}
 
-		//select validation handler
-		for _, handler := range allValidationHandlers {
-			if route.SourcePayloadType == handler.PayloadType() {
-				route.ValidationHandler = handler
-				break
+		//instantiate validation handler if not done yet
+		if validationHandlers[route.SourcePayloadType] == nil {
+			vh := ValidationHandlerRegistry.Instantiate(route.SourcePayloadType)
+			if vh == nil {
+				return nil, fmt.Errorf("route specification %q is invalid: cannot validate %s",
+					routeSpec, route.SourcePayloadType)
 			}
+			err := vh.Init(pc, eo)
+			if err != nil {
+				return nil, fmt.Errorf("while parsing route specification %q: cannot initialize validation for %s: %s",
+					routeSpec, route.SourcePayloadType, err.Error())
+			}
+			validationHandlers[route.SourcePayloadType] = vh
 		}
-		if route.ValidationHandler == nil {
-			return nil, fmt.Errorf("route specification %q is invalid: cannot validate %s",
-				routeSpec, route.SourcePayloadType)
-		}
-		err := route.ValidationHandler.Init(pc, eo)
-		if err != nil {
-			return nil, fmt.Errorf("while parsing route specification %q: cannot initialize validation for %s: %s",
-				routeSpec, route.SourcePayloadType, err.Error())
-		}
+		route.ValidationHandler = validationHandlers[route.SourcePayloadType]
 
-		//select translation handler
-		for _, handler := range allTranslationHandlers {
-			if route.SourcePayloadType == handler.SourcePayloadType() &&
-				route.TargetPayloadType == handler.TargetPayloadType() {
-				route.TranslationHandler = handler
-				break
+		//initiate translation handler if not done yet
+		typeID := fmt.Sprintf("%s->%s", route.SourcePayloadType, route.TargetPayloadType)
+		if translationHandlers[typeID] == nil {
+			th := TranslationHandlerRegistry.Instantiate(typeID)
+			if th == nil {
+				return nil, fmt.Errorf("route specification %q is invalid: do not know how to translate from %s to %s",
+					routeSpec, route.SourcePayloadType, route.TargetPayloadType)
 			}
+			err := th.Init(pc, eo)
+			if err != nil {
+				return nil, fmt.Errorf("while parsing route specification %q: cannot initialize translation from %s to %s: %s",
+					routeSpec, route.SourcePayloadType, route.TargetPayloadType, err.Error())
+			}
+			translationHandlers[typeID] = th
 		}
-		if route.TranslationHandler == nil {
-			return nil, fmt.Errorf("route specification %q is invalid: do not know how to translate from %s to %s",
-				routeSpec, route.SourcePayloadType, route.TargetPayloadType)
-		}
-		err = route.TranslationHandler.Init(pc, eo)
-		if err != nil {
-			return nil, fmt.Errorf("while parsing route specification %q: cannot initialize translation from %s to %s: %s",
-				routeSpec, route.SourcePayloadType, route.TargetPayloadType, err.Error())
-		}
+		route.TranslationHandler = translationHandlers[typeID]
 
-		//select delivery handler
-		for _, handler := range allDeliveryHandlers {
-			if route.TargetPayloadType == handler.PayloadType() {
-				route.DeliveryHandler = handler
-				break
+		//instantiate delivery handler if not done yet
+		if deliveryHandlers[route.TargetPayloadType] == nil {
+			dh := DeliveryHandlerRegistry.Instantiate(route.TargetPayloadType)
+			if dh == nil {
+				return nil, fmt.Errorf("route specification %q is invalid: cannot deliver %s",
+					routeSpec, route.TargetPayloadType)
 			}
+			err := dh.Init(pc, eo)
+			if err != nil {
+				return nil, fmt.Errorf("while parsing route specification %q: cannot initialize delivery for %s: %s",
+					routeSpec, route.TargetPayloadType, err.Error())
+			}
+			deliveryHandlers[route.TargetPayloadType] = dh
 		}
-		if route.DeliveryHandler == nil {
-			return nil, fmt.Errorf("route specification %q is invalid: cannot deliver %s",
-				routeSpec, route.TargetPayloadType)
-		}
-		err = route.DeliveryHandler.Init(pc, eo)
-		if err != nil {
-			return nil, fmt.Errorf("while parsing route specification %q: cannot initialize delivery for %s: %s",
-				routeSpec, route.TargetPayloadType, err.Error())
-		}
+		route.DeliveryHandler = deliveryHandlers[route.TargetPayloadType]
 
 		result = append(result, route)
 	}

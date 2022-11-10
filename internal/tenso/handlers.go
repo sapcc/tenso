@@ -19,11 +19,18 @@
 
 package tenso
 
-import "github.com/gophercloud/gophercloud"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/gophercloud/gophercloud"
+	"github.com/sapcc/go-bits/pluggable"
+)
 
 // ValidationHandler is an object that validates incoming payloads of a specific
-// payload type.
+// payload type. The PluginTypeID must be equal to the payload type.
 type ValidationHandler interface {
+	pluggable.Plugin
 	//Init will be called at least once during startup if this ValidationHandler
 	//is enabled in the configuration.
 	//
@@ -31,7 +38,6 @@ type ValidationHandler interface {
 	//talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
-	PayloadType() string
 	ValidatePayload(payload []byte) (*PayloadInfo, error)
 }
 
@@ -44,8 +50,10 @@ type PayloadInfo struct {
 }
 
 // TranslationHandler is an object that can translate payloads from one specific
-// payload type into a different payload type.
+// payload type into a different payload type. The PluginTypeID must be equal to
+// "$SOURCE_PAYLOAD_TYPE->$TARGET_PAYLOAD_TYPE".
 type TranslationHandler interface {
+	pluggable.Plugin
 	//Init will be called at least once during startup if this TranslationHandler
 	//is enabled in the configuration.
 	//
@@ -53,14 +61,32 @@ type TranslationHandler interface {
 	//talk to OpenStack. During unit tests, (nil, {}) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
-	SourcePayloadType() string
-	TargetPayloadType() string
 	TranslatePayload(payload []byte) ([]byte, error)
 }
 
+// SourcePayloadTypeOf extracts the source payload type from h.PluginTypeID().
+func SourcePayloadTypeOf(h TranslationHandler) string {
+	fields := strings.Split(h.PluginTypeID(), "->")
+	if len(fields) != 2 {
+		panic(fmt.Sprintf("malformed PluginTypeID for %T: %q", h, h.PluginTypeID()))
+	}
+	return fields[0]
+}
+
+// TargetPayloadTypeOf extracts the source payload type from h.PluginTypeID().
+func TargetPayloadTypeOf(h TranslationHandler) string {
+	fields := strings.Split(h.PluginTypeID(), "->")
+	if len(fields) != 2 {
+		panic(fmt.Sprintf("malformed PluginTypeID for %T: %q", h, h.PluginTypeID()))
+	}
+	return fields[1]
+}
+
 // DeliveryHandler is an object that can deliver payloads of one specific
-// payload type to a target in some way.
+// payload type to a target in some way. The PluginTypeID must be equal to the
+// payload type.
 type DeliveryHandler interface {
+	pluggable.Plugin
 	//Init will be called at least once during startup if this DeliveryHandler
 	//is enabled in the configuration.
 	//
@@ -68,7 +94,6 @@ type DeliveryHandler interface {
 	//talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
-	PayloadType() string
 	DeliverPayload(payload []byte) (*DeliveryLog, error)
 }
 
@@ -80,28 +105,13 @@ type DeliveryLog struct {
 }
 
 var (
-	allValidationHandlers  []ValidationHandler
-	allTranslationHandlers []TranslationHandler
-	allDeliveryHandlers    []DeliveryHandler
+	// ValidationHandlerRegistry is a pluggable.Registry for ValidationHandler implementations.
+	ValidationHandlerRegistry pluggable.Registry[ValidationHandler]
+	// TranslationHandlerRegistry is a pluggable.Registry for TranslationHandler implementations.
+	TranslationHandlerRegistry pluggable.Registry[TranslationHandler]
+	// DeliveryHandlerRegistry is a pluggable.Registry for DeliveryHandler implementations.
+	DeliveryHandlerRegistry pluggable.Registry[DeliveryHandler]
 )
-
-// RegisterValidationHandler adds a ValidationHandler instance to the global
-// lookup table.
-func RegisterValidationHandler(h ValidationHandler) {
-	allValidationHandlers = append(allValidationHandlers, h)
-}
-
-// RegisterTranslationHandler adds a TranslationHandler instance to the global
-// lookup table.
-func RegisterTranslationHandler(h TranslationHandler) {
-	allTranslationHandlers = append(allTranslationHandlers, h)
-}
-
-// RegisterDeliveryHandler adds a DeliveryHandler instance to the global lookup
-// table.
-func RegisterDeliveryHandler(h DeliveryHandler) {
-	allDeliveryHandlers = append(allDeliveryHandlers, h)
-}
 
 // Route describes a complete delivery path for events: An event gets submitted
 // to us with an initial payload type, gets translated into a different payload

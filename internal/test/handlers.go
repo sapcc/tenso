@@ -37,11 +37,11 @@ import (
 //renames the field, the value remains the same.
 
 func init() {
-	tenso.RegisterValidationHandler(&testValidationHandler{"foo"})
-	tenso.RegisterTranslationHandler(&testTranslationHandler{"foo", "bar"})
-	tenso.RegisterTranslationHandler(&testTranslationHandler{"foo", "baz"})
-	tenso.RegisterDeliveryHandler(&testDeliveryHandler{"bar"})
-	tenso.RegisterDeliveryHandler(&testDeliveryHandler{"baz"})
+	tenso.ValidationHandlerRegistry.Add(func() tenso.ValidationHandler { return &testValidationHandler{"foo"} })
+	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler { return &testTranslationHandler{"foo", "bar"} })
+	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler { return &testTranslationHandler{"foo", "baz"} })
+	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &testDeliveryHandler{"bar"} })
+	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &testDeliveryHandler{"baz"} })
 }
 
 type testPayload struct {
@@ -69,7 +69,7 @@ type testValidationHandler struct {
 func (h *testValidationHandler) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
-func (h *testValidationHandler) PayloadType() string {
+func (h *testValidationHandler) PluginTypeID() string {
 	return fmt.Sprintf("test-%s.v1", h.Type)
 }
 
@@ -91,11 +91,8 @@ type testTranslationHandler struct {
 func (h *testTranslationHandler) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
-func (h *testTranslationHandler) SourcePayloadType() string {
-	return fmt.Sprintf("test-%s.v1", h.SourceType)
-}
-func (h *testTranslationHandler) TargetPayloadType() string {
-	return fmt.Sprintf("test-%s.v1", h.TargetType)
+func (h *testTranslationHandler) PluginTypeID() string {
+	return fmt.Sprintf("test-%s.v1->test-%s.v1", h.SourceType, h.TargetType)
 }
 
 func (h *testTranslationHandler) TranslatePayload(data []byte) ([]byte, error) {
@@ -114,7 +111,7 @@ type testDeliveryHandler struct {
 func (h *testDeliveryHandler) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
-func (h *testDeliveryHandler) PayloadType() string {
+func (h *testDeliveryHandler) PluginTypeID() string {
 	return fmt.Sprintf("test-%s.v1", h.Type)
 }
 

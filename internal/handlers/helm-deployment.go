@@ -47,11 +47,11 @@ import (
 )
 
 func init() {
-	tenso.RegisterValidationHandler(&helmDeploymentValidator{})
-	tenso.RegisterDeliveryHandler(&helmDeploymentToElkDeliverer{})
-	tenso.RegisterDeliveryHandler(&helmDeploymentToSwiftDeliverer{})
-	tenso.RegisterTranslationHandler(&helmDeploymentToSNowTranslator{})
-	tenso.RegisterDeliveryHandler(&helmDeploymentToSNowDeliverer{})
+	tenso.ValidationHandlerRegistry.Add(func() tenso.ValidationHandler { return &helmDeploymentValidator{} })
+	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &helmDeploymentToElkDeliverer{} })
+	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &helmDeploymentToSwiftDeliverer{} })
+	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler { return &helmDeploymentToSNowTranslator{} })
+	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &helmDeploymentToSNowDeliverer{} })
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -91,7 +91,7 @@ func (h *helmDeploymentValidator) Init(*gophercloud.ProviderClient, gophercloud.
 	return nil
 }
 
-func (h *helmDeploymentValidator) PayloadType() string {
+func (h *helmDeploymentValidator) PluginTypeID() string {
 	return "helm-deployment-from-concourse.v1"
 }
 
@@ -216,7 +216,7 @@ func (h *helmDeploymentToElkDeliverer) Init(*gophercloud.ProviderClient, gopherc
 	return nil
 }
 
-func (h *helmDeploymentToElkDeliverer) PayloadType() string {
+func (h *helmDeploymentToElkDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-elk.v1"
 }
 
@@ -272,7 +272,7 @@ func (h *helmDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo
 	return err
 }
 
-func (h *helmDeploymentToSwiftDeliverer) PayloadType() string {
+func (h *helmDeploymentToSwiftDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-swift.v1"
 }
 
@@ -342,12 +342,8 @@ func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo
 	return yaml.Unmarshal(buf, &h.Mapping)
 }
 
-func (h *helmDeploymentToSNowTranslator) SourcePayloadType() string {
-	return "helm-deployment-from-concourse.v1"
-}
-
-func (h *helmDeploymentToSNowTranslator) TargetPayloadType() string {
-	return "helm-deployment-to-servicenow.v1"
+func (h *helmDeploymentToSNowTranslator) PluginTypeID() string {
+	return "helm-deployment-from-concourse.v1->helm-deployment-to-servicenow.v1"
 }
 
 func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
@@ -431,7 +427,7 @@ func (h *helmDeploymentToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo 
 	return err
 }
 
-func (h *helmDeploymentToSNowDeliverer) PayloadType() string {
+func (h *helmDeploymentToSNowDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-servicenow.v1"
 }
 

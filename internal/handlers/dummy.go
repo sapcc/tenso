@@ -26,26 +26,25 @@ import (
 )
 
 func init() {
-	tenso.RegisterTranslationHandler(&dummyTranslator{"helm-deployment-from-concourse.v1", "helm-deployment-to-elk.v1"})
-	tenso.RegisterTranslationHandler(&dummyTranslator{"helm-deployment-from-concourse.v1", "helm-deployment-to-swift.v1"})
+	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler {
+		return &dummyTranslator{"helm-deployment-from-concourse.v1->helm-deployment-to-elk.v1"}
+	})
+	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler {
+		return &dummyTranslator{"helm-deployment-from-concourse.v1->helm-deployment-to-swift.v1"}
+	})
 }
 
 // dummyTranslator is a tenso.TranslationHandler for no-op translations.
 type dummyTranslator struct {
-	sourcePayloadType string
-	targetPayloadType string
+	pluginTypeID string
+}
+
+func (h *dummyTranslator) PluginTypeID() string {
+	return h.pluginTypeID
 }
 
 func (h *dummyTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
-}
-
-func (h *dummyTranslator) SourcePayloadType() string {
-	return h.sourcePayloadType
-}
-
-func (h *dummyTranslator) TargetPayloadType() string {
-	return h.targetPayloadType
 }
 
 func (h *dummyTranslator) TranslatePayload(payload []byte) ([]byte, error) {
