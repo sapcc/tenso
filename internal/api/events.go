@@ -50,7 +50,6 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 		return io.ReadAll(io.LimitReader(r.Body, maxIncomingPayloadBytes))
 	}
 	a.handlePostNewEventCommon(w, r, "event:create", getEventPayload)
-
 }
 
 func (a *API) handlePostSyntheticEvent(w http.ResponseWriter, r *http.Request) {
