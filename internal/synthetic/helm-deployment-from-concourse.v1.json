@@ -1,0 +1,30 @@
+{
+  "region": "qa-de-1",
+  "recorded_at": "2022-01-01T00:00:02Z",
+  "git": {
+    "helm-charts": {
+      "commit-id": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    }
+  },
+  "helm-release": [
+    {
+      "name": "synthetic",
+      "outcome": "succeeded",
+      "chart-id": "",
+      "chart-path": "system/synthetic",
+      "cluster": "qa-de-1",
+      "kubernetes-namespace": "kube-system",
+      "started-at": "2022-01-01T00:00:00Z",
+      "finished-at": "2022-01-01T00:00:01Z",
+      "duration": 1
+    }
+  ],
+  "pipeline": {
+    "build-number": "1",
+    "build-url": "https://concourse.example.org/teams/dummy/pipelines/synthetic/jobs/qa-de-1-deploy/builds/1",
+    "job": "qa-de-1-deploy",
+    "name": "synthetic",
+    "team": "dummy"
+  }
+}
+

@@ -99,6 +99,19 @@ The corresponding policy rule is `event:create`. The object attribute
 [os-pol-json]: https://docs.openstack.org/oslo.policy/latest/admin/policy-json-file.html
 [os-pol-yaml]: https://docs.openstack.org/oslo.policy/latest/admin/policy-yaml-file.html
 
+### `POST /v1/events/synthetic`
+
+Submits a synthetic event to Tenso for delivery. This endpoint works
+identically to `POST /v1/events/new`, with two exceptions:
+
+- Instead of reading the event payload in the request body, a hardcoded event
+  payload with synthetic is used.
+- The policy rule is `event:create_synthetic` instead of `event:create`.
+
+This endpoint should be restricted to cloud admins. It can be used to test the
+conversion and delivery path for an incoming payload type without having to
+wait for an event to be submitted (or having to generate one manually).
+
 ## Supported payload types
 
 ### Helm deployments

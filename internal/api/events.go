@@ -28,6 +28,7 @@ import (
 	"github.com/sapcc/go-bits/respondwith"
 	"github.com/sapcc/go-bits/sqlext"
 
+	"github.com/sapcc/tenso/internal/synthetic"
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
@@ -45,6 +46,19 @@ var (
 
 func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 	httpapi.IdentifyEndpoint(r, "/v1/events/new")
+	getEventPayload := func(payloadType string) ([]byte, error) {
+		return io.ReadAll(io.LimitReader(r.Body, maxIncomingPayloadBytes))
+	}
+	a.handlePostNewEventCommon(w, r, "event:create", getEventPayload)
+
+}
+
+func (a *API) handlePostSyntheticEvent(w http.ResponseWriter, r *http.Request) {
+	httpapi.IdentifyEndpoint(r, "/v1/events/synthetic")
+	a.handlePostNewEventCommon(w, r, "event:create_synthetic", synthetic.Event)
+}
+
+func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, policyRule string, getPayload func(payloadType string) ([]byte, error)) {
 	requestTime := a.timeNow()
 
 	//collect required query parameters
@@ -62,7 +76,7 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 	//check authorization
 	token := a.Validator.CheckToken(r)
 	token.Context.Request = map[string]string{"target.payload_type": payloadType}
-	if !token.Require(w, "event:create") {
+	if !token.Require(w, policyRule) {
 		return
 	}
 
@@ -86,7 +100,7 @@ func (a *API) handlePostNewEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//validate incoming payload
-	payloadBytes, err := io.ReadAll(io.LimitReader(r.Body, maxIncomingPayloadBytes))
+	payloadBytes, err := getPayload(payloadType)
 	if respondwith.ErrorText(w, err) {
 		return
 	}

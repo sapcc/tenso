@@ -17,37 +17,24 @@
 *
 *******************************************************************************/
 
-package api
+package synthetic
 
 import (
-	"time"
-
-	"github.com/gorilla/mux"
-	"github.com/sapcc/go-bits/gopherpolicy"
-	"gopkg.in/gorp.v2"
-
-	"github.com/sapcc/tenso/internal/tenso"
+	_ "embed"
+	"fmt"
 )
 
-type API struct {
-	Config    tenso.Configuration
-	DB        *gorp.DbMap
-	Validator gopherpolicy.Validator
-	timeNow   func() time.Time
-}
+//go:embed helm-deployment-from-concourse.v1.json
+var helmV1Payload []byte
 
-func NewAPI(cfg tenso.Configuration, db *gorp.DbMap, validator gopherpolicy.Validator) *API {
-	return &API{cfg, db, validator, time.Now}
-}
-
-// OverrideTimeNow is used by unit tests to inject a mock clock.
-func (a *API) OverrideTimeNow(now func() time.Time) *API {
-	a.timeNow = now
-	return a
-}
-
-// Handler implements the httpapi.API interface.
-func (a *API) AddTo(r *mux.Router) {
-	r.Methods("POST").Path("/v1/events/new").HandlerFunc(a.handlePostNewEvent)
-	r.Methods("POST").Path("/v1/events/synthetic").HandlerFunc(a.handlePostSyntheticEvent)
+// Event returns a synthetic event for the given payload type, or an error if
+// no synthetic event exists for this payload type. Synthetic events are
+// intended to be used by cloud admins to test conversions and delivery paths.
+func Event(payloadType string) ([]byte, error) {
+	switch payloadType {
+	case "helm-deployment-from-concourse.v1":
+		return helmV1Payload, nil
+	default:
+		return nil, fmt.Errorf("no synthetic event available for payload type %q", payloadType)
+	}
 }
