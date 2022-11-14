@@ -384,7 +384,7 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 	inputDesc := strings.Join(inputDescriptorsOf(event), ", ")
 
 	data := map[string]interface{}{
-		"chg_model":                "GCS CCloud Automated Standard Change",
+		"chg_model":                "SAP Standard GCS Retrospective GCSCHGCCEEC147 CCloud Control Plane Deployment",
 		"assigned_to":              assignee,
 		"requested_by":             requester,
 		"u_implementation_contact": event.Pipeline.CreatedBy, //NOTE can be empty
