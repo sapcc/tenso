@@ -314,19 +314,23 @@ var serviceNowCloseCodes = map[helmevent.Outcome]string{
 }
 
 type ServiceNowMappingConfig struct {
-	Fallbacks struct {
-		Assignee           string `yaml:"assignee"`
-		Requester          string `yaml:"requester"`
-		ResponsibleManager string `yaml:"responsible_manager"`
-		ServiceOffering    string `yaml:"service_offering"`
-	} `yaml:"fallbacks"`
-	Overrides struct {
-		Assignee string `yaml:"assignee"`
-	} `yaml:"overrides"`
-	Regions map[string]struct {
+	HelmDeployment struct {
+		Fallbacks struct {
+			Assignee           string `yaml:"assignee"`
+			Requester          string `yaml:"requester"`
+			ResponsibleManager string `yaml:"responsible_manager"`
+			ServiceOffering    string `yaml:"service_offering"`
+		} `yaml:"fallbacks"`
+		Overrides struct {
+			Assignee string `yaml:"assignee"`
+		} `yaml:"overrides"`
+	} `yaml:"helm-deployment"`
+	Ignored           interface{}         `yaml:"awx-workflow"` //forward-compatibility; usage will come in subsequent commits
+	Regions           map[string][]string `yaml:"regions"`
+	AvailabilityZones map[string]struct {
 		Datacenters []string `yaml:"datacenters"`
 		Environment string   `yaml:"environment"`
-	} `yaml:"regions"`
+	} `yaml:"availability_zones"`
 }
 
 func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
@@ -339,7 +343,7 @@ func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo
 	if err != nil {
 		return err
 	}
-	return yaml.Unmarshal(buf, &h.Mapping)
+	return yaml.UnmarshalStrict(buf, &h.Mapping)
 }
 
 func (h *helmDeploymentToSNowTranslator) PluginTypeID() string {
@@ -362,9 +366,25 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 	}
 
 	//map region to datacenters/environment
-	regionMapping, ok := h.Mapping.Regions[event.Region]
+	azNames, ok := h.Mapping.Regions[event.Region]
 	if !ok {
 		return nil, fmt.Errorf("region not found in mapping config: %q", event.Region)
+	}
+	var (
+		datacenters []string
+		environment string
+	)
+	for _, azName := range azNames {
+		azMapping, ok := h.Mapping.AvailabilityZones[azName]
+		if !ok {
+			return nil, fmt.Errorf("availability zone not found in mapping config: %q", azName)
+		}
+		datacenters = append(datacenters, azMapping.Datacenters...)
+		if environment == "" {
+			environment = azMapping.Environment
+		} else if environment != azMapping.Environment {
+			return nil, fmt.Errorf(`found inconsistent values of field "environment" across AZs of region %q`, event.Region)
+		}
 	}
 
 	//choose assignee
@@ -372,11 +392,11 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 	requester := event.Pipeline.CreatedBy
 	if assignee == "" {
 		//TODO derive from owner-info if possible
-		assignee = h.Mapping.Fallbacks.Assignee
-		requester = h.Mapping.Fallbacks.Requester
+		assignee = h.Mapping.HelmDeployment.Fallbacks.Assignee
+		requester = h.Mapping.HelmDeployment.Fallbacks.Requester
 	}
-	if h.Mapping.Overrides.Assignee != "" {
-		assignee = h.Mapping.Overrides.Assignee
+	if h.Mapping.HelmDeployment.Overrides.Assignee != "" {
+		assignee = h.Mapping.HelmDeployment.Overrides.Assignee
 	}
 
 	//some more precomputations
@@ -388,13 +408,13 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 		"assigned_to":              assignee,
 		"requested_by":             requester,
 		"u_implementation_contact": event.Pipeline.CreatedBy, //NOTE can be empty
-		"service_offering":         h.Mapping.Fallbacks.ServiceOffering,
-		"u_data_center":            strings.Join(regionMapping.Datacenters, ", "),
-		"u_customer_impact":        "No Impact",                            //TODO check possible values, consider mapping from outcome
-		"u_responsible_manager":    h.Mapping.Fallbacks.ResponsibleManager, //TODO derive from owner-info
+		"service_offering":         h.Mapping.HelmDeployment.Fallbacks.ServiceOffering,
+		"u_data_center":            strings.Join(datacenters, ", "),
+		"u_customer_impact":        "No Impact",                                           //TODO check possible values, consider mapping from outcome
+		"u_responsible_manager":    h.Mapping.HelmDeployment.Fallbacks.ResponsibleManager, //TODO derive from owner-info
 		"u_customer_notification":  "No",
 		"u_impacted_lobs":          "Global Cloud Services",
-		"u_affected_environments":  regionMapping.Environment,
+		"u_affected_environments":  environment,
 		"start_date":               sNowTimeStr(event.CombinedStartDate()),
 		"end_date":                 sNowTimeStr(event.RecordedAt),
 		"close_code":               serviceNowCloseCodes[event.CombinedOutcome()],

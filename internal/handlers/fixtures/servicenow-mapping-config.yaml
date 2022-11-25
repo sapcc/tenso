@@ -1,13 +1,26 @@
-fallbacks:
-  assignee: D123456
-  requester: D234567
-  responsible_manager: John Doe (D123456)
-  service_offering: GCS-Network-Security
+helm-deployment:
+  fallbacks:
+    assignee: D123456
+    requester: D234567
+    responsible_manager: John Doe (D123456)
+    service_offering: GCS-Network-Security
+awx-workflow:
+  fallbacks:
+    assignee: D123456
+    requester: D234567
+    responsible_manager: John Doe (D123456)
+    service_offering: GCS-Network-Security
 
 regions:
-  qa-de-1:
+  qa-de-1: [ qa-de-1a, qa-de-1b, qa-de-1d ]
+
+availability_zones:
+  qa-de-1a:
     environment: Development
-    datacenters:
-      - ROT 1
-      - ROT 2
-      - Walldorf 4
+    datacenters: [ ROT 1 ]
+  qa-de-1b:
+    environment: Development
+    datacenters: [ ROT 2 ]
+  qa-de-1d:
+    environment: Development
+    datacenters: [ Walldorf 4 ]
