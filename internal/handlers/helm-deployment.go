@@ -24,11 +24,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -40,7 +37,6 @@ import (
 	"github.com/majewsky/schwift/gopherschwift"
 	"github.com/sapcc/go-api-declarations/helmevent"
 	"github.com/sapcc/go-bits/osext"
-	"gopkg.in/yaml.v2"
 
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -298,7 +294,7 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.
 // TranslationHandler for SNow
 
 type helmDeploymentToSNowTranslator struct {
-	Mapping ServiceNowMappingConfig
+	Mapping servicenow.MappingConfiguration
 }
 
 var serviceNowCloseCodes = map[helmevent.Outcome]string{
@@ -313,37 +309,9 @@ var serviceNowCloseCodes = map[helmevent.Outcome]string{
 	helmevent.OutcomeSucceeded:         "Implemented - Successfully",
 }
 
-type ServiceNowMappingConfig struct {
-	HelmDeployment struct {
-		Fallbacks struct {
-			Assignee           string `yaml:"assignee"`
-			Requester          string `yaml:"requester"`
-			ResponsibleManager string `yaml:"responsible_manager"`
-			ServiceOffering    string `yaml:"service_offering"`
-		} `yaml:"fallbacks"`
-		Overrides struct {
-			Assignee string `yaml:"assignee"`
-		} `yaml:"overrides"`
-	} `yaml:"helm-deployment"`
-	Ignored           interface{}         `yaml:"awx-workflow"` //forward-compatibility; usage will come in subsequent commits
-	Regions           map[string][]string `yaml:"regions"`
-	AvailabilityZones map[string]struct {
-		Datacenters []string `yaml:"datacenters"`
-		Environment string   `yaml:"environment"`
-	} `yaml:"availability_zones"`
-}
-
-func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
-	filePath, err := osext.NeedGetenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
-	if err != nil {
-		return err
-	}
-
-	buf, err := os.ReadFile(filePath)
-	if err != nil {
-		return err
-	}
-	return yaml.UnmarshalStrict(buf, &h.Mapping)
+func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+	h.Mapping, err = servicenow.LoadMappingConfiguration()
+	return err
 }
 
 func (h *helmDeploymentToSNowTranslator) PluginTypeID() string {
@@ -365,85 +333,30 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 		return []byte("skip"), nil
 	}
 
-	//map region to datacenters/environment
-	azNames, ok := h.Mapping.Regions[event.Region]
-	if !ok {
-		return nil, fmt.Errorf("region not found in mapping config: %q", event.Region)
-	}
-	var (
-		datacenters []string
-		environment string
-	)
-	for _, azName := range azNames {
-		azMapping, ok := h.Mapping.AvailabilityZones[azName]
-		if !ok {
-			return nil, fmt.Errorf("availability zone not found in mapping config: %q", azName)
-		}
-		datacenters = append(datacenters, azMapping.Datacenters...)
-		if environment == "" {
-			environment = azMapping.Environment
-		} else if environment != azMapping.Environment {
-			return nil, fmt.Errorf(`found inconsistent values of field "environment" across AZs of region %q`, event.Region)
-		}
-	}
-
-	//choose assignee
-	assignee := event.Pipeline.CreatedBy
-	requester := event.Pipeline.CreatedBy
-	if assignee == "" {
-		//TODO derive from owner-info if possible
-		assignee = h.Mapping.HelmDeployment.Fallbacks.Assignee
-		requester = h.Mapping.HelmDeployment.Fallbacks.Requester
-	}
-	if h.Mapping.HelmDeployment.Overrides.Assignee != "" {
-		assignee = h.Mapping.HelmDeployment.Overrides.Assignee
-	}
-
-	//some more precomputations
 	releaseDesc := strings.Join(releaseDescriptorsOf(event, " to "), ", ")
 	inputDesc := strings.Join(inputDescriptorsOf(event), ", ")
-
-	data := map[string]interface{}{
-		"chg_model":                "SAP Standard GCS Retrospective GCSCHGCCEEC147 CCloud Control Plane Deployment",
-		"assigned_to":              assignee,
-		"requested_by":             requester,
-		"u_implementation_contact": event.Pipeline.CreatedBy, //NOTE can be empty
-		"service_offering":         h.Mapping.HelmDeployment.Fallbacks.ServiceOffering,
-		"u_data_center":            strings.Join(datacenters, ", "),
-		"u_customer_impact":        "No Impact",                                           //TODO check possible values, consider mapping from outcome
-		"u_responsible_manager":    h.Mapping.HelmDeployment.Fallbacks.ResponsibleManager, //TODO derive from owner-info
-		"u_customer_notification":  "No",
-		"u_impacted_lobs":          "Global Cloud Services",
-		"u_affected_environments":  environment,
-		"start_date":               sNowTimeStr(event.CombinedStartDate()),
-		"end_date":                 sNowTimeStr(event.RecordedAt),
-		"close_code":               serviceNowCloseCodes[event.CombinedOutcome()],
-		//TODO maybe put the first line in "Internal Info" instead (what's the API field name for "Internal Info"?)
-		"close_notes":       fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s\n\nOutcome: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL, string(event.CombinedOutcome())),
-		"short_description": fmt.Sprintf("Deploy %s", releaseDesc),
+	chg := servicenow.Change{
+		StartedAt:   event.CombinedStartDate(),
+		EndedAt:     event.RecordedAt,
+		CloseCode:   serviceNowCloseCodes[event.CombinedOutcome()],
+		Summary:     fmt.Sprintf("Deploy %s", releaseDesc),
+		Description: fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s\n\nOutcome: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL, string(event.CombinedOutcome())),
+		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty
+		Region:      event.Region,
 	}
 
-	return json.Marshal(data)
-}
-
-func sNowTimeStr(t *time.Time) string {
-	return t.UTC().Format("2006-01-02 15:04:05")
+	return chg.Serialize(h.Mapping, h.Mapping.HelmDeployment)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // DeliveryHandler for SNow
 
 type helmDeploymentToSNowDeliverer struct {
-	EndpointURL string
-	HTTPClient  *http.Client
+	Client *servicenow.Client
 }
 
 func (h *helmDeploymentToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	h.EndpointURL, err = osext.NeedGetenv("TENSO_SERVICENOW_CREATE_CHANGE_URL")
-	if err != nil {
-		return err
-	}
-	h.HTTPClient, err = servicenow.NewClientWithOAuth("TENSO_SERVICENOW")
+	h.Client, err = servicenow.NewClientWithOAuth("TENSO_SERVICENOW")
 	return err
 }
 
@@ -456,44 +369,5 @@ func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.D
 	if string(payload) == "skip" {
 		return nil, nil
 	}
-
-	req, err := http.NewRequest(http.MethodPost, h.EndpointURL, bytes.NewReader(payload))
-	if err != nil {
-		return nil, fmt.Errorf("while preparing request for POST %s: %w", h.EndpointURL, err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := h.HTTPClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("during POST %s: %w", h.EndpointURL, err)
-	}
-	defer resp.Body.Close()
-
-	//on success, make a best-effort attempt to retrieve the object ID from the
-	//response...
-	if resp.StatusCode < 400 { //nolint:usestdlibvars
-		var respData struct {
-			Result struct {
-				Number struct {
-					Value string `json:"value"`
-				} `json:"number"`
-			} `json:"result"`
-		}
-		err := json.NewDecoder(resp.Body).Decode(&respData)
-		if err == nil && respData.Result.Number.Value != "" {
-			return &tenso.DeliveryLog{
-				Message: fmt.Sprintf("created %s in ServiceNow", respData.Result.Number.Value),
-			}, nil
-		}
-		//...but failure to retrieve it is not an error, because we want
-		//to avoid double delivery of the same payload if at all possible
-		return nil, nil
-	}
-
-	//unexpected error -> log response body
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("while reading response body for failed POST %s: %w", h.EndpointURL, err)
-	}
-	return nil, fmt.Errorf("POST failed with status %d and response: %q", resp.StatusCode, string(bodyBytes))
+	return h.Client.DeliverChangePayload(payload)
 }
