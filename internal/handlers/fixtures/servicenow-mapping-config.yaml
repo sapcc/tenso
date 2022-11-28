@@ -6,10 +6,11 @@ helm-deployment:
     service_offering: GCS-Network-Security
 awx-workflow:
   fallbacks:
-    assignee: D123456
-    requester: D234567
-    responsible_manager: John Doe (D123456)
+    requester: I2345678
+    responsible_manager: Jane Doe (I1234567)
     service_offering: GCS-Network-Security
+  overrides:
+    assignee: I1234567
 
 regions:
   qa-de-1: [ qa-de-1a, qa-de-1b, qa-de-1d ]

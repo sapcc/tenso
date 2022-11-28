@@ -1,0 +1,18 @@
+{
+  "assigned_to": "I1234567",
+  "chg_model": "SAP Standard GCS Retrospective GCSCHGCCEEC147 CCloud Control Plane Deployment",
+  "close_code": "Implemented - Successfully",
+  "close_notes": "Workflow \"ESX upgrade\" started by D012345 finished successful\nInventory: qa-de-1a Limit: node002-bb091.cc.qa-de-1.cloud.sap\nLink: https://awx.scaleout.qa-de-1.cloud.sap/#/jobs/workflow/174195\n{\"maintenance_reason\": \"CHG0193757\"}\nWorkflow job summary:\n\n- node #109639 spawns job #174196, \"AAAtest\", which finished with status successful.",
+  "end_date": "2022-11-21 16:51:29",
+  "requested_by": "D012345",
+  "service_offering": "GCS-Network-Security",
+  "short_description": "ESX upgrade, qa-de-1a, node002-bb091.cc.qa-de-1.cloud.sap",
+  "start_date": "2022-11-21 16:51:04",
+  "u_affected_environments": "Development",
+  "u_customer_impact": "No Impact",
+  "u_customer_notification": "No",
+  "u_data_center": "ROT 1",
+  "u_impacted_lobs": "Global Cloud Services",
+  "u_implementation_contact": "D012345",
+  "u_responsible_manager": "Jane Doe (I1234567)"
+}

@@ -32,6 +32,9 @@ func init() {
 	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler {
 		return &dummyTranslator{"helm-deployment-from-concourse.v1->helm-deployment-to-swift.v1"}
 	})
+	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler {
+		return &dummyTranslator{"infra-workflow-from-awx.v1->infra-workflow-to-swift.v1"}
+	})
 }
 
 // dummyTranslator is a tenso.TranslationHandler for no-op translations.
