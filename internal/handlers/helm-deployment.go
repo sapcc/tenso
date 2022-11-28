@@ -100,10 +100,7 @@ var (
 )
 
 func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
-	var event helmevent.Event
-	dec := json.NewDecoder(bytes.NewReader(payload))
-	dec.DisallowUnknownFields()
-	err := dec.Decode(&event)
+	event, err := jsonUnmarshalStrict[helmevent.Event](payload)
 	if err != nil {
 		return nil, err
 	}
@@ -273,10 +270,7 @@ func (h *helmDeploymentToSwiftDeliverer) PluginTypeID() string {
 }
 
 func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	var event helmevent.Event
-	dec := json.NewDecoder(bytes.NewReader(payload))
-	dec.DisallowUnknownFields()
-	err := dec.Decode(&event)
+	event, err := jsonUnmarshalStrict[helmevent.Event](payload)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +291,7 @@ type helmDeploymentToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-var serviceNowCloseCodes = map[helmevent.Outcome]string{
+var helmSNowCloseCodes = map[helmevent.Outcome]string{
 	helmevent.OutcomeNotDeployed: "Failed - Rolled back",
 	//This used to be "Partially Implemented" and "Failed - Others", but it was
 	//all changed to "Closed without Implementation" because the former close
@@ -319,10 +313,7 @@ func (h *helmDeploymentToSNowTranslator) PluginTypeID() string {
 }
 
 func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
-	var event helmevent.Event
-	dec := json.NewDecoder(bytes.NewReader(payload))
-	dec.DisallowUnknownFields()
-	err := dec.Decode(&event)
+	event, err := jsonUnmarshalStrict[helmevent.Event](payload)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +329,7 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 	chg := servicenow.Change{
 		StartedAt:   event.CombinedStartDate(),
 		EndedAt:     event.RecordedAt,
-		CloseCode:   serviceNowCloseCodes[event.CombinedOutcome()],
+		CloseCode:   helmSNowCloseCodes[event.CombinedOutcome()],
 		Summary:     fmt.Sprintf("Deploy %s", releaseDesc),
 		Description: fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s\n\nOutcome: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL, string(event.CombinedOutcome())),
 		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty
