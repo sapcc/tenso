@@ -2,7 +2,7 @@
   "assigned_to": "I1234567",
   "chg_model": "SAP Standard GCS Retrospective GCSCHGCCEEC147 CCloud Control Plane Deployment",
   "close_code": "Implemented - Successfully",
-  "close_notes": "Workflow \"ESX upgrade\" started by D012345 finished successful\nInventory: qa-de-1a Limit: node002-bb091.cc.qa-de-1.cloud.sap\nLink: https://awx.scaleout.qa-de-1.cloud.sap/#/jobs/workflow/174195\n{\"maintenance_reason\": \"CHG0193757\"}\nWorkflow job summary:\n\n- node #109639 spawns job #174196, \"AAAtest\", which finished with status successful.",
+  "close_notes": "Workflow \u0026#34;ESX upgrade\u0026#34; started by D012345 finished successful\u003cbr\u003eInventory: qa-de-1a Limit: node002-bb091.cc.qa-de-1.cloud.sap\u003cbr\u003eLink: https://awx.scaleout.qa-de-1.cloud.sap/#/jobs/workflow/174195\u003cbr\u003e{\u0026#34;maintenance_reason\u0026#34;: \u0026#34;CHG0193757\u0026#34;}\u003cbr\u003eWorkflow job summary:\u003cbr\u003e\u003cbr\u003e- node #109639 spawns job #174196, \u0026#34;AAAtest\u0026#34;, which finished with status successful.",
   "cmdb_ci": "node002-bb091.cc.qa-de-1.cloud.sap",
   "end_date": "2022-11-21 16:51:29",
   "requested_by": "D012345",
