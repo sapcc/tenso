@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -93,7 +94,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		"start_date":               sNowTimeStr(chg.StartedAt),
 		"end_date":                 sNowTimeStr(chg.EndedAt),
 		"close_code":               chg.CloseCode,
-		"close_notes":              chg.Description,
+		"close_notes":              nl2br(chg.Description),
 		"short_description":        chg.Summary,
 	}
 	if chg.ConfigurationItem != "" {
@@ -104,4 +105,10 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 
 func sNowTimeStr(t *time.Time) string {
 	return t.UTC().Format("2006-01-02 15:04:05")
+}
+
+func nl2br(text string) string {
+	//SNow ignores "\n", but I'm going to guess that it accepts "<br>"
+	text = template.HTMLEscapeString(text)
+	return strings.Replace(text, "\n", "<br>", -1)
 }
