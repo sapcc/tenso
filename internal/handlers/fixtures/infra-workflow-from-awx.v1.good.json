@@ -2,7 +2,7 @@
   "id": 174195,
   "name": "ESX upgrade",
   "url": "https://awx.scaleout.qa-de-1.cloud.sap/#/jobs/workflow/174195",
-  "created_by": "D012345",
+  "created_by": "d012345",
   "started": "2022-11-21T16:51:04.851601+00:00",
   "finished": "2022-11-21T16:51:29.328300+00:00",
   "status": "successful",

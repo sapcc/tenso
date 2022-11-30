@@ -1,0 +1,14 @@
+{
+  "id": 2342,
+  "name": "Synthetic task",
+  "url": "https://awx.example.org/#/jobs/workflow/2342",
+  "created_by": "d012345",
+  "started": "2022-01-01T00:00:00.000000+00:00",
+  "finished": "2022-01-01T00:00:01.000000+00:00",
+  "status": "successful",
+  "traceback": "",
+  "body": "Workflow job summary:\n\n- node #1337 spawns job #2343, \"AAAtest\", which finished with status successful.",
+  "inventory": "qa-de-1a",
+  "limit": "node002-bb091.cc.qa-de-1.cloud.sap",
+  "extra_vars": "{\"maintenance_reason\": \"CHG0123456\"}"
+}

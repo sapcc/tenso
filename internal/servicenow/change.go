@@ -28,11 +28,12 @@ import (
 
 // Change describes the data that we can pass into a ServiceNow change object.
 type Change struct {
-	StartedAt   *time.Time
-	EndedAt     *time.Time
-	CloseCode   string
-	Summary     string
-	Description string
+	StartedAt         *time.Time
+	EndedAt           *time.Time
+	CloseCode         string
+	Summary           string
+	Description       string
+	ConfigurationItem string
 
 	// Executee (optional) is the user ID of the user who triggered/executed this change.
 	Executee string
@@ -94,6 +95,9 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		"close_code":               chg.CloseCode,
 		"close_notes":              chg.Description,
 		"short_description":        chg.Summary,
+	}
+	if chg.ConfigurationItem != "" {
+		data["cmdb_ci"] = chg.ConfigurationItem
 	}
 	return json.Marshal(data)
 }

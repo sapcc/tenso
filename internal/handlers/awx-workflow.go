@@ -77,7 +77,7 @@ func (e awxWorkflowEvent) GetDescription() string {
 		queryLine += fmt.Sprintf(" Limit: %s", e.SearchQuery)
 	}
 	lines := []string{
-		fmt.Sprintf("Workflow %q started by %s finished %s", e.Name, e.CreatedBy, e.Status),
+		fmt.Sprintf("Workflow %q started by %s finished %s", e.Name, strings.ToUpper(e.CreatedBy), e.Status),
 		queryLine,
 		"Link: " + e.URL,
 	}
@@ -211,6 +211,15 @@ func (a *awxWorkflowToSNowTranslator) PluginTypeID() string {
 	return "infra-workflow-from-awx.v1->infra-workflow-to-servicenow.v1"
 }
 
+var (
+	// If `event.SearchQuery` exactly matches this query, we will give it to SNow
+	// in the "configuration_item" field. (We have to be strict here since
+	// "configuration_item" is a reference to objects that exist in the SNow DB,
+	// so we need to be reasonably sure that SNow knows about the object in
+	// question.)
+	configurationItemRx = regexp.MustCompile(`^node\d{3}-bb\d{3}\.cc\.[a-z]{2}-[a-z]{2}-[0-9]\.cloud\.sap$`) //e.g. "node002-bb091.cc.qa-de-1.cloud.sap"
+)
+
 func (a *awxWorkflowToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[awxWorkflowEvent](payload)
 	if err != nil {
@@ -225,9 +234,13 @@ func (a *awxWorkflowToSNowTranslator) TranslatePayload(payload []byte) ([]byte, 
 		Summary:          event.GetSummary(),
 		Description:      event.GetDescription(),
 		AvailabilityZone: event.AvailabilityZone,
+		Executee:         strings.ToUpper(event.CreatedBy),
 	}
-	if sapUserIDRx.MatchString(event.CreatedBy) {
-		chg.Executee = event.CreatedBy
+	if configurationItemRx.MatchString(event.SearchQuery) {
+		chg.ConfigurationItem = event.SearchQuery
+	}
+	if !sapUserIDRx.MatchString(chg.Executee) {
+		chg.Executee = ""
 	}
 
 	return chg.Serialize(a.Mapping, a.Mapping.AWXWorkflow)
