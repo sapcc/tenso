@@ -92,11 +92,11 @@ func (h *helmDeploymentValidator) PluginTypeID() string {
 }
 
 var (
-	regionRx      = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9]$`)                       //e.g. "qa-de-1"
-	clusterRx     = regexp.MustCompile(`^(?:|[a-z]-|ci[0-9]?-)?[a-z]{2}-[a-z]{2}-[0-9]$`) //e.g. "qa-de-1" or "s-qa-de-1" or "ci-eu-de-2"
-	gitCommitRx   = regexp.MustCompile(`^[0-9a-f]{40}$`)                                  //SHA-1 digest with lower-case digits
-	buildNumberRx = regexp.MustCompile(`^[1-9][0-9]*(?:\.[1-9][0-9]*)?$`)                 //e.g. "23" or "42.1"
-	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)                    //e.g. "D123456" or "C1234567"
+	regionRx      = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9]$`)                                    //e.g. "qa-de-1"
+	clusterRx     = regexp.MustCompile(`^(?:(?:|[a-z]-|ci[0-9]?-)?[a-z]{2}-[a-z]{2}-[0-9]|k-master)$`) //e.g. "qa-de-1" or "s-qa-de-1" or "ci-eu-de-2" or "k-master"
+	gitCommitRx   = regexp.MustCompile(`^[0-9a-f]{40}$`)                                               //SHA-1 digest with lower-case digits
+	buildNumberRx = regexp.MustCompile(`^[1-9][0-9]*(?:\.[1-9][0-9]*)?$`)                              //e.g. "23" or "42.1"
+	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)                                 //e.g. "D123456" or "C1234567"
 )
 
 func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
@@ -138,7 +138,7 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 		if !clusterRx.MatchString(relInfo.Cluster) {
 			return nil, fmt.Errorf(`in helm-release %q: invalid value for field cluster: %q`, relInfo.Name, relInfo.Cluster)
 		}
-		if !strings.HasSuffix(relInfo.Cluster, event.Region) {
+		if !isClusterLocatedInRegion(relInfo.Cluster, event.Region) {
 			return nil, fmt.Errorf(`in helm-release %q: cluster %q is not in region %q`, relInfo.Name, relInfo.Cluster, event.Region)
 		}
 		if relInfo.Namespace == "" {
@@ -185,6 +185,13 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 			strings.Join(releaseDescriptorsOf(event, " to "), " and "),
 		),
 	}, nil
+}
+
+func isClusterLocatedInRegion(cluster, region string) bool {
+	if cluster == "k-master" {
+		return region == "eu-nl-1"
+	}
+	return strings.HasSuffix(cluster, region)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
