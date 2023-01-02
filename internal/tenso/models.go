@@ -22,7 +22,7 @@ package tenso
 import (
 	"time"
 
-	gorp "gopkg.in/gorp.v2"
+	"github.com/go-gorp/gorp/v3"
 )
 
 // Event contains a record from the `events` table.

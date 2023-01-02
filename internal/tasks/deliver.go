@@ -24,10 +24,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-gorp/gorp/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/sqlext"
-	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )

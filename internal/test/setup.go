@@ -25,12 +25,12 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/go-gorp/gorp/v3"
 	"github.com/gophercloud/gophercloud"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
-	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/api"
 	"github.com/sapcc/tenso/internal/tasks"

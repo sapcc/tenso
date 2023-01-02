@@ -22,9 +22,9 @@ package api
 import (
 	"time"
 
+	"github.com/go-gorp/gorp/v3"
 	"github.com/gorilla/mux"
 	"github.com/sapcc/go-bits/gopherpolicy"
-	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )

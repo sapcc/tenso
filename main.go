@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/dlmiddlecote/sqlstats"
+	"github.com/go-gorp/gorp/v3"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/prometheus/client_golang/prometheus"
@@ -39,7 +40,6 @@ import (
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
-	"gopkg.in/gorp.v2"
 
 	"github.com/sapcc/tenso/internal/api"
 	_ "github.com/sapcc/tenso/internal/handlers" //must be imported to register the handler implementations
