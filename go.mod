@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/majewsky/schwift v1.2.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/rs/cors v1.8.2
+	github.com/rs/cors v1.8.3
 	github.com/sapcc/go-api-declarations v1.4.2
 	github.com/sapcc/go-bits v0.0.0-20230101201537-12465ca06570
 	golang.org/x/oauth2 v0.3.0
