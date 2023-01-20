@@ -15,7 +15,7 @@ require (
 	github.com/sapcc/go-api-declarations v1.4.2
 	github.com/sapcc/go-bits v0.0.0-20230106150032-a47ac4215fc5
 	golang.org/x/oauth2 v0.4.0
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
