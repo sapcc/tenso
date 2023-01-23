@@ -24,7 +24,7 @@ erDiagram
         string uuid
     }
     KeystoneUser ||--o{ Event : submits
-    Event ||--|{ PendingDelivery : waits on
+    Event ||--|{ PendingDelivery : waits-on
 ```
 
 Users can submit events via Tenso's own API. Once an event is submitted,
