@@ -30,12 +30,12 @@ import (
 
 func TestAWXWorkflowValidationAndConversionToSNow(t *testing.T) {
 	//we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
-	os.Setenv("TENSO_SERVICENOW_CREATE_CHANGE_URL", "http://www.example.com")
-	os.Setenv("TENSO_SERVICENOW_TOKEN_URL", "http://www.example.com")
-	os.Setenv("TENSO_SERVICENOW_USERNAME", "foo")
-	os.Setenv("TENSO_SERVICENOW_PASSWORD", "bar")
+	t.Setenv("TENSO_SERVICENOW_CREATE_CHANGE_URL", "http://www.example.com")
+	t.Setenv("TENSO_SERVICENOW_TOKEN_URL", "http://www.example.com")
+	t.Setenv("TENSO_SERVICENOW_USERNAME", "foo")
+	t.Setenv("TENSO_SERVICENOW_PASSWORD", "bar")
 	//this one we actually need
-	os.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
+	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
 
 	s := test.NewSetup(t,
 		test.WithRoute("infra-workflow-from-awx.v1 -> infra-workflow-to-servicenow.v1"),
