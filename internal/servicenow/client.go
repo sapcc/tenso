@@ -90,7 +90,7 @@ func (c *Client) DeliverChangePayload(payload []byte) (*tenso.DeliveryLog, error
 
 	//on success, make a best-effort attempt to retrieve the object ID from the
 	//response...
-	if resp.StatusCode < 400 { //nolint:usestdlibvars
+	if resp.StatusCode < 400 {
 		var respData struct {
 			Result struct {
 				Number struct {
