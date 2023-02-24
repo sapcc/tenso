@@ -69,4 +69,6 @@ func init() {
 	prometheus.MustRegister(eventConversionSuccessCounter)
 	prometheus.MustRegister(eventDeliveryFailedCounter)
 	prometheus.MustRegister(eventDeliverySuccessCounter)
+	prometheus.MustRegister(gcFailedCounter)
+	prometheus.MustRegister(gcSuccessCounter)
 }
