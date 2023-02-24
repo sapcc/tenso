@@ -103,10 +103,7 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 
 	//start HTTP server
 	apiListenAddress := osext.GetenvOrDefault("TENSO_API_LISTEN_ADDRESS", ":8080")
-	err = httpext.ListenAndServeContext(ctx, apiListenAddress, nil)
-	if err != nil {
-		logg.Fatal("error returned from httpext.ListenAndServeContext(): %s", err.Error())
-	}
+	must.Succeed(httpext.ListenAndServeContext(ctx, apiListenAddress, nil))
 }
 
 func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
@@ -126,10 +123,7 @@ func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 
 	//start HTTP server
 	listenAddress := osext.GetenvOrDefault("TENSO_WORKER_LISTEN_ADDRESS", ":8080")
-	err := httpext.ListenAndServeContext(ctx, listenAddress, nil)
-	if err != nil {
-		logg.Fatal("error returned from httpext.ListenAndServeContext(): %s", err.Error())
-	}
+	must.Succeed(httpext.ListenAndServeContext(ctx, listenAddress, nil))
 }
 
 // Execute a task repeatedly, but slow down when sql.ErrNoRows is returned by it.
