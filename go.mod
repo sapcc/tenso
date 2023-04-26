@@ -14,6 +14,7 @@ require (
 	github.com/rs/cors v1.9.0
 	github.com/sapcc/go-api-declarations v1.5.1
 	github.com/sapcc/go-bits v0.0.0-20230420083834-e3870701a14b
+	go.uber.org/automaxprocs v1.5.2
 	golang.org/x/oauth2 v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
 )

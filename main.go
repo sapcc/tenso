@@ -40,6 +40,7 @@ import (
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
+	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/sapcc/tenso/internal/api"
 	_ "github.com/sapcc/tenso/internal/handlers" //must be imported to register the handler implementations
@@ -55,6 +56,8 @@ func main() {
 	}
 
 	logg.ShowDebug = osext.GetenvBool("TENSO_DEBUG")
+	undoMaxprocs := must.Return(maxprocs.Set(maxprocs.Logger(logg.Debug)))
+	defer undoMaxprocs()
 
 	wrap := httpext.WrapTransport(&http.DefaultTransport)
 	wrap.SetInsecureSkipVerify(osext.GetenvBool("TENSO_INSECURE")) //for debugging with mitmproxy etc. (DO NOT SET IN PRODUCTION)
