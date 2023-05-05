@@ -75,7 +75,7 @@ github.com/minio/sha256-simd
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/prometheus/client_golang v1.15.0
+# github.com/prometheus/client_golang v1.15.1
 ## explicit; go 1.17
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
@@ -100,7 +100,7 @@ github.com/rs/cors
 ## explicit; go 1.20
 github.com/sapcc/go-api-declarations/bininfo
 github.com/sapcc/go-api-declarations/helmevent
-# github.com/sapcc/go-bits v0.0.0-20230427112005-83ae3f63bf8b
+# github.com/sapcc/go-bits v0.0.0-20230504084121-e1394d9f1b00
 ## explicit; go 1.20
 github.com/sapcc/go-bits/assert
 github.com/sapcc/go-bits/easypg
@@ -123,7 +123,7 @@ github.com/sapcc/go-bits/sqlext
 # github.com/sergi/go-diff v1.3.1
 ## explicit; go 1.12
 github.com/sergi/go-diff/diffmatchpatch
-# go.uber.org/atomic v1.10.0
+# go.uber.org/atomic v1.11.0
 ## explicit; go 1.18
 go.uber.org/atomic
 # go.uber.org/automaxprocs v1.5.2
