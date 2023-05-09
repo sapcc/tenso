@@ -254,7 +254,7 @@ type awxWorkflowToSNowDeliverer struct {
 }
 
 func (a *awxWorkflowToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	a.Client, err = servicenow.NewClientWithOAuth("TENSO_SERVICENOW")
+	a.Client, err = servicenow.NewClientFromEnv("TENSO_SERVICENOW")
 	return err
 }
 

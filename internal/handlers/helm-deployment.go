@@ -354,7 +354,7 @@ type helmDeploymentToSNowDeliverer struct {
 }
 
 func (h *helmDeploymentToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	h.Client, err = servicenow.NewClientWithOAuth("TENSO_SERVICENOW")
+	h.Client, err = servicenow.NewClientFromEnv("TENSO_SERVICENOW")
 	return err
 }
 

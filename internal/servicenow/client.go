@@ -22,10 +22,12 @@ package servicenow
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/sapcc/go-bits/osext"
 	"golang.org/x/oauth2"
@@ -40,7 +42,51 @@ type Client struct {
 	HTTPClient  *http.Client
 }
 
-// NewClientWithOAuth returns a http.Client that obtains OAuth2 tokens as required.
+// NewClientFromEnv returns a Client that is either using OAuth2 or TLS client
+// certificates, based on what is present in the env vars starting with the
+// given prefix.
+func NewClientFromEnv(envPrefix string) (*Client, error) {
+	if os.Getenv(envPrefix+"_CLIENT_CERT") == "" {
+		return NewClientWithOAuth(envPrefix)
+	}
+	return NewClientWithCerts(envPrefix)
+}
+
+// NewClientWithCerts returns a Client that uses a TLS client certificate to
+// authenticate with the ServiceNow integration API.
+func NewClientWithCerts(envPrefix string) (*Client, error) {
+	endpointURL, err := osext.NeedGetenv(envPrefix + "_CREATE_CHANGE_URL")
+	if err != nil {
+		return nil, err
+	}
+	certPath, err := osext.NeedGetenv(envPrefix + "_CLIENT_CERT")
+	if err != nil {
+		return nil, err
+	}
+	keyPath, err := osext.NeedGetenv(envPrefix + "_PRIVATE_KEY")
+	if err != nil {
+		return nil, err
+	}
+	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot load client certificate from %s: %w", certPath, err)
+	}
+
+	return &Client{
+		EndpointURL: endpointURL,
+		HTTPClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					Certificates: []tls.Certificate{cert},
+					MinVersion:   tls.VersionTLS12,
+				},
+				Proxy: http.ProxyFromEnvironment,
+			},
+		},
+	}, nil
+}
+
+// NewClientWithOAuth returns a Client that obtains OAuth2 tokens as required.
 // Credentials are read from `${PREFIX}_{TOKEN_URL,USERNAME,PASSWORD}` env vars.
 func NewClientWithOAuth(envPrefix string) (*Client, error) {
 	endpointURL, err := osext.NeedGetenv(envPrefix + "_CREATE_CHANGE_URL")
