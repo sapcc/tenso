@@ -23,6 +23,7 @@ import (
 	"errors"
 
 	"github.com/gophercloud/gophercloud"
+
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
