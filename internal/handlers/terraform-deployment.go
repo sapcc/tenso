@@ -85,7 +85,7 @@ func (d *terraformDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, g
 }
 
 func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
-	return "terraform-deployment-from-concourse.v1->terraform-deployment-to-servicenow.v1"
+	return "terraform-deployment-to-servicenow.v1"
 }
 
 func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
