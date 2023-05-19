@@ -29,26 +29,26 @@ import (
 )
 
 func init() {
-	tenso.ValidationHandlerRegistry.Add(func() tenso.ValidationHandler { return &terraformDeploymentValidator{} })
-	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler { return &terraformDeploymentToSNowTranslator{} })
-	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &terraformDeploymentToSNowDeliverer{} })
+	tenso.ValidationHandlerRegistry.Add(func() tenso.ValidationHandler { return &activeDirectoryDeploymentValidator{} })
+	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler { return &activeDirectoryDeploymentToSNowTranslator{} })
+	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &activeDirectoryDeploymentToSNowDeliverer{} })
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // ValidationHandler
 
-type terraformDeploymentValidator struct {
+type activeDirectoryDeploymentValidator struct {
 }
 
-func (v *terraformDeploymentValidator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (v *activeDirectoryDeploymentValidator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
-func (v *terraformDeploymentValidator) PluginTypeID() string {
-	return "terraform-deployment-from-concourse.v1"
+func (v *activeDirectoryDeploymentValidator) PluginTypeID() string {
+	return "active-directory-deployment-from-concourse.v1"
 }
 
-func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
+func (v *activeDirectoryDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
 	//TODO: For now, this is only deployed to QA, and we allow everything because
 	//we are working on the event source implementation first. Once that is done,
 	//we will get rid of the events posted thus far, and add validation,
@@ -59,18 +59,18 @@ func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.P
 ////////////////////////////////////////////////////////////////////////////////
 // TranslationHandler for SNow
 
-type terraformDeploymentToSNowTranslator struct {
+type activeDirectoryDeploymentToSNowTranslator struct {
 }
 
-func (t *terraformDeploymentToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (t *activeDirectoryDeploymentToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
-func (t *terraformDeploymentToSNowTranslator) PluginTypeID() string {
-	return "terraform-deployment-from-concourse.v1->terraform-deployment-to-servicenow.v1"
+func (t *activeDirectoryDeploymentToSNowTranslator) PluginTypeID() string {
+	return "active-directory-deployment-from-concourse.v1->active-directory-deployment-to-servicenow.v1"
 }
 
-func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
+func (t *activeDirectoryDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
 	//TODO: stub
 	return nil, errors.New("unimplemented")
 }
@@ -78,18 +78,18 @@ func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte) (
 ////////////////////////////////////////////////////////////////////////////////
 // DeliveryHandler for SNow
 
-type terraformDeploymentToSNowDeliverer struct {
+type activeDirectoryDeploymentToSNowDeliverer struct {
 }
 
-func (d *terraformDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (d *activeDirectoryDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
-func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
-	return "terraform-deployment-to-servicenow.v1"
+func (d *activeDirectoryDeploymentToSNowDeliverer) PluginTypeID() string {
+	return "active-directory-deployment-to-servicenow.v1"
 }
 
-func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
+func (d *activeDirectoryDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
 	//TODO: stub
 	return nil, errors.New("unimplemented")
 }
