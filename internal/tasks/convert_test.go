@@ -23,11 +23,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/sapcc/go-bits/easypg"
+	"github.com/sapcc/go-bits/jobloop"
 
 	"github.com/sapcc/tenso/internal/tasks"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -69,12 +69,13 @@ func TestConversionCommon(t *testing.T) {
 	}
 
 	tr, _ := easypg.NewTracker(t, s.DB.Db)
+	conversionJob := s.TaskContext.ConversionJob(s.Registry)
 
 	//simulate conversion failure by having provided a broken source payload
 	s.Clock.StepBy(5 * time.Minute)
 	test.MustFail(t,
-		tasks.ExecuteOne(s.TaskContext.PollForPendingConversions),
-		`while trying to convert payload for event 1 ("foo event with value 42") into test-bar.v1: translation failed: expected event = "foo", but got "invalid"`,
+		conversionJob.ProcessOne(s.Ctx),
+		`could not process task for job "Event conversion": while trying to convert payload for event 1 ("foo event with value 42") into test-bar.v1: translation failed: expected event = "foo", but got "invalid"`,
 	)
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET failed_conversions = 1, next_conversion_at = %[1]d WHERE event_id = 1 AND payload_type = 'test-bar.v1';
@@ -88,7 +89,7 @@ func TestConversionCommon(t *testing.T) {
 	tr.DBChanges().Ignore()
 
 	//check successful conversion (this touches the second PendingDelivery since it's NextConversionAt is lower)
-	test.Must(t, tasks.ExecuteOne(s.TaskContext.PollForPendingConversions))
+	test.Must(t, conversionJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET payload = '%[1]s', converted_at = %[2]d WHERE event_id = 1 AND payload_type = 'test-baz.v1';
 		`,
@@ -97,11 +98,11 @@ func TestConversionCommon(t *testing.T) {
 	)
 
 	//second conversion is still postponed, so we stall for now
-	test.MustFail(t, tasks.ExecuteOne(s.TaskContext.PollForPendingConversions), sql.ErrNoRows.Error())
+	test.MustFail(t, conversionJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
 
 	//second conversion goes through after waiting period is over
 	s.Clock.StepBy(5 * time.Minute)
-	test.Must(t, tasks.ExecuteOne(s.TaskContext.PollForPendingConversions))
+	test.Must(t, conversionJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET payload = '%[1]s', converted_at = %[2]d WHERE event_id = 1 AND payload_type = 'test-bar.v1';
 		`,
@@ -110,7 +111,7 @@ func TestConversionCommon(t *testing.T) {
 	)
 
 	//nothing left to convert now
-	test.MustFail(t, tasks.ExecuteOne(s.TaskContext.PollForPendingConversions), sql.ErrNoRows.Error())
+	test.MustFail(t, conversionJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
 	tr.DBChanges().AssertEmpty()
 }
 
@@ -151,22 +152,9 @@ func TestParallelConversion(t *testing.T) {
 	}
 
 	tr, _ := easypg.NewTracker(t, s.DB.Db)
+	conversionJob := s.TaskContext.ConversionJob(s.Registry)
 
-	//execute all conversions in parallel
-	blocker := make(chan struct{})
-	s.TaskContext.Blocker = blocker
-	wg := &sync.WaitGroup{}
-	wg.Add(eventCount)
-	for idx := 0; idx < eventCount; idx++ {
-		go func() {
-			defer wg.Done()
-			test.Must(t, tasks.ExecuteOne(s.TaskContext.PollForPendingConversions))
-		}()
-	}
-
-	time.Sleep(100 * time.Millisecond)
-	close(blocker)
-	wg.Wait()
+	test.Must(t, jobloop.ProcessMany(conversionJob, s.Ctx, eventCount))
 
 	//check that all deliveries got their payloads converted (which implies that
 	//each goroutine picked a unique delivery to work on)

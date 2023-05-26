@@ -20,6 +20,7 @@
 package test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/go-gorp/gorp/v3"
 	"github.com/gophercloud/gophercloud"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/must"
@@ -66,9 +68,11 @@ type SetupOption func(*setupParams)
 // Setup contains all the pieces that are needed for most tests.
 type Setup struct {
 	//fields that are always set
-	Clock  *Clock
-	Config tenso.Configuration
-	DB     *gorp.DbMap
+	Clock    *Clock
+	Config   tenso.Configuration
+	DB       *gorp.DbMap
+	Ctx      context.Context //nolint: containedctx  // only used in tests
+	Registry *prometheus.Registry
 	//fields that are set if WithAPI is included
 	Validator *MockValidator
 	Handler   http.Handler
@@ -122,7 +126,9 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 			DatabaseURL:   dbURL,
 			EnabledRoutes: routes,
 		},
-		DB: db,
+		Ctx:      context.Background(),
+		DB:       db,
+		Registry: prometheus.NewPedanticRegistry(),
 	}
 
 	//satisfy additional requests
