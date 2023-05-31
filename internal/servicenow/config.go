@@ -30,8 +30,10 @@ import (
 // $TENSO_SERVICENOW_MAPPING_CONFIG_PATH.
 type MappingConfiguration struct {
 	//rulesets per event type
-	HelmDeployment MappingRuleset `yaml:"helm-deployment"`
-	AWXWorkflow    MappingRuleset `yaml:"awx-workflow"`
+	HelmDeployment            MappingRuleset `yaml:"helm-deployment"`
+	ActiveDirectoryDeployment MappingRuleset `yaml:"active-directory-deployment"`
+	AWXWorkflow               MappingRuleset `yaml:"awx-workflow"`
+	TerraformDeployment       MappingRuleset `yaml:"terraform-deployment"`
 	//datacenter mapping
 	Regions           map[string][]string `yaml:"regions"`
 	AvailabilityZones map[string]struct {
