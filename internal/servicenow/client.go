@@ -21,17 +21,13 @@ package servicenow
 
 import (
 	"bytes"
-	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 
 	"github.com/sapcc/go-bits/osext"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -42,23 +38,23 @@ type Client struct {
 	HTTPClient  *http.Client
 }
 
-// NewClientFromEnv returns a Client that is either using OAuth2 or TLS client
-// certificates, based on what is present in the env vars starting with the
-// given prefix.
-func NewClientFromEnv(envPrefix string) (*Client, error) {
-	if os.Getenv(envPrefix+"_CLIENT_CERT") == "" {
-		return NewClientWithOAuth(envPrefix)
-	}
-	return NewClientWithCerts(envPrefix)
-}
-
-// NewClientWithCerts returns a Client that uses a TLS client certificate to
+// NewClientFromEnv returns a Client that uses a TLS client certificate to
 // authenticate with the ServiceNow integration API.
-func NewClientWithCerts(envPrefix string) (*Client, error) {
+func NewClientFromEnv(envPrefix string) (*Client, error) {
 	endpointURL, err := osext.NeedGetenv(envPrefix + "_CREATE_CHANGE_URL")
 	if err != nil {
 		return nil, err
 	}
+
+	//in unit tests, we are setting this dummy value to circumvent the
+	//client-cert loading
+	if endpointURL == "http://www.example.com" {
+		return &Client{
+			EndpointURL: endpointURL,
+			HTTPClient:  http.DefaultClient,
+		}, nil
+	}
+
 	certPath, err := osext.NeedGetenv(envPrefix + "_CLIENT_CERT")
 	if err != nil {
 		return nil, err
@@ -83,38 +79,6 @@ func NewClientWithCerts(envPrefix string) (*Client, error) {
 				Proxy: http.ProxyFromEnvironment,
 			},
 		},
-	}, nil
-}
-
-// NewClientWithOAuth returns a Client that obtains OAuth2 tokens as required.
-// Credentials are read from `${PREFIX}_{TOKEN_URL,USERNAME,PASSWORD}` env vars.
-func NewClientWithOAuth(envPrefix string) (*Client, error) {
-	endpointURL, err := osext.NeedGetenv(envPrefix + "_CREATE_CHANGE_URL")
-	if err != nil {
-		return nil, err
-	}
-	tokenURL, err := osext.NeedGetenv(envPrefix + "_TOKEN_URL")
-	if err != nil {
-		return nil, err
-	}
-	username, err := osext.NeedGetenv(envPrefix + "_USERNAME")
-	if err != nil {
-		return nil, err
-	}
-	password, err := osext.NeedGetenv(envPrefix + "_PASSWORD")
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := clientcredentials.Config{
-		TokenURL:     tokenURL,
-		ClientID:     username,
-		ClientSecret: password,
-		AuthStyle:    oauth2.AuthStyleInParams,
-	}
-	return &Client{
-		EndpointURL: endpointURL,
-		HTTPClient:  cfg.Client(context.Background()),
 	}, nil
 }
 

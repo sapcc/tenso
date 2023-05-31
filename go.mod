@@ -15,7 +15,6 @@ require (
 	github.com/sapcc/go-api-declarations v1.5.1
 	github.com/sapcc/go-bits v0.0.0-20230525104154-4ee9a7b263f9
 	go.uber.org/automaxprocs v1.5.2
-	golang.org/x/oauth2 v0.8.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -38,9 +37,7 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 )
