@@ -17,13 +17,16 @@
 *
 *******************************************************************************/
 
-//nolint:dupl
+
 package handlers
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gophercloud/gophercloud"
+
+	"github.com/sapcc/go-api-declarations/deployevent"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -49,11 +52,61 @@ func (v *terraformDeploymentValidator) PluginTypeID() string {
 }
 
 func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
-	//TODO: For now, this is only deployed to QA, and we allow everything because
-	//we are working on the event source implementation first. Once that is done,
-	//we will get rid of the events posted thus far, and add validation,
-	//translation and delivery here.
-	return &tenso.PayloadInfo{}, nil
+	event, err := parseAndValidateDeployEvent(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(event.HelmReleases) != 0 {
+		return nil, errors.New("helm-release[] may not be set for Helm deployment events")
+	}
+	if len(event.TerraformRuns) == 0 {
+		return nil, errors.New("terraform-runs[] may not be empty")
+	}
+
+	for idx, runInfo := range event.TerraformRuns {
+		if !runInfo.Outcome.IsKnownInputValue() {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: invalid value for field outcome: %q`, idx, runInfo.Outcome)
+		}
+
+		if runInfo.StartedAt == nil && runInfo.Outcome != deployevent.OutcomeNotDeployed {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field started-at must be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.StartedAt != nil && runInfo.Outcome == deployevent.OutcomeNotDeployed {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field started-at may not be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.FinishedAt == nil && (runInfo.Outcome != deployevent.OutcomeNotDeployed && runInfo.Outcome != deployevent.OutcomeHelmUpgradeFailed) {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field finished-at must be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.FinishedAt != nil && (runInfo.Outcome == deployevent.OutcomeNotDeployed || runInfo.Outcome == deployevent.OutcomeHelmUpgradeFailed) {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field finished-at may not be set for outcome %q`, idx, runInfo.Outcome)
+		}
+
+		if runInfo.TerraformVersion == "" {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field terraform-version may not be empty`, idx)
+		}
+
+		//Terraform will only show the change_summary if the operation completes successfully
+		//Ref: <https://github.com/hashicorp/terraform/blob/6fa5784129f706a4b459b4495394899c6cc3e041/internal/command/apply.go#L131-L138>
+		if runInfo.Outcome == deployevent.OutcomeSucceeded && runInfo.ChangeSummary == nil {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field change-summary must be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.Outcome != deployevent.OutcomeSucceeded && runInfo.ChangeSummary != nil {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field change-summary may not be set for outcome %q`, idx, runInfo.Outcome)
+		}
+
+		if runInfo.Outcome == deployevent.OutcomeTerraformRunFailed && runInfo.ErrorMessage == "" {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field terraform-version must be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.Outcome != deployevent.OutcomeTerraformRunFailed && runInfo.ErrorMessage != "" {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field terraform-version may not be set for outcome %q`, idx, runInfo.Outcome)
+		}
+	}
+
+	return &tenso.PayloadInfo{
+		Description: fmt.Sprintf("%s/%s: Terraform run for %s",
+			event.Pipeline.TeamName, event.Pipeline.PipelineName, event.Pipeline.JobName),
+	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
