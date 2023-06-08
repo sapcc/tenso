@@ -86,6 +86,11 @@ func NewClientFromEnv(envPrefix string) (*Client, error) {
 // has the same interface as DeliverPayload() in the tenso.DeliveryHandler
 // interface.
 func (c *Client) DeliverChangePayload(payload []byte) (*tenso.DeliveryLog, error) {
+	//if the TranslationHandler wants us to ignore this payload, skip the delivery
+	if string(payload) == "skip" {
+		return nil, nil
+	}
+
 	req, err := http.NewRequest(http.MethodPost, c.EndpointURL, bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("while preparing request for POST %s: %w", c.EndpointURL, err)

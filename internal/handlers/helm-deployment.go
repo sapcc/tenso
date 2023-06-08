@@ -29,9 +29,7 @@ import (
 	"time"
 
 	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/majewsky/schwift"
-	"github.com/majewsky/schwift/gopherschwift"
 	"github.com/sapcc/go-api-declarations/deployevent"
 	"github.com/sapcc/go-bits/osext"
 
@@ -183,23 +181,8 @@ type helmDeploymentToSwiftDeliverer struct {
 	Container *schwift.Container
 }
 
-func (h *helmDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
-	containerName, err := osext.NeedGetenv("TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
-	if err != nil {
-		return err
-	}
-
-	client, err := openstack.NewObjectStorageV1(pc, eo)
-	if err != nil {
-		return err
-	}
-
-	swiftAccount, err := gopherschwift.Wrap(client, nil)
-	if err != nil {
-		return err
-	}
-
-	h.Container, err = swiftAccount.Container(containerName).EnsureExists()
+func (h *helmDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+	h.Container, err = tenso.InitializeSwiftDelivery(pc, eo, "TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
 	return err
 }
 
@@ -294,9 +277,5 @@ func (h *helmDeploymentToSNowDeliverer) PluginTypeID() string {
 }
 
 func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	//if the TranslationHandler wants us to ignore this payload, skip the delivery
-	if string(payload) == "skip" {
-		return nil, nil
-	}
 	return h.Client.DeliverChangePayload(payload)
 }
