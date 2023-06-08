@@ -17,9 +17,10 @@
 *
 *******************************************************************************/
 
-// Package helmevent contains data structures describing the event messages that
-// our CI generates for Helm deployments (i.e. "helm install" and "helm upgrade".
-package helmevent
+// Package deployevent contains data structures for the event messages that our
+// CI generates for Helm deployments (i.e. "helm install" and "helm upgrade")
+// and Terraform runs (e.g. "terragrunt apply").
+package deployevent
 
 import (
 	"time"
@@ -27,12 +28,16 @@ import (
 
 // Event describes a deployment (i.e. install or upgrade) of one or more Helm releases.
 type Event struct {
-	Region string `json:"region"`
-	//NOTE: This should be "recorded-at". The inconsistent naming needs to stay like this now for backwards compatibility.
-	RecordedAt   *time.Time         `json:"recorded_at"`
-	GitRepos     map[string]GitRepo `json:"git"`
-	HelmReleases []*HelmRelease     `json:"helm-release"`
-	Pipeline     Pipeline           `json:"pipeline"`
+	//NOTE: "recorded_at" should be "recorded-at", and "helm-release" should be
+	//"helm-releases". The inconsistent naming needs to stay like this now for
+	//backwards compatibility.
+	Region     string             `json:"region"`
+	RecordedAt *time.Time         `json:"recorded_at"`
+	GitRepos   map[string]GitRepo `json:"git"`
+	Pipeline   Pipeline           `json:"pipeline"`
+	// Exactly one of the following fields must be filled.
+	HelmReleases  []*HelmRelease  `json:"helm-release,omitempty"`
+	TerraformRuns []*TerraformRun `json:"terraform-runs,omitempty"`
 }
 
 // GitRepo appears in type Event. It describes the state of a Git repository
@@ -43,6 +48,31 @@ type GitRepo struct {
 	CommittedAt *time.Time `json:"committed-at"`
 	CommitID    string     `json:"commit-id"`
 	RemoteURL   string     `json:"remote-url"`
+}
+
+// TerraformRun appears in type Event. It describes a Terraform run that was
+// executed and its outcome.
+type TerraformRun struct {
+	Outcome Outcome `json:"outcome"`
+
+	//StartedAt is not set for OutcomeNotDeployed.
+	StartedAt *time.Time `json:"started-at"`
+	//FinishedAt is not set for OutcomeNotDeployed and OutcomeHelmUpgradeFailed.
+	FinishedAt      *time.Time `json:"finished-at,omitempty"`
+	DurationSeconds *uint64    `json:"duration,omitempty"`
+
+	TerraformVersion string                  `json:"terraform-version"`
+	ChangeSummary    *TerraformChangeSummary `json:"change-summary,omitempty"`
+	ErrorMessage     string                  `json:"error-message,omitempty"`
+}
+
+// TerraformChangeSummary appears in TerraformRun. It describes how many
+// resources were added, destroyed or changed by a Terraform run.
+type TerraformChangeSummary struct {
+	Added     int    `json:"added"`
+	Changed   int    `json:"changed"`
+	Removed   int    `json:"removed"`
+	Operation string `json:"operation"`
 }
 
 // HelmRelease appears in type Event. It describes a Helm release that was
@@ -70,7 +100,8 @@ type HelmRelease struct {
 	DurationSeconds *uint64    `json:"duration,omitempty"`
 }
 
-// Outcome appears in type HelmRelease. It describes the final state of a Helm release.
+// Outcome appears in type HelmRelease and TerraformRun. It describes the final
+// state of a release.
 type Outcome string
 
 const (
@@ -79,6 +110,8 @@ const (
 	OutcomeNotDeployed Outcome = "not-deployed"
 	//OutcomeSucceeded describes a Helm release that succeeded.
 	OutcomeSucceeded Outcome = "succeeded"
+	//OutcomeTerraformRunFailed describes a terraform run that failed
+	OutcomeTerraformRunFailed Outcome = "terraform-run-failed"
 	//OutcomeHelmUpgradeFailed describes a Helm release that failed during
 	//`helm upgrade` or because some deployed pods did not come up correctly.
 	OutcomeHelmUpgradeFailed Outcome = "helm-upgrade-failed"
@@ -95,7 +128,7 @@ const (
 // Helm release.
 func (o Outcome) IsKnownInputValue() bool {
 	switch o {
-	case OutcomeNotDeployed, OutcomeSucceeded, OutcomeHelmUpgradeFailed, OutcomeE2ETestFailed:
+	case OutcomeNotDeployed, OutcomeSucceeded, OutcomeHelmUpgradeFailed, OutcomeE2ETestFailed, OutcomeTerraformRunFailed:
 		return true
 	case OutcomePartiallyDeployed:
 		return false //not acceptable on an individual release, can only appear as result of Event.CombinedOutcome()
@@ -118,13 +151,21 @@ type Pipeline struct {
 // CombinedOutcome merges the Outcome values of all HelmReleases in this Event
 // into a single summary value.
 func (event Event) CombinedOutcome() Outcome {
+	allOutcomes := make([]Outcome, 0, len(event.HelmReleases)+len(event.TerraformRuns))
+	for _, hr := range event.HelmReleases {
+		allOutcomes = append(allOutcomes, hr.Outcome)
+	}
+	for _, tr := range event.TerraformRuns {
+		allOutcomes = append(allOutcomes, tr.Outcome)
+	}
+
 	hasSucceeded := false
 	hasUndeployed := false
-	for _, hr := range event.HelmReleases {
-		switch hr.Outcome {
-		case OutcomeHelmUpgradeFailed, OutcomeE2ETestFailed:
+	for _, outcome := range allOutcomes {
+		switch outcome {
+		case OutcomeHelmUpgradeFailed, OutcomeE2ETestFailed, OutcomeTerraformRunFailed:
 			//specific failure forces the entire result to be that failure
-			return hr.Outcome
+			return outcome
 		case OutcomeSucceeded:
 			hasSucceeded = true
 		case OutcomeNotDeployed:
@@ -147,11 +188,13 @@ func (event Event) CombinedOutcome() Outcome {
 func (event Event) CombinedStartDate() *time.Time {
 	t := event.RecordedAt
 	for _, hr := range event.HelmReleases {
-		if hr.StartedAt == nil {
-			continue
-		}
-		if t.After(*hr.StartedAt) {
+		if hr.StartedAt != nil && t.After(*hr.StartedAt) {
 			t = hr.StartedAt
+		}
+	}
+	for _, tr := range event.TerraformRuns {
+		if tr.StartedAt != nil && t.After(*tr.StartedAt) {
+			t = tr.StartedAt
 		}
 	}
 	return t

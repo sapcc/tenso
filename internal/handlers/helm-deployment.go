@@ -35,7 +35,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
-	"github.com/sapcc/go-api-declarations/helmevent"
+	"github.com/sapcc/go-api-declarations/deployevent"
 	"github.com/sapcc/go-bits/osext"
 
 	"github.com/sapcc/tenso/internal/servicenow"
@@ -53,14 +53,14 @@ func init() {
 ////////////////////////////////////////////////////////////////////////////////
 // helper functions
 
-func releaseDescriptorsOf(event helmevent.Event, sep string) (result []string) {
+func releaseDescriptorsOf(event deployevent.Event, sep string) (result []string) {
 	for _, hr := range event.HelmReleases {
 		result = append(result, fmt.Sprintf("%s%s%s", hr.Name, sep, hr.Cluster))
 	}
 	return
 }
 
-func inputDescriptorsOf(event helmevent.Event) (result []string) {
+func inputDescriptorsOf(event deployevent.Event) (result []string) {
 	var imageVersions []string
 	for _, rel := range event.HelmReleases {
 		if rel.ImageVersion != "" {
@@ -100,7 +100,7 @@ var (
 )
 
 func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
-	event, err := jsonUnmarshalStrict[helmevent.Event](payload)
+	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err
 	}
@@ -144,16 +144,16 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 		if relInfo.Namespace == "" {
 			return nil, fmt.Errorf(`in helm-release %q: invalid value for field namespace: %q`, relInfo.Name, relInfo.Namespace)
 		}
-		if relInfo.StartedAt == nil && relInfo.Outcome != helmevent.OutcomeNotDeployed {
+		if relInfo.StartedAt == nil && relInfo.Outcome != deployevent.OutcomeNotDeployed {
 			return nil, fmt.Errorf(`in helm-release %q: field started-at must be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
-		if relInfo.StartedAt != nil && relInfo.Outcome == helmevent.OutcomeNotDeployed {
+		if relInfo.StartedAt != nil && relInfo.Outcome == deployevent.OutcomeNotDeployed {
 			return nil, fmt.Errorf(`in helm-release %q: field started-at may not be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
-		if relInfo.FinishedAt == nil && (relInfo.Outcome != helmevent.OutcomeNotDeployed && relInfo.Outcome != helmevent.OutcomeHelmUpgradeFailed) {
+		if relInfo.FinishedAt == nil && (relInfo.Outcome != deployevent.OutcomeNotDeployed && relInfo.Outcome != deployevent.OutcomeHelmUpgradeFailed) {
 			return nil, fmt.Errorf(`in helm-release %q: field finished-at must be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
-		if relInfo.FinishedAt != nil && (relInfo.Outcome == helmevent.OutcomeNotDeployed || relInfo.Outcome == helmevent.OutcomeHelmUpgradeFailed) {
+		if relInfo.FinishedAt != nil && (relInfo.Outcome == deployevent.OutcomeNotDeployed || relInfo.Outcome == deployevent.OutcomeHelmUpgradeFailed) {
 			return nil, fmt.Errorf(`in helm-release %q: field finished-at may not be set for outcome %q`, relInfo.Name, relInfo.Outcome)
 		}
 	}
@@ -277,7 +277,7 @@ func (h *helmDeploymentToSwiftDeliverer) PluginTypeID() string {
 }
 
 func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	event, err := jsonUnmarshalStrict[helmevent.Event](payload)
+	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err
 	}
@@ -298,16 +298,16 @@ type helmDeploymentToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-var helmSNowCloseCodes = map[helmevent.Outcome]string{
-	helmevent.OutcomeNotDeployed: "Failed - Rolled back",
+var helmSNowCloseCodes = map[deployevent.Outcome]string{
+	deployevent.OutcomeNotDeployed: "Failed - Rolled back",
 	//This used to be "Partially Implemented" and "Failed - Others", but it was
 	//all changed to "Closed without Implementation" because the former close
 	//codes are intended for problems that require human intervention and
 	//subsequent analysis, which we do not want.
-	helmevent.OutcomePartiallyDeployed: "Closed without Implementation",
-	helmevent.OutcomeHelmUpgradeFailed: "Closed without Implementation",
-	helmevent.OutcomeE2ETestFailed:     "Closed without Implementation",
-	helmevent.OutcomeSucceeded:         "Implemented - Successfully",
+	deployevent.OutcomePartiallyDeployed: "Closed without Implementation",
+	deployevent.OutcomeHelmUpgradeFailed: "Closed without Implementation",
+	deployevent.OutcomeE2ETestFailed:     "Closed without Implementation",
+	deployevent.OutcomeSucceeded:         "Implemented - Successfully",
 }
 
 func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
@@ -320,14 +320,14 @@ func (h *helmDeploymentToSNowTranslator) PluginTypeID() string {
 }
 
 func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
-	event, err := jsonUnmarshalStrict[helmevent.Event](payload)
+	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err
 	}
 
 	//if we did not start deploying, we won't create a change object in ServiceNow
 	outcome := event.CombinedOutcome()
-	if outcome == helmevent.OutcomeNotDeployed {
+	if outcome == deployevent.OutcomeNotDeployed {
 		return []byte("skip"), nil
 	}
 
