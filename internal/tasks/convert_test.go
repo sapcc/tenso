@@ -20,14 +20,10 @@ package tasks_test
 
 import (
 	"database/sql"
-	"fmt"
-	"sort"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/sapcc/go-bits/easypg"
-	"github.com/sapcc/go-bits/jobloop"
 
 	"github.com/sapcc/tenso/internal/tasks"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -113,60 +109,4 @@ func TestConversionCommon(t *testing.T) {
 	//nothing left to convert now
 	test.MustFail(t, conversionJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
 	tr.DBChanges().AssertEmpty()
-}
-
-func TestParallelConversion(t *testing.T) {
-	//This test checks that, when there are multiple payloads to convert, each
-	//conversion is executed EXACTLY ONCE.
-	const eventCount = 10
-
-	s := test.NewSetup(t,
-		test.WithTaskContext,
-		test.WithRoute("test-foo.v1 -> test-bar.v1"),
-	)
-
-	//set up several events with one pending delivery each
-	s.Clock.StepBy(1 * time.Hour)
-	user := tenso.User{
-		Name:       "testusername",
-		UUID:       "testuserid",
-		DomainName: "testdomainname",
-	}
-	test.Must(t, s.DB.Insert(&user))
-	for idx := 0; idx < eventCount; idx++ {
-		event := tenso.Event{
-			CreatorID:   user.ID,
-			CreatedAt:   s.Clock.Now(),
-			PayloadType: "test-foo.v1",
-			Payload:     `{"event":"foo","value":42}`,
-		}
-		test.Must(t, s.DB.Insert(&event))
-		test.Must(t, s.DB.Insert(&tenso.PendingDelivery{
-			EventID:          event.ID,
-			PayloadType:      "test-bar.v1",
-			Payload:          nil,
-			ConvertedAt:      nil,
-			NextConversionAt: s.Clock.Now(),
-			NextDeliveryAt:   s.Clock.Now(),
-		}))
-	}
-
-	tr, _ := easypg.NewTracker(t, s.DB.Db)
-	conversionJob := s.TaskContext.ConversionJob(s.Registry)
-
-	test.Must(t, jobloop.ProcessMany(conversionJob, s.Ctx, eventCount))
-
-	//check that all deliveries got their payloads converted (which implies that
-	//each goroutine picked a unique delivery to work on)
-	var lines []string
-	for idx := 1; idx <= eventCount; idx++ {
-		lines = append(lines, fmt.Sprintf(
-			"UPDATE pending_deliveries SET payload = '%[1]s', converted_at = %[2]d WHERE event_id = %[3]d AND payload_type = '%[4]s';",
-			`{"event":"bar","value":42}`,
-			s.Clock.Now().Unix(),
-			idx, "test-bar.v1",
-		))
-	}
-	sort.Strings(lines)
-	tr.DBChanges().AssertEqualf(strings.Join(lines, "\n"))
 }

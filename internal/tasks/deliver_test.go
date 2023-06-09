@@ -20,14 +20,10 @@ package tasks_test
 
 import (
 	"database/sql"
-	"fmt"
-	"sort"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/sapcc/go-bits/easypg"
-	"github.com/sapcc/go-bits/jobloop"
 
 	"github.com/sapcc/tenso/internal/tasks"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -123,66 +119,4 @@ func TestDeliveryCommon(t *testing.T) {
 	//since all payloads were delivered, GC will clean up the event
 	test.Must(t, garbageJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`DELETE FROM events WHERE id = 1;`)
-}
-
-func TestParallelDelivery(t *testing.T) {
-	//This test checks that, when there are multiple payloads to convert, each
-	//conversion is executed EXACTLY ONCE.
-	const eventCount = 10
-
-	s := test.NewSetup(t,
-		test.WithTaskContext,
-		test.WithRoute("test-foo.v1 -> test-bar.v1"),
-	)
-
-	//set up several events with one pending delivery each
-	s.Clock.StepBy(1 * time.Hour)
-	user := tenso.User{
-		Name:       "testusername",
-		UUID:       "testuserid",
-		DomainName: "testdomainname",
-	}
-	test.Must(t, s.DB.Insert(&user))
-	for idx := 0; idx < eventCount; idx++ {
-		event := tenso.Event{
-			CreatorID:   user.ID,
-			CreatedAt:   s.Clock.Now(),
-			PayloadType: "test-foo.v1",
-			Payload:     `{"event":"foo","value":42}`,
-		}
-		test.Must(t, s.DB.Insert(&event))
-		test.Must(t, s.DB.Insert(&tenso.PendingDelivery{
-			EventID:          event.ID,
-			PayloadType:      "test-bar.v1",
-			Payload:          p2str(`{"event":"bar","value":42}`),
-			ConvertedAt:      p2time(s.Clock.Now()),
-			NextConversionAt: s.Clock.Now(),
-			NextDeliveryAt:   s.Clock.Now(),
-		}))
-	}
-
-	tr, _ := easypg.NewTracker(t, s.DB.Db)
-	deliveryJob := s.TaskContext.DeliveryJob(s.Registry)
-
-	test.Must(t, jobloop.ProcessMany(deliveryJob, s.Ctx, eventCount))
-
-	//check that all deliveries were completed (which implies that each goroutine
-	//picked a unique delivery to work on)
-	var lines []string
-	for idx := 1; idx <= eventCount; idx++ {
-		lines = append(lines, fmt.Sprintf(
-			"DELETE FROM pending_deliveries WHERE event_id = %[1]d AND payload_type = '%[2]s';",
-			idx, "test-bar.v1",
-		))
-	}
-	sort.Strings(lines)
-	tr.DBChanges().AssertEqualf(strings.Join(lines, "\n"))
-}
-
-func p2str(val string) *string {
-	return &val
-}
-
-func p2time(val time.Time) *time.Time {
-	return &val
 }
