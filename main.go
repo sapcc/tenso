@@ -21,7 +21,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"os"
 	"time"
@@ -37,6 +36,7 @@ import (
 	"github.com/sapcc/go-bits/gopherpolicy"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/httpext"
+	"github.com/sapcc/go-bits/jobloop"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
@@ -115,9 +115,9 @@ func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	//start worker loops (we have a budget of 16 DB connections, which we
 	//distribute between converting and delivering with some headroom to spare)
 	c := tasks.NewContext(cfg, db)
-	goQueuedJobLoop(ctx, 7, c.PollForPendingConversions)
-	goQueuedJobLoop(ctx, 7, c.PollForPendingDeliveries)
-	go cronJobLoop(5*time.Minute, c.CollectGarbage)
+	go c.ConversionJob(nil).Run(ctx, jobloop.NumGoroutines(7))
+	go c.DeliveryJob(nil).Run(ctx, jobloop.NumGoroutines(7))
+	go c.GarbageCollectionJob(nil).Run(ctx)
 
 	//wire up HTTP handlers for Prometheus metrics and health check
 	handler := httpapi.Compose(httpapi.HealthCheckAPI{SkipRequestLog: true})
@@ -127,57 +127,4 @@ func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	//start HTTP server
 	listenAddress := osext.GetenvOrDefault("TENSO_WORKER_LISTEN_ADDRESS", ":8080")
 	must.Succeed(httpext.ListenAndServeContext(ctx, listenAddress, nil))
-}
-
-// Execute a task repeatedly, but slow down when sql.ErrNoRows is returned by it.
-// (Tasks use this error value to indicate that nothing needs scraping, so we
-// can back off a bit to avoid useless database load.)
-func goQueuedJobLoop(ctx context.Context, numGoroutines int, poll tasks.JobPoller) {
-	ch := make(chan tasks.Job) //unbuffered!
-
-	//one goroutine to select tasks from the DB
-	go func(ch chan<- tasks.Job) {
-		for ctx.Err() == nil {
-			job, err := poll()
-			switch err {
-			case nil:
-				ch <- job
-			case sql.ErrNoRows:
-				//no jobs waiting right now - slow down a bit to avoid useless DB load
-				time.Sleep(3 * time.Second)
-			default:
-				logg.Error(err.Error())
-			}
-		}
-
-		//`ctx` has expired -> tell workers to shutdown
-		close(ch)
-	}(ch)
-
-	//multiple goroutines to execute tasks
-	//
-	//We use `numGoroutines-1` here since we already have spawned one goroutine
-	//for the polling above.
-	for i := 0; i < numGoroutines-1; i++ {
-		go func(ch <-chan tasks.Job) {
-			for job := range ch {
-				err := job.Execute()
-				if err != nil {
-					logg.Error(err.Error())
-				}
-			}
-		}(ch)
-	}
-}
-
-// Execute a task repeatedly, in set intervals. Unlike queuedJobLoop(), this
-// does not change pace when errors are returned.
-func cronJobLoop(interval time.Duration, task func() error) {
-	for {
-		err := task()
-		if err != nil {
-			logg.Error(err.Error())
-		}
-		time.Sleep(interval)
-	}
 }

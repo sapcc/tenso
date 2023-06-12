@@ -20,28 +20,34 @@
 package tasks
 
 import (
-	"fmt"
+	"context"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sapcc/go-bits/jobloop"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/sqlext"
 )
 
-var (
-	gcDeliveredEventsQuery = sqlext.SimplifyWhitespace(`
-		DELETE FROM events WHERE id NOT IN (SELECT event_id FROM pending_deliveries)
-	`)
-)
+var gcDeliveredEventsQuery = sqlext.SimplifyWhitespace(`
+	DELETE FROM events WHERE id NOT IN (SELECT event_id FROM pending_deliveries)
+`)
 
-func (c *Context) CollectGarbage() (returnedError error) {
-	defer func() {
-		if returnedError == nil {
-			gcSuccessCounter.Inc()
-		} else {
-			gcFailedCounter.Inc()
-			returnedError = fmt.Errorf("while collecting garbage: %w", returnedError)
-		}
-	}()
+func (c *Context) GarbageCollectionJob(registerer prometheus.Registerer) jobloop.Job {
+	return (&jobloop.CronJob{
+		Metadata: jobloop.JobMetadata{
+			ReadableName: "garbage collection",
+			CounterOpts: prometheus.CounterOpts{
+				Name: "tenso_garbage_collections",
+				Help: "Counter for database GC runs.",
+			},
+		},
+		Interval: 5 * time.Minute,
+		Task:     c.collectGarbage,
+	}).Setup(registerer)
+}
 
+func (c *Context) collectGarbage(_ context.Context, _ prometheus.Labels) error {
 	result, err := c.DB.Exec(gcDeliveredEventsQuery)
 	if err != nil {
 		return err
