@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"path"
 	"regexp"
 	"sort"
 	"strings"
@@ -112,7 +113,26 @@ func inputDescriptorsOf(event deployevent.Event) (result []string) {
 
 	var gitVersions []string
 	for name, repo := range event.GitRepos {
-		gitVersions = append(gitVersions, fmt.Sprintf("%s.git %s", name, repo.CommitID))
+		//`name` is the name of this resource from which the Git repository was
+		//pulled, which can be readable like `helm-charts.git` or `secrets.git`,
+		//but sometimes is nonsensical without context (e.g. `qa-de-1.git` for a
+		//checkout of `secrets.git` with path filter on qa-de-1 values), so we're
+		//only using it if we don't have a better alternative
+		readableName := name
+		if repo.RemoteURL != "" {
+			//our preference is to take the basename from the remote URL, e.g.
+			//        remoteURL = "https://github.com/sapcc/helm-charts/"
+			//  -> readableName = "helm-charts.git"
+			remoteURL, err := url.Parse(repo.RemoteURL)
+			if err == nil {
+				readableName = strings.TrimSuffix(path.Base(strings.TrimSuffix(remoteURL.Path, "/")), ".git")
+			}
+		}
+		if !strings.HasSuffix(readableName, ".git") {
+			readableName += ".git"
+		}
+
+		gitVersions = append(gitVersions, fmt.Sprintf("%s %s", readableName, repo.CommitID))
 	}
 	sort.Strings(gitVersions) //for test reproducability
 

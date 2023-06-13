@@ -17,22 +17,28 @@
 *
 *******************************************************************************/
 
-
 package handlers
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
 
 	"github.com/gophercloud/gophercloud"
+	"github.com/majewsky/schwift"
 
 	"github.com/sapcc/go-api-declarations/deployevent"
 
+	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
 func init() {
 	tenso.ValidationHandlerRegistry.Add(func() tenso.ValidationHandler { return &terraformDeploymentValidator{} })
+	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &terraformDeploymentToSwiftDeliverer{} })
 	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler { return &terraformDeploymentToSNowTranslator{} })
 	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &terraformDeploymentToSNowDeliverer{} })
 }
@@ -65,6 +71,9 @@ func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.P
 	}
 
 	for idx, runInfo := range event.TerraformRuns {
+		if runInfo == nil {
+			return nil, fmt.Errorf(`terraform-runs[%d] may not be nil`, idx)
+		}
 		if !runInfo.Outcome.IsKnownInputValue() {
 			return nil, fmt.Errorf(`in terraform-runs[%d]: invalid value for field outcome: %q`, idx, runInfo.Outcome)
 		}
@@ -110,13 +119,46 @@ func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.P
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// DeliveryHandler for Swift
+
+type terraformDeploymentToSwiftDeliverer struct {
+	Container *schwift.Container
+}
+
+func (h *terraformDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+	h.Container, err = tenso.InitializeSwiftDelivery(pc, eo, "TENSO_TERRAFORM_DEPLOYMENT_SWIFT_CONTAINER")
+	return err
+}
+
+func (h *terraformDeploymentToSwiftDeliverer) PluginTypeID() string {
+	return "terraform-deployment-to-swift.v1"
+}
+
+func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
+	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
+	if err != nil {
+		return nil, err
+	}
+
+	objectName := fmt.Sprintf("%s/%s/%s/%s/%s.json",
+		event.Pipeline.TeamName, event.Pipeline.PipelineName,
+		event.Pipeline.JobName,
+		string(event.CombinedOutcome()),
+		event.RecordedAt.Format(time.RFC3339),
+	)
+	return nil, h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // TranslationHandler for SNow
 
 type terraformDeploymentToSNowTranslator struct {
+	Mapping servicenow.MappingConfiguration
 }
 
-func (t *terraformDeploymentToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
-	return nil
+func (t *terraformDeploymentToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+	t.Mapping, err = servicenow.LoadMappingConfiguration()
+	return err
 }
 
 func (t *terraformDeploymentToSNowTranslator) PluginTypeID() string {
@@ -124,18 +166,86 @@ func (t *terraformDeploymentToSNowTranslator) PluginTypeID() string {
 }
 
 func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
-	//TODO: stub
-	return nil, errors.New("unimplemented")
+	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.SliceStable(event.TerraformRuns, func(i, j int) bool {
+		lhs := event.TerraformRuns[i].StartedAt
+		if lhs == nil {
+			return true
+		}
+		rhs := event.TerraformRuns[j].StartedAt
+		if rhs == nil {
+			return false
+		}
+		return lhs.Before(*rhs)
+	})
+
+	//if we did not start deploying, we won't create a change object in ServiceNow
+	outcome := event.CombinedOutcome()
+	if outcome == deployevent.OutcomeNotDeployed {
+		return []byte("skip"), nil
+	}
+	closeCode, err := servicenow.CloseCodeForOutcome(outcome)
+	if err != nil {
+		return nil, err
+	}
+
+	inputDesc := strings.Join(inputDescriptorsOf(event), ", ")
+	descLines := []string{
+		fmt.Sprintf("Deployed %s for %s with versions: %s", event.Pipeline.PipelineName, event.Pipeline.JobName, inputDesc),
+	}
+	for idx, run := range event.TerraformRuns {
+		descLines = append(descLines, fmt.Sprintf("Step %d: %s", idx+1, summaryOfRun(*run)))
+	}
+	descLines = append(descLines,
+		fmt.Sprintf("Deployment log: %s", event.Pipeline.BuildURL),
+		"",
+		fmt.Sprintf("Outcome: %s", event.CombinedOutcome()),
+	)
+
+	chg := servicenow.Change{
+		StartedAt:   event.CombinedStartDate(),
+		EndedAt:     event.RecordedAt,
+		CloseCode:   closeCode,
+		Summary:     fmt.Sprintf("Deploy %s for %s", event.Pipeline.PipelineName, event.Pipeline.JobName),
+		Description: strings.Join(descLines, "\n"),
+		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty
+		Region:      event.Region,
+	}
+
+	return chg.Serialize(t.Mapping, t.Mapping.TerraformDeployment)
+}
+
+func summaryOfRun(run deployevent.TerraformRun) string {
+	var parts []string
+	if run.ChangeSummary.Added > 0 {
+		parts = append(parts, fmt.Sprintf("added %d objects", run.ChangeSummary.Added))
+	}
+	if run.ChangeSummary.Changed > 0 {
+		parts = append(parts, fmt.Sprintf("changed %d objects", run.ChangeSummary.Changed))
+	}
+	if run.ChangeSummary.Removed > 0 {
+		parts = append(parts, fmt.Sprintf("removed %d objects", run.ChangeSummary.Removed))
+	}
+	if len(parts) == 0 {
+		parts = append(parts, "no changes")
+	}
+	return fmt.Sprintf("%s (outcome: %s)", strings.Join(parts, ", "), run.Outcome)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // DeliveryHandler for SNow
 
 type terraformDeploymentToSNowDeliverer struct {
+	Client *servicenow.Client
 }
 
-func (d *terraformDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
-	return nil
+func (d *terraformDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+	d.Client, err = servicenow.NewClientFromEnv("TENSO_SERVICENOW")
+	return err
 }
 
 func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
@@ -143,6 +253,5 @@ func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
 }
 
 func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	//TODO: stub
-	return nil, errors.New("unimplemented")
+	return d.Client.DeliverChangePayload(payload)
 }

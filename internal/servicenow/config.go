@@ -20,8 +20,10 @@
 package servicenow
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/sapcc/go-api-declarations/deployevent"
 	"github.com/sapcc/go-bits/osext"
 	"gopkg.in/yaml.v2"
 )
@@ -103,4 +105,26 @@ func (rs MappingRuleset) ServiceOffering() string {
 // ResponsibleManager chooses the appropriate value for "u_responsible_manager".
 func (rs MappingRuleset) ResponsibleManager() string {
 	return rs.Fallbacks.ResponsibleManager
+}
+
+// CloseCodeForOutcome maps a deployevent.Outcome into a SNow close code.
+func CloseCodeForOutcome(outcome deployevent.Outcome) (string, error) {
+	switch outcome {
+	case deployevent.OutcomeNotDeployed:
+		return "Failed - Rolled back", nil
+	//This used to be "Partially Implemented" and "Failed - Others", but it was
+	//all changed to "Closed without Implementation" because the former close
+	//codes are intended for problems that require human intervention and
+	//subsequent analysis, which we do not want.
+	case deployevent.OutcomePartiallyDeployed,
+		deployevent.OutcomeHelmUpgradeFailed,
+		deployevent.OutcomeE2ETestFailed:
+		return "Closed without Implementation", nil
+	case deployevent.OutcomeSucceeded:
+		return "Implemented - Successfully", nil
+	default:
+		//defense in depth (this should be unreachable because incoming deployment
+		//events are validated and unknown outcome values are rejected)
+		return "", fmt.Errorf("invalid outcome value: %s", outcome)
+	}
 }
