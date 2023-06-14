@@ -78,7 +78,10 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 	if len(event.HelmReleases) == 0 {
 		return nil, errors.New("helm-release[] may not be empty")
 	}
-	for _, relInfo := range event.HelmReleases {
+	for idx, relInfo := range event.HelmReleases {
+		if relInfo == nil {
+			return nil, fmt.Errorf(`helm-release[%d] may not be nil`, idx)
+		}
 		//TODO: Can we do regex matches to validate the contents of Name, Namespace, ChartID, ChartPath?
 		if relInfo.Name == "" {
 			return nil, fmt.Errorf(`invalid value for field helm-release[].name: %q`, relInfo.Name)
@@ -212,18 +215,6 @@ type helmDeploymentToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-var helmSNowCloseCodes = map[deployevent.Outcome]string{
-	deployevent.OutcomeNotDeployed: "Failed - Rolled back",
-	//This used to be "Partially Implemented" and "Failed - Others", but it was
-	//all changed to "Closed without Implementation" because the former close
-	//codes are intended for problems that require human intervention and
-	//subsequent analysis, which we do not want.
-	deployevent.OutcomePartiallyDeployed: "Closed without Implementation",
-	deployevent.OutcomeHelmUpgradeFailed: "Closed without Implementation",
-	deployevent.OutcomeE2ETestFailed:     "Closed without Implementation",
-	deployevent.OutcomeSucceeded:         "Implemented - Successfully",
-}
-
 func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	h.Mapping, err = servicenow.LoadMappingConfiguration()
 	return err
@@ -244,13 +235,17 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 	if outcome == deployevent.OutcomeNotDeployed {
 		return []byte("skip"), nil
 	}
+	closeCode, err := servicenow.CloseCodeForOutcome(outcome)
+	if err != nil {
+		return nil, err
+	}
 
 	releaseDesc := strings.Join(releaseDescriptorsOf(event, " to "), ", ")
 	inputDesc := strings.Join(inputDescriptorsOf(event), ", ")
 	chg := servicenow.Change{
 		StartedAt:   event.CombinedStartDate(),
 		EndedAt:     event.RecordedAt,
-		CloseCode:   helmSNowCloseCodes[event.CombinedOutcome()],
+		CloseCode:   closeCode,
 		Summary:     fmt.Sprintf("Deploy %s", releaseDesc),
 		Description: fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s\n\nOutcome: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL, string(event.CombinedOutcome())),
 		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty

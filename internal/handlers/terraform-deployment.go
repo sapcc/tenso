@@ -17,19 +17,28 @@
 *
 *******************************************************************************/
 
-//nolint:dupl
 package handlers
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
+	"sort"
+	"strings"
+	"time"
 
 	"github.com/gophercloud/gophercloud"
+	"github.com/majewsky/schwift"
 
+	"github.com/sapcc/go-api-declarations/deployevent"
+
+	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
 func init() {
 	tenso.ValidationHandlerRegistry.Add(func() tenso.ValidationHandler { return &terraformDeploymentValidator{} })
+	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &terraformDeploymentToSwiftDeliverer{} })
 	tenso.TranslationHandlerRegistry.Add(func() tenso.TranslationHandler { return &terraformDeploymentToSNowTranslator{} })
 	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &terraformDeploymentToSNowDeliverer{} })
 }
@@ -49,21 +58,107 @@ func (v *terraformDeploymentValidator) PluginTypeID() string {
 }
 
 func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
-	//TODO: For now, this is only deployed to QA, and we allow everything because
-	//we are working on the event source implementation first. Once that is done,
-	//we will get rid of the events posted thus far, and add validation,
-	//translation and delivery here.
-	return &tenso.PayloadInfo{}, nil
+	event, err := parseAndValidateDeployEvent(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(event.HelmReleases) != 0 {
+		return nil, errors.New("helm-release[] may not be set for Helm deployment events")
+	}
+	if len(event.TerraformRuns) == 0 {
+		return nil, errors.New("terraform-runs[] may not be empty")
+	}
+
+	for idx, runInfo := range event.TerraformRuns {
+		if runInfo == nil {
+			return nil, fmt.Errorf(`terraform-runs[%d] may not be nil`, idx)
+		}
+		if !runInfo.Outcome.IsKnownInputValue() {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: invalid value for field outcome: %q`, idx, runInfo.Outcome)
+		}
+
+		if runInfo.StartedAt == nil && runInfo.Outcome != deployevent.OutcomeNotDeployed {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field started-at must be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.StartedAt != nil && runInfo.Outcome == deployevent.OutcomeNotDeployed {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field started-at may not be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.FinishedAt == nil && (runInfo.Outcome != deployevent.OutcomeNotDeployed && runInfo.Outcome != deployevent.OutcomeHelmUpgradeFailed) {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field finished-at must be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.FinishedAt != nil && (runInfo.Outcome == deployevent.OutcomeNotDeployed || runInfo.Outcome == deployevent.OutcomeHelmUpgradeFailed) {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field finished-at may not be set for outcome %q`, idx, runInfo.Outcome)
+		}
+
+		if runInfo.TerraformVersion == "" {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field terraform-version may not be empty`, idx)
+		}
+
+		//Terraform will only show the change_summary if the operation completes successfully
+		//Ref: <https://github.com/hashicorp/terraform/blob/6fa5784129f706a4b459b4495394899c6cc3e041/internal/command/apply.go#L131-L138>
+		if runInfo.Outcome == deployevent.OutcomeSucceeded && runInfo.ChangeSummary == nil {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field change-summary must be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.Outcome != deployevent.OutcomeSucceeded && runInfo.ChangeSummary != nil {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field change-summary may not be set for outcome %q`, idx, runInfo.Outcome)
+		}
+
+		if runInfo.Outcome == deployevent.OutcomeTerraformRunFailed && runInfo.ErrorMessage == "" {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field terraform-version must be set for outcome %q`, idx, runInfo.Outcome)
+		}
+		if runInfo.Outcome != deployevent.OutcomeTerraformRunFailed && runInfo.ErrorMessage != "" {
+			return nil, fmt.Errorf(`in terraform-runs[%d]: field terraform-version may not be set for outcome %q`, idx, runInfo.Outcome)
+		}
+	}
+
+	return &tenso.PayloadInfo{
+		Description: fmt.Sprintf("%s/%s: Terraform run for %s",
+			event.Pipeline.TeamName, event.Pipeline.PipelineName, event.Pipeline.JobName),
+	}, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// DeliveryHandler for Swift
+
+type terraformDeploymentToSwiftDeliverer struct {
+	Container *schwift.Container
+}
+
+func (h *terraformDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+	h.Container, err = tenso.InitializeSwiftDelivery(pc, eo, "TENSO_TERRAFORM_DEPLOYMENT_SWIFT_CONTAINER")
+	return err
+}
+
+func (h *terraformDeploymentToSwiftDeliverer) PluginTypeID() string {
+	return "terraform-deployment-to-swift.v1"
+}
+
+func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
+	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
+	if err != nil {
+		return nil, err
+	}
+
+	objectName := fmt.Sprintf("%s/%s/%s/%s/%s.json",
+		event.Pipeline.TeamName, event.Pipeline.PipelineName,
+		event.Pipeline.JobName,
+		string(event.CombinedOutcome()),
+		event.RecordedAt.Format(time.RFC3339),
+	)
+	return nil, h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // TranslationHandler for SNow
 
 type terraformDeploymentToSNowTranslator struct {
+	Mapping servicenow.MappingConfiguration
 }
 
-func (t *terraformDeploymentToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
-	return nil
+func (t *terraformDeploymentToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+	t.Mapping, err = servicenow.LoadMappingConfiguration()
+	return err
 }
 
 func (t *terraformDeploymentToSNowTranslator) PluginTypeID() string {
@@ -71,18 +166,86 @@ func (t *terraformDeploymentToSNowTranslator) PluginTypeID() string {
 }
 
 func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
-	//TODO: stub
-	return nil, errors.New("unimplemented")
+	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.SliceStable(event.TerraformRuns, func(i, j int) bool {
+		lhs := event.TerraformRuns[i].StartedAt
+		if lhs == nil {
+			return true
+		}
+		rhs := event.TerraformRuns[j].StartedAt
+		if rhs == nil {
+			return false
+		}
+		return lhs.Before(*rhs)
+	})
+
+	//if we did not start deploying, we won't create a change object in ServiceNow
+	outcome := event.CombinedOutcome()
+	if outcome == deployevent.OutcomeNotDeployed {
+		return []byte("skip"), nil
+	}
+	closeCode, err := servicenow.CloseCodeForOutcome(outcome)
+	if err != nil {
+		return nil, err
+	}
+
+	inputDesc := strings.Join(inputDescriptorsOf(event), ", ")
+	descLines := []string{
+		fmt.Sprintf("Deployed %s for %s with versions: %s", event.Pipeline.PipelineName, event.Pipeline.JobName, inputDesc),
+	}
+	for idx, run := range event.TerraformRuns {
+		descLines = append(descLines, fmt.Sprintf("Step %d: %s", idx+1, summaryOfRun(*run)))
+	}
+	descLines = append(descLines,
+		fmt.Sprintf("Deployment log: %s", event.Pipeline.BuildURL),
+		"",
+		fmt.Sprintf("Outcome: %s", event.CombinedOutcome()),
+	)
+
+	chg := servicenow.Change{
+		StartedAt:   event.CombinedStartDate(),
+		EndedAt:     event.RecordedAt,
+		CloseCode:   closeCode,
+		Summary:     fmt.Sprintf("Deploy %s for %s", event.Pipeline.PipelineName, event.Pipeline.JobName),
+		Description: strings.Join(descLines, "\n"),
+		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty
+		Region:      event.Region,
+	}
+
+	return chg.Serialize(t.Mapping, t.Mapping.TerraformDeployment)
+}
+
+func summaryOfRun(run deployevent.TerraformRun) string {
+	var parts []string
+	if run.ChangeSummary.Added > 0 {
+		parts = append(parts, fmt.Sprintf("added %d objects", run.ChangeSummary.Added))
+	}
+	if run.ChangeSummary.Changed > 0 {
+		parts = append(parts, fmt.Sprintf("changed %d objects", run.ChangeSummary.Changed))
+	}
+	if run.ChangeSummary.Removed > 0 {
+		parts = append(parts, fmt.Sprintf("removed %d objects", run.ChangeSummary.Removed))
+	}
+	if len(parts) == 0 {
+		parts = append(parts, "no changes")
+	}
+	return fmt.Sprintf("%s (outcome: %s)", strings.Join(parts, ", "), run.Outcome)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // DeliveryHandler for SNow
 
 type terraformDeploymentToSNowDeliverer struct {
+	Client *servicenow.Client
 }
 
-func (d *terraformDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
-	return nil
+func (d *terraformDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+	d.Client, err = servicenow.NewClientFromEnv("TENSO_SERVICENOW")
+	return err
 }
 
 func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
@@ -90,6 +253,5 @@ func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
 }
 
 func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	//TODO: stub
-	return nil, errors.New("unimplemented")
+	return d.Client.DeliverChangePayload(payload)
 }
