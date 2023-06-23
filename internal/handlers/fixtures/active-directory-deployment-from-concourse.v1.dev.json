@@ -1,0 +1,30 @@
+{
+  "recorded_at": "2023-06-22T16:24:33",
+  "region": "qa-de-1",
+  "landscape": "dev",
+  "ad_deployment": {
+    "finished_at": "2023-06-22T16:24:25",
+    "duration": 203,
+    "outcome": "succeeded",
+    "started_at": "2023-06-22T16:21:02"
+  },
+  "host": "ad-dev.example.sap",
+  "git": {
+    "convergedcloud-ad-config_dev": {
+      "author": "John Doe",
+      "commit-id": "09d2af8dd22201dd8d48e5dcfcaed281ff9422c7",
+      "authored-at": "2023-06-14 11:43:57 +0200",
+      "branch": "main",
+      "remote-url": "https://git.example.org/ad-config.git",
+      "commit-message": "[LAB] Remove single cipher disabling"
+    },
+    "convergedcloud-ad": {
+      "author": "John Doe",
+      "commit-id": "e5fa44f2b31c1fb553b6021e7360d07d5d91ff5e",
+      "authored-at": "2023-06-21 20:06:21 +0200",
+      "branch": "main",
+      "remote-url": "https://git.example.org/ad.git",
+      "commit-message": "make the code look nicer"
+    }
+  }
+}
