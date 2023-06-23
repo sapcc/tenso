@@ -25,7 +25,7 @@ github.com/golang-migrate/migrate/v4/source/go_bindata
 # github.com/golang/protobuf v1.5.3
 ## explicit; go 1.9
 github.com/golang/protobuf/proto
-# github.com/gophercloud/gophercloud v1.4.0
+# github.com/gophercloud/gophercloud v1.5.0
 ## explicit; go 1.14
 github.com/gophercloud/gophercloud
 github.com/gophercloud/gophercloud/openstack
@@ -54,7 +54,7 @@ github.com/hashicorp/go-multierror
 # github.com/hashicorp/go-uuid v1.0.3
 ## explicit
 github.com/hashicorp/go-uuid
-# github.com/hashicorp/golang-lru/v2 v2.0.3
+# github.com/hashicorp/golang-lru/v2 v2.0.4
 ## explicit; go 1.18
 github.com/hashicorp/golang-lru/v2
 github.com/hashicorp/golang-lru/v2/simplelru
@@ -108,7 +108,7 @@ github.com/rs/cors
 ## explicit; go 1.20
 github.com/sapcc/go-api-declarations/bininfo
 github.com/sapcc/go-api-declarations/deployevent
-# github.com/sapcc/go-bits v0.0.0-20230614140115-83eb3a701632
+# github.com/sapcc/go-bits v0.0.0-20230622213651-f0dc22861208
 ## explicit; go 1.20
 github.com/sapcc/go-bits/assert
 github.com/sapcc/go-bits/easypg
