@@ -65,7 +65,8 @@ func LoadMappingConfiguration() (MappingConfiguration, error) {
 // MappingRuleset is a set of rules for filling missing fields in a Change
 // object.
 type MappingRuleset struct {
-	Fallbacks struct {
+	ChangeModel string `yaml:"change_model"`
+	Fallbacks   struct {
 		Assignee           string `yaml:"assignee"`
 		Requester          string `yaml:"requester"`
 		ResponsibleManager string `yaml:"responsible_manager"`

@@ -80,7 +80,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 	}
 
 	data := map[string]interface{}{
-		"chg_model":                "SAP Standard GCS Retrospective GCSCHGCCEEC147 CCloud Control Plane Deployment",
+		"chg_model":                ruleset.ChangeModel,
 		"assigned_to":              ruleset.Assignee(chg.Executee),
 		"requested_by":             ruleset.Requester(chg.Executee),
 		"u_implementation_contact": chg.Executee,

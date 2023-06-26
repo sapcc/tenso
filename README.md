@@ -161,6 +161,7 @@ The "mapping ruleset" objects mentioned above can have the following fields:
 
 | Field | Data type | Explanation |
 | ----- | --------- | ----------- |
+| `change_model` | string | Value for the `chg_model` field. |
 | `fallbacks.assignee` | string | User ID of the user that we will put into `assigned_to` when we don't have a better option. |
 | `fallbacks.requester` | string | User ID of the user that we will put into `requested_by` when we don't have a better option. |
 | `fallbacks.responsible_manager` | string | User name and ID of the user that we will put as `responsible_manager` when we don't have a better option. |
