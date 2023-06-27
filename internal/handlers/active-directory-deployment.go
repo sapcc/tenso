@@ -51,11 +51,11 @@ type activeDirectoryDeploymentEvent struct {
 	Landscape    string                    `json:"landscape"` //e.g. "dev" or "prod"
 	Hostname     string                    `json:"host"`
 	ADDeployment struct {
-		Outcome   string                    `json:"outcome"`
-		StartedAt *activeDirectoryEventTime `json:"started_at"`
+		Outcome   string                   `json:"outcome"`
+		StartedAt activeDirectoryEventTime `json:"started_at"`
 		//FinishedAt and DurationSeconds are not set for outcome "failed".
-		FinishedAt      *activeDirectoryEventTime `json:"finished_at,omitempty"`
-		DurationSeconds *uint64                   `json:"duration,omitempty"`
+		FinishedAt      activeDirectoryEventTime `json:"finished_at,omitempty"`
+		DurationSeconds any                      `json:"duration,omitempty"`
 	} `json:"ad_deployment"`
 	GitRepos map[string]struct {
 		Author        string `json:"author"`
@@ -67,7 +67,9 @@ type activeDirectoryDeploymentEvent struct {
 	} `json:"git"`
 }
 
-type activeDirectoryEventTime time.Time
+type activeDirectoryEventTime struct {
+	Value *time.Time
+}
 
 func (a *activeDirectoryEventTime) UnmarshalJSON(buf []byte) error {
 	var s string
@@ -75,8 +77,13 @@ func (a *activeDirectoryEventTime) UnmarshalJSON(buf []byte) error {
 	if err != nil {
 		return err
 	}
+	if s == "" {
+		*a = activeDirectoryEventTime{nil}
+		return nil
+	}
+
 	t, err := time.ParseInLocation("2006-01-02T15:04:05", s, time.UTC)
-	*a = activeDirectoryEventTime(t)
+	*a = activeDirectoryEventTime{&t}
 	return err
 }
 
@@ -124,16 +131,16 @@ func (v *activeDirectoryDeploymentValidator) ValidatePayload(payload []byte) (*t
 	}
 
 	d := event.ADDeployment
-	if d.StartedAt == nil {
+	if d.StartedAt.Value == nil {
 		return nil, errors.New("value for field ad_deployment.started_at is missing")
 	}
 	switch d.Outcome {
 	case "succeeded":
-		if d.FinishedAt == nil {
+		if d.FinishedAt.Value == nil {
 			return nil, fmt.Errorf("field ad_deployment.finished_at must be set for outcome %q", d.Outcome)
 		}
 	case "failed":
-		if d.FinishedAt != nil {
+		if d.FinishedAt.Value != nil {
 			return nil, fmt.Errorf("field ad_deployment.finished_at may not be set for outcome %q", d.Outcome)
 		}
 	default:
@@ -199,8 +206,8 @@ func (t *activeDirectoryDeploymentToSNowTranslator) TranslatePayload(payload []b
 	}
 	inputDesc := strings.Join(inputDescriptorsOf(mock), ", ")
 
-	startedAt := time.Time(*event.ADDeployment.StartedAt)
-	recordedAt := time.Time(*event.RecordedAt)
+	startedAt := *event.ADDeployment.StartedAt.Value
+	recordedAt := *event.RecordedAt.Value
 	chg := servicenow.Change{
 		StartedAt:   &startedAt,
 		EndedAt:     &recordedAt,

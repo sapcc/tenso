@@ -17,7 +17,6 @@
 *
 *******************************************************************************/
 
-//nolint:dupl
 package handlers_test
 
 import (
@@ -40,14 +39,21 @@ func TestActiveDirectoryDeploymentValidationSuccess(t *testing.T) {
 	)
 	vh := s.Config.EnabledRoutes[0].ValidationHandler
 
-	sourcePayloadBytes, err := os.ReadFile("fixtures/active-directory-deployment-from-concourse.v1.dev.json")
-	test.Must(t, err)
-	payloadInfo, err := vh.ValidatePayload(sourcePayloadBytes)
-	test.Must(t, err)
-	assert.DeepEqual(t, "event description",
-		payloadInfo.Description,
-		"core/active-directory: deploy AD to ad-dev.example.sap",
-	)
+	testCases := []string{
+		"fixtures/active-directory-deployment-from-concourse.v1.dev.json",
+		"fixtures/active-directory-deployment-from-concourse.v1.failed.json",
+	}
+
+	for _, tc := range testCases {
+		sourcePayloadBytes, err := os.ReadFile(tc)
+		test.Must(t, err)
+		payloadInfo, err := vh.ValidatePayload(sourcePayloadBytes)
+		test.Must(t, err)
+		assert.DeepEqual(t, "event description",
+			payloadInfo.Description,
+			"core/active-directory: deploy AD to ad-dev.example.sap",
+		)
+	}
 }
 
 //TODO test validation errors
