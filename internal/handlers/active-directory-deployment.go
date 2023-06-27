@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"github.com/gophercloud/gophercloud"
-
 	"github.com/sapcc/go-api-declarations/deployevent"
+
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
 )
