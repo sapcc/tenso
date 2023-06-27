@@ -225,10 +225,12 @@ func (t *activeDirectoryDeploymentToSNowTranslator) TranslatePayload(payload []b
 // DeliveryHandler for SNow
 
 type activeDirectoryDeploymentToSNowDeliverer struct {
+	Client *servicenow.Client
 }
 
-func (d *activeDirectoryDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
-	return nil
+func (d *activeDirectoryDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+	d.Client, err = servicenow.NewClientFromEnv("TENSO_SERVICENOW")
+	return err
 }
 
 func (d *activeDirectoryDeploymentToSNowDeliverer) PluginTypeID() string {
@@ -236,6 +238,5 @@ func (d *activeDirectoryDeploymentToSNowDeliverer) PluginTypeID() string {
 }
 
 func (d *activeDirectoryDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	//TODO: stub
-	return nil, errors.New("unimplemented")
+	return d.Client.DeliverChangePayload(payload)
 }
