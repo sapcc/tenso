@@ -46,10 +46,10 @@ func init() {
 //
 // TODO: Consider changing the AD deployment pipeline to use concourse-release-resource.
 type activeDirectoryDeploymentEvent struct {
-	Region       string                    `json:"region"`
-	RecordedAt   *activeDirectoryEventTime `json:"recorded_at"`
-	Landscape    string                    `json:"landscape"` //e.g. "dev" or "prod"
-	Hostname     string                    `json:"host"`
+	Region       string                   `json:"region"`
+	RecordedAt   activeDirectoryEventTime `json:"recorded_at"`
+	Landscape    string                   `json:"landscape"` //e.g. "dev" or "prod"
+	Hostname     string                   `json:"host"`
 	ADDeployment struct {
 		Outcome   string                   `json:"outcome"`
 		StartedAt activeDirectoryEventTime `json:"started_at"`
@@ -110,7 +110,7 @@ func (v *activeDirectoryDeploymentValidator) ValidatePayload(payload []byte) (*t
 	if !regionRx.MatchString(event.Region) {
 		return nil, fmt.Errorf(`value for field region is invalid: %q`, event.Region)
 	}
-	if event.RecordedAt == nil {
+	if event.RecordedAt.Value == nil {
 		return nil, errors.New("value for field recorded_at is missing")
 	}
 	if event.Landscape == "" {
