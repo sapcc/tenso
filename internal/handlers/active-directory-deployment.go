@@ -179,13 +179,13 @@ func (t *activeDirectoryDeploymentToSNowTranslator) TranslatePayload(payload []b
 	//above, I want to get this delivery path rebased on deployevent.Event
 	//eventually.
 
-	//get SNow close code by asking for the semantically closest deployevent.Outcome values
-	var closeCode string
+	//get the semantically closest deployevent.Outcome value
+	var outcome deployevent.Outcome
 	switch event.ADDeployment.Outcome {
 	case "succeeded":
-		closeCode, err = servicenow.CloseCodeForOutcome(deployevent.OutcomeSucceeded)
+		outcome = deployevent.OutcomeSucceeded
 	case "failed":
-		closeCode, err = servicenow.CloseCodeForOutcome(deployevent.OutcomeHelmUpgradeFailed)
+		outcome = deployevent.OutcomeADDeploymentFailed
 	default:
 		err = fmt.Errorf(`value for field ad_deployment.outcome is invalid: %q`, event.ADDeployment.Outcome)
 	}
@@ -211,7 +211,7 @@ func (t *activeDirectoryDeploymentToSNowTranslator) TranslatePayload(payload []b
 	chg := servicenow.Change{
 		StartedAt:   &startedAt,
 		EndedAt:     &recordedAt,
-		CloseCode:   closeCode,
+		Outcome:     outcome,
 		Summary:     fmt.Sprintf("Deploy AD to %s", event.Hostname),
 		Description: fmt.Sprintf("Deployed active-directory in landscape %s with versions: %s\n\nOutcome: %s", event.Landscape, inputDesc, event.ADDeployment.Outcome),
 		Executee:    "",

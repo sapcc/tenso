@@ -183,16 +183,6 @@ func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte) (
 		return lhs.Before(*rhs)
 	})
 
-	//if we did not start deploying, we won't create a change object in ServiceNow
-	outcome := event.CombinedOutcome()
-	if outcome == deployevent.OutcomeNotDeployed {
-		return []byte("skip"), nil
-	}
-	closeCode, err := servicenow.CloseCodeForOutcome(outcome)
-	if err != nil {
-		return nil, err
-	}
-
 	inputDesc := strings.Join(inputDescriptorsOf(event), ", ")
 	descLines := []string{
 		fmt.Sprintf("Deployed %s for %s with versions: %s", event.Pipeline.PipelineName, event.Pipeline.JobName, inputDesc),
@@ -209,7 +199,7 @@ func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte) (
 	chg := servicenow.Change{
 		StartedAt:   event.CombinedStartDate(),
 		EndedAt:     event.RecordedAt,
-		CloseCode:   closeCode,
+		Outcome:     event.CombinedOutcome(),
 		Summary:     fmt.Sprintf("Deploy %s for %s", event.Pipeline.PipelineName, event.Pipeline.JobName),
 		Description: strings.Join(descLines, "\n"),
 		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty

@@ -25,13 +25,15 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/sapcc/go-api-declarations/deployevent"
 )
 
 // Change describes the data that we can pass into a ServiceNow change object.
 type Change struct {
 	StartedAt         *time.Time
 	EndedAt           *time.Time
-	CloseCode         string
+	Outcome           deployevent.Outcome
 	Summary           string
 	Description       string
 	ConfigurationItem string
@@ -45,6 +47,15 @@ type Change struct {
 
 // Serialize returns the payload that we can send into SNow.
 func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([]byte, error) {
+	//we will not create a change object in ServiceNow if:
+	//- we did not start deploying (OutcomeNotDeployed)
+	//- the deployment did not finish (e.g. OutcomeHelmUpgradeFailed) -- as
+	//  requested by our change coordinator, because the state of the Helm
+	//  deployment is not clear at this point
+	if chg.Outcome != deployevent.OutcomeSucceeded {
+		return []byte("skip"), nil
+	}
+
 	//find AZs for this change
 	if chg.Region == "" && chg.AvailabilityZone == "" {
 		return nil, fmt.Errorf("cannot serialize a servicenow.Change without a value for either Region or AvailabilityZone")
@@ -93,7 +104,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		"u_affected_environments":  environment,
 		"start_date":               sNowTimeStr(chg.StartedAt),
 		"end_date":                 sNowTimeStr(chg.EndedAt),
-		"close_code":               chg.CloseCode,
+		"close_code":               "Implemented - Successfully",
 		"close_notes":              nl2br(chg.Description),
 		"short_description":        chg.Summary,
 	}

@@ -230,22 +230,12 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 		return nil, err
 	}
 
-	//if we did not start deploying, we won't create a change object in ServiceNow
-	outcome := event.CombinedOutcome()
-	if outcome == deployevent.OutcomeNotDeployed {
-		return []byte("skip"), nil
-	}
-	closeCode, err := servicenow.CloseCodeForOutcome(outcome)
-	if err != nil {
-		return nil, err
-	}
-
 	releaseDesc := strings.Join(releaseDescriptorsOf(event, " to "), ", ")
 	inputDesc := strings.Join(inputDescriptorsOf(event), ", ")
 	chg := servicenow.Change{
 		StartedAt:   event.CombinedStartDate(),
 		EndedAt:     event.RecordedAt,
-		CloseCode:   closeCode,
+		Outcome:     event.CombinedOutcome(),
 		Summary:     fmt.Sprintf("Deploy %s", releaseDesc),
 		Description: fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s\n\nOutcome: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL, string(event.CombinedOutcome())),
 		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty

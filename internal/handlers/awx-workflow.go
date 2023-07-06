@@ -32,6 +32,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
+	"github.com/sapcc/go-api-declarations/deployevent"
 	"github.com/sapcc/go-bits/osext"
 
 	"github.com/sapcc/tenso/internal/servicenow"
@@ -138,7 +139,7 @@ func (a *awxWorkflowValidator) ValidatePayload(payload []byte) (*tenso.PayloadIn
 	if event.FinishedAt == nil {
 		return nil, errors.New(`missing value for field "finished"`)
 	}
-	if _, ok := awxSNowCloseCodes[event.Status]; !ok {
+	if _, ok := awxOutcomes[event.Status]; !ok {
 		return nil, fmt.Errorf(`invalid value for field "status": %q`, event.Status)
 	}
 	if !availabilityZoneRx.MatchString(event.AvailabilityZone) {
@@ -198,8 +199,8 @@ type awxWorkflowToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-var awxSNowCloseCodes = map[string]string{
-	"successful": "Implemented - Successfully",
+var awxOutcomes = map[string]deployevent.Outcome{
+	"successful": deployevent.OutcomeSucceeded,
 }
 
 func (a *awxWorkflowToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
@@ -230,7 +231,7 @@ func (a *awxWorkflowToSNowTranslator) TranslatePayload(payload []byte) ([]byte, 
 	chg := servicenow.Change{
 		StartedAt:        &event.StartedAt.Time,
 		EndedAt:          &event.FinishedAt.Time,
-		CloseCode:        awxSNowCloseCodes[event.Status],
+		Outcome:          awxOutcomes[event.Status],
 		Summary:          event.GetSummary(),
 		Description:      event.GetDescription(),
 		AvailabilityZone: event.AvailabilityZone,
