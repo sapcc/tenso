@@ -21,6 +21,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -152,7 +153,7 @@ func (h *helmDeploymentToElkDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-elk.v1"
 }
 
-func (h *helmDeploymentToElkDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
+func (h *helmDeploymentToElkDeliverer) DeliverPayload(_ context.Context, payload []byte) (*tenso.DeliveryLog, error) {
 	//Logstash wants everything on one line, so ensure we don't have unnecessary whitespace in the payload
 	var buf bytes.Buffer
 	err := json.Compact(&buf, payload)
@@ -193,7 +194,7 @@ func (h *helmDeploymentToSwiftDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-swift.v1"
 }
 
-func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
+func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(_ context.Context, payload []byte) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err
@@ -261,6 +262,6 @@ func (h *helmDeploymentToSNowDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-servicenow.v1"
 }
 
-func (h *helmDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	return h.Client.DeliverChangePayload(payload)
+func (h *helmDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte) (*tenso.DeliveryLog, error) {
+	return h.Client.DeliverChangePayload(ctx, payload)
 }

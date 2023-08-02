@@ -20,6 +20,7 @@
 package tenso
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -94,7 +95,7 @@ type DeliveryHandler interface {
 	//talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
-	DeliverPayload(payload []byte) (*DeliveryLog, error)
+	DeliverPayload(ctx context.Context, payload []byte) (*DeliveryLog, error)
 }
 
 // DeliveryLog can be returned by DeliverPayload() to produce additional log

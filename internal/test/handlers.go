@@ -21,6 +21,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -115,7 +116,7 @@ func (h *testDeliveryHandler) PluginTypeID() string {
 	return fmt.Sprintf("test-%s.v1", h.Type)
 }
 
-func (h *testDeliveryHandler) DeliverPayload(data []byte) (*tenso.DeliveryLog, error) {
+func (h *testDeliveryHandler) DeliverPayload(_ context.Context, data []byte) (*tenso.DeliveryLog, error) {
 	//We don't actually deliver anywhere, but by giving us an invalid payload, tests can "simulate" a delivery failure.
 	_, err := parseTestPayload(data, h.Type)
 	if err != nil {
