@@ -66,7 +66,7 @@ func (c *Context) DeliveryJob(registerer prometheus.Registerer) jobloop.Job {
 	}).Setup(registerer)
 }
 
-func (c *Context) processDelivery(_ context.Context, tx *gorp.Transaction, pd tenso.PendingDelivery, labels prometheus.Labels) (returnedError error) {
+func (c *Context) processDelivery(ctx context.Context, tx *gorp.Transaction, pd tenso.PendingDelivery, labels prometheus.Labels) (returnedError error) {
 	var event tenso.Event
 
 	labels["payload_type"] = pd.PayloadType
@@ -98,7 +98,7 @@ func (c *Context) processDelivery(_ context.Context, tx *gorp.Transaction, pd te
 	}
 
 	//try to translate the payload, or set up a delayed retry on failure
-	dlog, err := dh.DeliverPayload([]byte(*pd.Payload))
+	dlog, err := dh.DeliverPayload(ctx, []byte(*pd.Payload))
 	if err != nil {
 		pd.NextDeliveryAt = c.timeNow().Add(DeliveryRetryInterval)
 		pd.FailedDeliveryCount++

@@ -20,6 +20,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -237,6 +238,6 @@ func (d *activeDirectoryDeploymentToSNowDeliverer) PluginTypeID() string {
 	return "active-directory-deployment-to-servicenow.v1"
 }
 
-func (d *activeDirectoryDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	return d.Client.DeliverChangePayload(payload)
+func (d *activeDirectoryDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte) (*tenso.DeliveryLog, error) {
+	return d.Client.DeliverChangePayload(ctx, payload)
 }

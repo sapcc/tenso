@@ -21,6 +21,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -134,7 +135,7 @@ func (h *terraformDeploymentToSwiftDeliverer) PluginTypeID() string {
 	return "terraform-deployment-to-swift.v1"
 }
 
-func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
+func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(_ context.Context, payload []byte) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err
@@ -242,6 +243,6 @@ func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
 	return "terraform-deployment-to-servicenow.v1"
 }
 
-func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(payload []byte) (*tenso.DeliveryLog, error) {
-	return d.Client.DeliverChangePayload(payload)
+func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte) (*tenso.DeliveryLog, error) {
+	return d.Client.DeliverChangePayload(ctx, payload)
 }
