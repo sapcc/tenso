@@ -1,0 +1,35 @@
+{
+  "region": "qa-de-1",
+  "recorded_at": "2023-06-22T16:24:33Z",
+  "git": {
+    "convergedcloud-ad-config_dev": {
+      "authored-at": "2023-06-14T11:43:57+02:00",
+      "branch": "main",
+      "commit-id": "09d2af8dd22201dd8d48e5dcfcaed281ff9422c7",
+      "committed-at": "2023-06-14T11:43:57+02:00",
+      "remote-url": "https://git.example.org/ad-config.git"
+    },
+    "convergedcloud-ad": {
+      "authored-at": "2023-06-21T20:06:21+02:00",
+      "branch": "main",
+      "commit-id": "e5fa44f2b31c1fb553b6021e7360d07d5d91ff5e",
+      "committed-at": "2023-06-21T20:06:21+02:00",
+      "remote-url": "https://git.example.org/ad.git"
+    }
+  },
+  "pipeline": {
+    "build-number": "58",
+    "build-url": "https://concourse.example.org/teams/core/pipelines/active-directory/jobs/dev-deploy/builds/58",
+    "job": "dev-deploy",
+    "name": "active-directory",
+    "team": "core"
+  },
+  "active-directory-deployment": {
+    "landscape": "dev",
+    "host": "ad-dev.example.sap",
+    "outcome": "succeeded",
+    "finished-at": "2023-06-22T16:24:25Z",
+    "started-at": "2023-06-22T16:21:02Z",
+    "duration": 203
+  }
+}

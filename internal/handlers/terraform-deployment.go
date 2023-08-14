@@ -64,8 +64,11 @@ func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.P
 		return nil, err
 	}
 
+	if event.ADDeployment != nil {
+		return nil, errors.New("active-directory-deployment may not be set for Terraform run events")
+	}
 	if len(event.HelmReleases) != 0 {
-		return nil, errors.New("helm-release[] may not be set for Helm deployment events")
+		return nil, errors.New("helm-release[] may not be set for Terraform run events")
 	}
 	if len(event.TerraformRuns) == 0 {
 		return nil, errors.New("terraform-runs[] may not be empty")

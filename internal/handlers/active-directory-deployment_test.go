@@ -20,6 +20,7 @@
 package handlers_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -34,25 +35,32 @@ func TestActiveDirectoryDeploymentValidationSuccess(t *testing.T) {
 	//this one we actually need
 	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
 
-	s := test.NewSetup(t,
-		test.WithRoute("active-directory-deployment-from-concourse.v1 -> active-directory-deployment-to-servicenow.v1"),
-	)
-	vh := s.Config.EnabledRoutes[0].ValidationHandler
+	for _, eventFormat := range []string{"v1", "v2"} {
+		t.Logf("-- testing event format %s", eventFormat)
 
-	testCases := []string{
-		"fixtures/active-directory-deployment-from-concourse.v1.dev.json",
-		"fixtures/active-directory-deployment-from-concourse.v1.failed.json",
-	}
-
-	for _, tc := range testCases {
-		sourcePayloadBytes, err := os.ReadFile(tc)
-		test.Must(t, err)
-		payloadInfo, err := vh.ValidatePayload(sourcePayloadBytes)
-		test.Must(t, err)
-		assert.DeepEqual(t, "event description",
-			payloadInfo.Description,
-			"core/active-directory: deploy AD to ad-dev.example.sap",
+		s := test.NewSetup(t,
+			test.WithRoute(fmt.Sprintf(
+				"active-directory-deployment-from-concourse.%[1]s -> active-directory-deployment-to-servicenow.v1",
+				eventFormat,
+			)),
 		)
+		vh := s.Config.EnabledRoutes[0].ValidationHandler
+
+		testCases := []string{
+			fmt.Sprintf("fixtures/active-directory-deployment-from-concourse.%s.dev.json", eventFormat),
+			fmt.Sprintf("fixtures/active-directory-deployment-from-concourse.%s.failed.json", eventFormat),
+		}
+
+		for _, tc := range testCases {
+			sourcePayloadBytes, err := os.ReadFile(tc)
+			test.Must(t, err)
+			payloadInfo, err := vh.ValidatePayload(sourcePayloadBytes)
+			test.Must(t, err)
+			assert.DeepEqual(t, "event description",
+				payloadInfo.Description,
+				"core/active-directory: deploy AD to ad-dev.example.sap",
+			)
+		}
 	}
 }
 
@@ -64,15 +72,22 @@ func TestActiveDirectoryDeploymentConversionToSNow(t *testing.T) {
 	//this one we actually need
 	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
 
-	s := test.NewSetup(t,
-		test.WithRoute("active-directory-deployment-from-concourse.v1 -> active-directory-deployment-to-servicenow.v1"),
-	)
-	th := s.Config.EnabledRoutes[0].TranslationHandler
+	for _, eventFormat := range []string{"v1", "v2"} {
+		t.Logf("-- testing event format %s", eventFormat)
 
-	sourcePayloadBytes, err := os.ReadFile("fixtures/active-directory-deployment-from-concourse.v1.dev.json")
-	test.Must(t, err)
-	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes)
-	test.Must(t, err)
-	assert.JSONFixtureFile("fixtures/active-directory-deployment-to-servicenow.v1.dev.json").
-		AssertResponseBody(t, "translated payload", targetPayloadBytes)
+		s := test.NewSetup(t,
+			test.WithRoute(fmt.Sprintf(
+				"active-directory-deployment-from-concourse.%s -> active-directory-deployment-to-servicenow.v1",
+				eventFormat,
+			)),
+		)
+		th := s.Config.EnabledRoutes[0].TranslationHandler
+
+		sourcePayloadBytes, err := os.ReadFile(fmt.Sprintf("fixtures/active-directory-deployment-from-concourse.%s.dev.json", eventFormat))
+		test.Must(t, err)
+		targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes)
+		test.Must(t, err)
+		assert.JSONFixtureFile("fixtures/active-directory-deployment-to-servicenow.v1.dev.json").
+			AssertResponseBody(t, "translated payload", targetPayloadBytes)
+	}
 }

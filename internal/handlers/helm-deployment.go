@@ -38,6 +38,7 @@ import (
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
+//nolint:dupl
 func init() {
 	tenso.ValidationHandlerRegistry.Add(func() tenso.ValidationHandler { return &helmDeploymentValidator{} })
 	tenso.DeliveryHandlerRegistry.Add(func() tenso.DeliveryHandler { return &helmDeploymentToElkDeliverer{} })
@@ -73,6 +74,9 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 		return nil, err
 	}
 
+	if event.ADDeployment != nil {
+		return nil, errors.New("active-directory-deployment may not be set for Helm deployment events")
+	}
 	if len(event.TerraformRuns) != 0 {
 		return nil, errors.New("terraform-runs[] may not be set for Helm deployment events")
 	}
