@@ -80,7 +80,7 @@ func TestPostNewEvent(t *testing.T) {
 	}.Check(t, s.Handler)
 
 	//test error cases: no permission
-	s.Validator.Forbid("event:create")
+	s.Validator.Enforcer.Forbid("event:create")
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=test-foo.v1",
@@ -90,7 +90,7 @@ func TestPostNewEvent(t *testing.T) {
 
 	//test successful event ingestion
 	s.Clock.StepBy(1 * time.Minute)
-	s.Validator.Allow("event:create")
+	s.Validator.Enforcer.Allow("event:create")
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=test-foo.v1",

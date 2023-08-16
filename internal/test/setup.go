@@ -31,6 +31,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"
+	"github.com/sapcc/go-bits/mock"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
 
@@ -68,13 +69,13 @@ type SetupOption func(*setupParams)
 // Setup contains all the pieces that are needed for most tests.
 type Setup struct {
 	//fields that are always set
-	Clock    *Clock
+	Clock    *mock.Clock
 	Config   tenso.Configuration
 	DB       *gorp.DbMap
 	Ctx      context.Context //nolint: containedctx  // only used in tests
 	Registry *prometheus.Registry
 	//fields that are set if WithAPI is included
-	Validator *MockValidator
+	Validator *mock.Validator[*mock.Enforcer]
 	Handler   http.Handler
 	//fields that are set if WithTaskContext is included
 	TaskContext *tasks.Context
@@ -121,7 +122,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	routes, err := tenso.BuildRoutes(params.RouteSpecs, nil, gophercloud.EndpointOpts{})
 	Must(t, err)
 	s := Setup{
-		Clock: &Clock{},
+		Clock: mock.NewClock(),
 		Config: tenso.Configuration{
 			DatabaseURL:   dbURL,
 			EnabledRoutes: routes,
@@ -133,7 +134,11 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 
 	//satisfy additional requests
 	if params.WithAPI {
-		s.Validator = &MockValidator{}
+		s.Validator = mock.NewValidator(mock.NewEnforcer(), map[string]string{
+			"user_name":        "testusername",
+			"user_id":          "testuserid",
+			"user_domain_name": "testdomainname",
+		})
 		s.Handler = httpapi.Compose(
 			api.NewAPI(s.Config, s.DB, s.Validator).OverrideTimeNow(s.Clock.Now),
 			httpapi.WithoutLogging(),
