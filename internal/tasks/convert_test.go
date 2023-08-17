@@ -71,7 +71,7 @@ func TestConversionCommon(t *testing.T) {
 	s.Clock.StepBy(5 * time.Minute)
 	test.MustFail(t,
 		conversionJob.ProcessOne(s.Ctx),
-		`could not process task for job "Event conversion": while trying to convert payload for event 1 ("foo event with value 42") into test-bar.v1: translation failed: expected event = "foo", but got "invalid"`,
+		`while trying to convert payload for event 1 ("foo event with value 42") into test-bar.v1: translation failed: expected event = "foo", but got "invalid"`,
 	)
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET failed_conversions = 1, next_conversion_at = %[1]d WHERE event_id = 1 AND payload_type = 'test-bar.v1';
