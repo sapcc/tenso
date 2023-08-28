@@ -115,7 +115,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 }
 
 func sNowTimeStr(t *time.Time) string {
-	return t.UTC().Format("2006-01-02 15:04:05")
+	return t.UTC().Format(time.DateTime)
 }
 
 func nl2br(text string) string {
