@@ -101,12 +101,13 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 		httpapi.HealthCheckAPI{SkipRequestLog: true},
 		httpapi.WithGlobalMiddleware(corsMiddleware.Handler),
 	)
-	http.Handle("/", handler)
-	http.Handle("/metrics", promhttp.Handler())
+	mux := http.NewServeMux()
+	mux.Handle("/", handler)
+	mux.Handle("/metrics", promhttp.Handler())
 
 	//start HTTP server
 	apiListenAddress := osext.GetenvOrDefault("TENSO_API_LISTEN_ADDRESS", ":8080")
-	must.Succeed(httpext.ListenAndServeContext(ctx, apiListenAddress, nil))
+	must.Succeed(httpext.ListenAndServeContext(ctx, apiListenAddress, mux))
 }
 
 func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
@@ -121,10 +122,11 @@ func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 
 	//wire up HTTP handlers for Prometheus metrics and health check
 	handler := httpapi.Compose(httpapi.HealthCheckAPI{SkipRequestLog: true})
-	http.Handle("/", handler)
-	http.Handle("/metrics", promhttp.Handler())
+	mux := http.NewServeMux()
+	mux.Handle("/", handler)
+	mux.Handle("/metrics", promhttp.Handler())
 
 	//start HTTP server
 	listenAddress := osext.GetenvOrDefault("TENSO_WORKER_LISTEN_ADDRESS", ":8080")
-	must.Succeed(httpext.ListenAndServeContext(ctx, listenAddress, nil))
+	must.Succeed(httpext.ListenAndServeContext(ctx, listenAddress, mux))
 }
