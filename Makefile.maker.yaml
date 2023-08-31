@@ -12,11 +12,12 @@ coverageTest:
   only: '/internal'
   except: '/delivery'
 
-vendoring:
-  enabled: true
-
 dockerfile:
   enabled: true
+
+golang:
+  enableVendoring: true
+  setGoModVersion: true
 
 golangciLint:
   createConfig: true
