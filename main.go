@@ -35,6 +35,7 @@ import (
 	"github.com/sapcc/go-api-declarations/bininfo"
 	"github.com/sapcc/go-bits/gopherpolicy"
 	"github.com/sapcc/go-bits/httpapi"
+	"github.com/sapcc/go-bits/httpapi/pprofapi"
 	"github.com/sapcc/go-bits/httpext"
 	"github.com/sapcc/go-bits/jobloop"
 	"github.com/sapcc/go-bits/logg"
@@ -100,6 +101,7 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 		api.NewAPI(cfg, db, &tv),
 		httpapi.HealthCheckAPI{SkipRequestLog: true},
 		httpapi.WithGlobalMiddleware(corsMiddleware.Handler),
+		pprofapi.API{IsAuthorized: pprofapi.IsRequestFromLocalhost},
 	)
 	mux := http.NewServeMux()
 	mux.Handle("/", handler)
@@ -121,7 +123,10 @@ func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	go c.GarbageCollectionJob(nil).Run(ctx)
 
 	//wire up HTTP handlers for Prometheus metrics and health check
-	handler := httpapi.Compose(httpapi.HealthCheckAPI{SkipRequestLog: true})
+	handler := httpapi.Compose(
+		httpapi.HealthCheckAPI{SkipRequestLog: true},
+		pprofapi.API{IsAuthorized: pprofapi.IsRequestFromLocalhost},
+	)
 	mux := http.NewServeMux()
 	mux.Handle("/", handler)
 	mux.Handle("/metrics", promhttp.Handler())
