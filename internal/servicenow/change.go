@@ -90,15 +90,16 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		}
 	}
 
+	rule := ruleset.Evaluate(chg)
 	data := map[string]interface{}{
-		"chg_model":                ruleset.ChangeModel,
-		"assigned_to":              ruleset.Assignee(chg.Executee),
-		"requested_by":             ruleset.Requester(chg.Executee),
+		"chg_model":                rule.ChangeModel,
+		"assigned_to":              rule.Assignee(chg.Executee),
+		"requested_by":             rule.Requester(chg.Executee),
 		"u_implementation_contact": chg.Executee,
-		"service_offering":         ruleset.ServiceOffering(),
+		"service_offering":         rule.ServiceOffering(),
 		"u_data_center":            strings.Join(datacenters, ", "),
 		"u_customer_impact":        "No Impact",
-		"u_responsible_manager":    ruleset.ResponsibleManager(),
+		"u_responsible_manager":    rule.ResponsibleManager(),
 		"u_customer_notification":  "No",
 		"u_impacted_lobs":          "Global Cloud Services",
 		"u_affected_environments":  environment,

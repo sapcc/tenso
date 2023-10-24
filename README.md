@@ -151,19 +151,22 @@ The config file for `TENSO_SERVICENOW_MAPPING_CONFIG_PATH` must be a YAML docume
 
 | Field | Data type | Explanation |
 | ----- | --------- | ----------- |
-| `helm-deployment` | object | Mapping ruleset for `helm-deployment-from-concourse.v1` translation to ServiceNow (see below). |
-| `awx-workflow` | object | Mapping ruleset for `infra-workflow-from-awx.v1` translation to ServiceNow (see below). |
+| `helm-deployment` | list of objects | Mapping rules for `helm-deployment-from-concourse.v1` translation to ServiceNow (see below). |
+| `awx-workflow` | list of objects | Mapping rules for `infra-workflow-from-awx.v1` translation to ServiceNow (see below). |
 | `regions.<region>` | list of strings | Availability zones belonging to this region. |
 | `availability_zones.<az>.datacenters` | list of strings | Data centers belonging to this AZ, using the names that ServiceNow expects. |
 | `availability_zones.<az>.environment` | string | Either "Development", "QA" or "Production". |
 
-The "mapping ruleset" objects mentioned above can have the following fields:
+The "mapping rule" objects mentioned above can have the following fields:
 
 | Field | Data type | Explanation |
 | ----- | --------- | ----------- |
+| `match_summary` | string | If present, the rule only applies to changes whose summary matches this regular expression. A leading `^` and trailing `$` anchor is added automatically, thus the regex has to match the whole summary. |
 | `change_model` | string | Value for the `chg_model` field. |
 | `fallbacks.assignee` | string | User ID of the user that we will put into `assigned_to` when we don't have a better option. |
 | `fallbacks.requester` | string | User ID of the user that we will put into `requested_by` when we don't have a better option. |
 | `fallbacks.responsible_manager` | string | User name and ID of the user that we will put as `responsible_manager` when we don't have a better option. |
 | `fallbacks.service_offering` | string | Value that we will put as `service_offering` when we don't have a better option. |
 | `overrides.assignee` | string | If given, we will always put this into `assigned_to`. |
+
+If multiple mapping rules match, attributes set in later rules override those set in earlier rules. In other words, put the more general rules at the top and the more specific rules at the bottom.

@@ -1,28 +1,31 @@
 helm-deployment:
-  change_model: "My Test Model"
+- change_model: "My Test Model"
   fallbacks:
     assignee: D123456
     requester: D234567
     responsible_manager: John Doe (D123456)
     service_offering: GCS-Network-Security
+
 awx-workflow:
-  change_model: "My Test Model"
+- change_model: "My Test Model"
   fallbacks:
     requester: I2345678
     responsible_manager: Jane Doe (I1234567)
     service_offering: GCS-Network-Security
   overrides:
     assignee: I1234567
+
 active-directory-deployment:
-  change_model: "My Test Model"
+- change_model: "My Test Model"
   fallbacks:
     requester: I1234567
     responsible_manager: Max Mustermann (D001234)
     service_offering: GCS-Network-Security
   overrides:
     assignee: I0123456
+
 terraform-deployment:
-  change_model: "My Test Model"
+- change_model: "My Test Model"
   fallbacks:
     requester: I1234567
     responsible_manager: Max Mustermann (D001234)
