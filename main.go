@@ -50,6 +50,8 @@ import (
 )
 
 func main() {
+	bininfo.HandleVersionArgument()
+
 	commandWord := ""
 	if len(os.Args) == 2 {
 		commandWord = os.Args[1]
