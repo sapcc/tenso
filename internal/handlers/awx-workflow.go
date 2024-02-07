@@ -74,9 +74,9 @@ func (e awxWorkflowEvent) GetSummary() string {
 }
 
 func (e awxWorkflowEvent) GetDescription() string {
-	queryLine := fmt.Sprintf("Inventory: %s", e.AvailabilityZone)
+	queryLine := "Inventory: " + e.AvailabilityZone
 	if e.SearchQuery != "" {
-		queryLine += fmt.Sprintf(" Limit: %s", e.SearchQuery)
+		queryLine += " Limit: " + e.SearchQuery
 	}
 	lines := []string{
 		fmt.Sprintf("Workflow %q started by %s finished %s", e.Name, strings.ToUpper(e.CreatedBy), e.Status),

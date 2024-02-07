@@ -241,7 +241,7 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byt
 		StartedAt:   event.CombinedStartDate(),
 		EndedAt:     event.RecordedAt,
 		Outcome:     event.CombinedOutcome(),
-		Summary:     fmt.Sprintf("Deploy %s", releaseDesc),
+		Summary:     "Deploy " + releaseDesc,
 		Description: fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s\n\nOutcome: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL, string(event.CombinedOutcome())),
 		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty
 		Region:      event.Region,

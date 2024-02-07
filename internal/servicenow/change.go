@@ -21,6 +21,7 @@ package servicenow
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"text/template"
@@ -58,7 +59,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 
 	//find AZs for this change
 	if chg.Region == "" && chg.AvailabilityZone == "" {
-		return nil, fmt.Errorf("cannot serialize a servicenow.Change without a value for either Region or AvailabilityZone")
+		return nil, errors.New("cannot serialize a servicenow.Change without a value for either Region or AvailabilityZone")
 	}
 	var azNames []string
 	switch {

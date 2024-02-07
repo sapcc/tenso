@@ -158,7 +158,7 @@ func (v *activeDirectoryDeploymentV1Validator) ValidatePayload(payload []byte) (
 	}
 
 	return &tenso.PayloadInfo{
-		Description: fmt.Sprintf("core/active-directory: deploy AD to %s", event.Hostname),
+		Description: "core/active-directory: deploy AD to " + event.Hostname,
 	}, nil
 }
 
@@ -222,7 +222,7 @@ func (t *activeDirectoryDeploymentV1ToSNowTranslator) TranslatePayload(payload [
 		StartedAt:   &startedAt,
 		EndedAt:     &recordedAt,
 		Outcome:     outcome,
-		Summary:     fmt.Sprintf("Deploy AD to %s", event.Hostname),
+		Summary:     "Deploy AD to " + event.Hostname,
 		Description: fmt.Sprintf("Deployed active-directory in landscape %s with versions: %s\n\nOutcome: %s", event.Landscape, inputDesc, event.ADDeployment.Outcome),
 		Executee:    "",
 		Region:      event.Region,
@@ -292,7 +292,7 @@ func (v *activeDirectoryDeploymentV2Validator) ValidatePayload(payload []byte) (
 	}
 
 	return &tenso.PayloadInfo{
-		Description: fmt.Sprintf("core/active-directory: deploy AD to %s", ad.Hostname),
+		Description: "core/active-directory: deploy AD to " + ad.Hostname,
 	}, nil
 }
 
@@ -322,7 +322,7 @@ func (t *activeDirectoryDeploymentV2ToSNowTranslator) TranslatePayload(payload [
 		StartedAt: event.CombinedStartDate(),
 		EndedAt:   event.RecordedAt,
 		Outcome:   event.CombinedOutcome(),
-		Summary:   fmt.Sprintf("Deploy AD to %s", event.ADDeployment.Hostname),
+		Summary:   "Deploy AD to " + event.ADDeployment.Hostname,
 		Description: fmt.Sprintf("Deployed active-directory in landscape %s with versions: %s\n\nOutcome: %s",
 			event.ADDeployment.Landscape,
 			strings.Join(inputDescriptorsOf(event), ", "),

@@ -195,7 +195,7 @@ func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte) (
 		descLines = append(descLines, fmt.Sprintf("Step %d: %s", idx+1, summaryOfRun(*run)))
 	}
 	descLines = append(descLines,
-		fmt.Sprintf("Deployment log: %s", event.Pipeline.BuildURL),
+		"Deployment log: "+event.Pipeline.BuildURL,
 		"",
 		fmt.Sprintf("Outcome: %s", event.CombinedOutcome()),
 	)

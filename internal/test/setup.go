@@ -108,9 +108,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 
 	//reset all primary key sequences for reproducible row IDs
 	for _, tableName := range []string{"events", "users"} {
-		nextID, err := db.SelectInt(fmt.Sprintf(
-			"SELECT 1 + COALESCE(MAX(id), 0) FROM %s", tableName,
-		))
+		nextID, err := db.SelectInt("SELECT 1 + COALESCE(MAX(id), 0) FROM " + tableName)
 		Must(t, err)
 
 		query := fmt.Sprintf(`ALTER SEQUENCE %s_id_seq RESTART WITH %d`, tableName, nextID)
