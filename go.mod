@@ -1,6 +1,6 @@
 module github.com/sapcc/tenso
 
-go 1.21
+go 1.22
 
 require (
 	github.com/dlmiddlecote/sqlstats v1.0.2
