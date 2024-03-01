@@ -22,7 +22,7 @@ github.com/golang-migrate/migrate/v4/database/postgres
 github.com/golang-migrate/migrate/v4/internal/url
 github.com/golang-migrate/migrate/v4/source
 github.com/golang-migrate/migrate/v4/source/go_bindata
-# github.com/gophercloud/gophercloud v1.9.0
+# github.com/gophercloud/gophercloud v1.10.0
 ## explicit; go 1.14
 github.com/gophercloud/gophercloud
 github.com/gophercloud/gophercloud/internal/ctxt
@@ -74,15 +74,15 @@ github.com/majewsky/schwift/internal/errext
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/prometheus/client_golang v1.18.0
-## explicit; go 1.19
+# github.com/prometheus/client_golang v1.19.0
+## explicit; go 1.20
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promhttp
 # github.com/prometheus/client_model v0.5.0
 ## explicit; go 1.19
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.47.0
+# github.com/prometheus/common v0.48.0
 ## explicit; go 1.20
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
@@ -99,7 +99,7 @@ github.com/rs/cors
 ## explicit; go 1.21
 github.com/sapcc/go-api-declarations/bininfo
 github.com/sapcc/go-api-declarations/deployevent
-# github.com/sapcc/go-bits v0.0.0-20240222221204-90b493ffdee9
+# github.com/sapcc/go-bits v0.0.0-20240229224940-f0612298e3a6
 ## explicit; go 1.21
 github.com/sapcc/go-bits/assert
 github.com/sapcc/go-bits/easypg
