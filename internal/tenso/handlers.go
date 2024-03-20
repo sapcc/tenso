@@ -32,10 +32,10 @@ import (
 // payload type. The PluginTypeID must be equal to the payload type.
 type ValidationHandler interface {
 	pluggable.Plugin
-	//Init will be called at least once during startup if this ValidationHandler
-	//is enabled in the configuration.
+	// Init will be called at least once during startup if this ValidationHandler
+	// is enabled in the configuration.
 	//
-	//A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
+	// A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
 	//talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
@@ -45,8 +45,8 @@ type ValidationHandler interface {
 // PayloadInfo contains structured information about a payload. It is returned
 // by ValidationHandler.ValidatePayload().
 type PayloadInfo struct {
-	//Description is a short summary of the event with this payload. It is used
-	//to identify the event in log messages.
+	// Description is a short summary of the event with this payload. It is used
+	// to identify the event in log messages.
 	Description string
 }
 
@@ -55,10 +55,10 @@ type PayloadInfo struct {
 // "$SOURCE_PAYLOAD_TYPE->$TARGET_PAYLOAD_TYPE".
 type TranslationHandler interface {
 	pluggable.Plugin
-	//Init will be called at least once during startup if this TranslationHandler
-	//is enabled in the configuration.
+	// Init will be called at least once during startup if this TranslationHandler
+	// is enabled in the configuration.
 	//
-	//A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
+	// A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
 	//talk to OpenStack. During unit tests, (nil, {}) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
@@ -88,10 +88,10 @@ func TargetPayloadTypeOf(h TranslationHandler) string {
 // payload type.
 type DeliveryHandler interface {
 	pluggable.Plugin
-	//Init will be called at least once during startup if this DeliveryHandler
-	//is enabled in the configuration.
+	// Init will be called at least once during startup if this DeliveryHandler
+	// is enabled in the configuration.
 	//
-	//A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
+	// A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
 	//talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 

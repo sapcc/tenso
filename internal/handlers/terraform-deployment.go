@@ -99,7 +99,7 @@ func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.P
 			return nil, fmt.Errorf(`in terraform-runs[%d]: field terraform-version may not be empty`, idx)
 		}
 
-		//Terraform will only show the change_summary if the operation completes successfully
+		// Terraform will only show the change_summary if the operation completes successfully
 		//Ref: <https://github.com/hashicorp/terraform/blob/6fa5784129f706a4b459b4495394899c6cc3e041/internal/command/apply.go#L131-L138>
 		if runInfo.Outcome == deployevent.OutcomeSucceeded && runInfo.ChangeSummary == nil {
 			return nil, fmt.Errorf(`in terraform-runs[%d]: field change-summary must be set for outcome %q`, idx, runInfo.Outcome)

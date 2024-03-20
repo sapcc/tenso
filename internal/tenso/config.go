@@ -61,7 +61,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		DatabaseName:      osext.GetenvOrDefault("TENSO_DB_NAME", "tenso"),
 	}))
 
-	//initialize OpenStack connection
+	// initialize OpenStack connection
 	ao, err := clientconfig.AuthOptions(nil)
 	if err != nil {
 		logg.Fatal("cannot find OpenStack credentials: " + err.Error())
@@ -72,7 +72,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		logg.Fatal("cannot connect to OpenStack: " + err.Error())
 	}
 	eo := gophercloud.EndpointOpts{
-		//note that empty values are acceptable in both fields
+		// note that empty values are acceptable in both fields
 		Region:       os.Getenv("OS_REGION_NAME"),
 		Availability: gophercloud.Availability(os.Getenv("OS_INTERFACE")),
 	}
@@ -93,11 +93,11 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 		deliveryHandlers    = make(map[string]DeliveryHandler)
 	)
 
-	//parse routes
+	// parse routes
 	for _, routeSpec := range routeSpecs {
 		routeSpec = strings.TrimSpace(routeSpec)
 		if routeSpec == "" {
-			//be lenient e.g. when the list of routes has a trailing comma
+			// be lenient e.g. when the list of routes has a trailing comma
 			continue
 		}
 
@@ -110,7 +110,7 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 			TargetPayloadType: match[2],
 		}
 
-		//instantiate validation handler if not done yet
+		// instantiate validation handler if not done yet
 		if validationHandlers[route.SourcePayloadType] == nil {
 			vh := ValidationHandlerRegistry.Instantiate(route.SourcePayloadType)
 			if vh == nil {
@@ -126,7 +126,7 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 		}
 		route.ValidationHandler = validationHandlers[route.SourcePayloadType]
 
-		//initiate translation handler if not done yet
+		// initiate translation handler if not done yet
 		typeID := fmt.Sprintf("%s->%s", route.SourcePayloadType, route.TargetPayloadType)
 		if translationHandlers[typeID] == nil {
 			th := TranslationHandlerRegistry.Instantiate(typeID)
@@ -143,7 +143,7 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 		}
 		route.TranslationHandler = translationHandlers[typeID]
 
-		//instantiate delivery handler if not done yet
+		// instantiate delivery handler if not done yet
 		if deliveryHandlers[route.TargetPayloadType] == nil {
 			dh := DeliveryHandlerRegistry.Instantiate(route.TargetPayloadType)
 			if dh == nil {

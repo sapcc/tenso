@@ -44,7 +44,7 @@ import (
 	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/sapcc/tenso/internal/api"
-	_ "github.com/sapcc/tenso/internal/handlers" //must be imported to register the handler implementations
+	_ "github.com/sapcc/tenso/internal/handlers" // must be imported to register the handler implementations
 	"github.com/sapcc/tenso/internal/tasks"
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -63,7 +63,7 @@ func main() {
 	defer undoMaxprocs()
 
 	wrap := httpext.WrapTransport(&http.DefaultTransport)
-	wrap.SetInsecureSkipVerify(osext.GetenvBool("TENSO_INSECURE")) //for debugging with mitmproxy etc. (DO NOT SET IN PRODUCTION)
+	wrap.SetInsecureSkipVerify(osext.GetenvBool("TENSO_INSECURE")) // for debugging with mitmproxy etc. (DO NOT SET IN PRODUCTION)
 	wrap.SetOverrideUserAgent(bininfo.Component(), bininfo.VersionOr("rolling"))
 
 	cfg, provider, eo := tenso.ParseConfiguration()
@@ -93,7 +93,7 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 	}
 	must.Succeed(tv.LoadPolicyFile(osext.MustGetenv("TENSO_OSLO_POLICY_PATH")))
 
-	//wire up HTTP handlers
+	// wire up HTTP handlers
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"HEAD", "GET", "POST", "PUT", "DELETE"},
@@ -109,7 +109,7 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 	mux.Handle("/", handler)
 	mux.Handle("/metrics", promhttp.Handler())
 
-	//start HTTP server
+	// start HTTP server
 	apiListenAddress := osext.GetenvOrDefault("TENSO_API_LISTEN_ADDRESS", ":8080")
 	must.Succeed(httpext.ListenAndServeContext(ctx, apiListenAddress, mux))
 }
@@ -117,14 +117,14 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
 
-	//start worker loops (we have a budget of 16 DB connections, which we
-	//distribute between converting and delivering with some headroom to spare)
+	// start worker loops (we have a budget of 16 DB connections, which we
+	// distribute between converting and delivering with some headroom to spare)
 	c := tasks.NewContext(cfg, db)
 	go c.ConversionJob(nil).Run(ctx, jobloop.NumGoroutines(7))
 	go c.DeliveryJob(nil).Run(ctx, jobloop.NumGoroutines(7))
 	go c.GarbageCollectionJob(nil).Run(ctx)
 
-	//wire up HTTP handlers for Prometheus metrics and health check
+	// wire up HTTP handlers for Prometheus metrics and health check
 	handler := httpapi.Compose(
 		httpapi.HealthCheckAPI{SkipRequestLog: true},
 		pprofapi.API{IsAuthorized: pprofapi.IsRequestFromLocalhost},
@@ -133,7 +133,7 @@ func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
 	mux.Handle("/", handler)
 	mux.Handle("/metrics", promhttp.Handler())
 
-	//start HTTP server
+	// start HTTP server
 	listenAddress := osext.GetenvOrDefault("TENSO_WORKER_LISTEN_ADDRESS", ":8080")
 	must.Succeed(httpext.ListenAndServeContext(ctx, listenAddress, mux))
 }

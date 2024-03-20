@@ -31,7 +31,7 @@ import (
 )
 
 func TestHelmDeploymentValidationSuccess(t *testing.T) {
-	//we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
+	// we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
 	t.Setenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST", "localhost:1")
 
 	s := test.NewSetup(t,
@@ -62,12 +62,12 @@ func TestHelmDeploymentValidationSuccess(t *testing.T) {
 	}
 }
 
-//TODO test validation errors
+// TODO test validation errors
 
 func TestHelmDeploymentConversionToSNow(t *testing.T) {
-	//we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
+	// we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
 	t.Setenv("TENSO_SERVICENOW_CREATE_CHANGE_URL", "http://www.example.com")
-	//this one we actually need
+	// this one we actually need
 	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
 
 	s := test.NewSetup(t,

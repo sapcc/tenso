@@ -50,7 +50,7 @@ func (c *Context) DeliveryJob(registerer prometheus.Registerer) jobloop.Job {
 	return (&jobloop.TxGuardedJob[*gorp.Transaction, tenso.PendingDelivery]{
 		Metadata: jobloop.JobMetadata{
 			ReadableName:    "Event delivery",
-			ConcurrencySafe: true, //because "FOR UPDATE SKIP LOCKED" is used
+			ConcurrencySafe: true, // because "FOR UPDATE SKIP LOCKED" is used
 			CounterOpts: prometheus.CounterOpts{
 				Name: "tenso_event_deliveries",
 				Help: "Counter for deliveries of event payloads.",
@@ -79,13 +79,13 @@ func (c *Context) processDelivery(ctx context.Context, tx *gorp.Transaction, pd 
 		}
 	}()
 
-	//find the corresponding event
+	// find the corresponding event
 	err := tx.SelectOne(&event, `SELECT * FROM events WHERE id = $1`, pd.EventID)
 	if err != nil {
 		return err
 	}
 
-	//find the delivery handler
+	// find the delivery handler
 	var dh tenso.DeliveryHandler
 	for _, route := range c.Config.EnabledRoutes {
 		if route.TargetPayloadType == pd.PayloadType {
@@ -97,7 +97,7 @@ func (c *Context) processDelivery(ctx context.Context, tx *gorp.Transaction, pd 
 		return fmt.Errorf("no DeliveryHandler found for %s (was this route disabled recently?)", pd.PayloadType)
 	}
 
-	//try to translate the payload, or set up a delayed retry on failure
+	// try to translate the payload, or set up a delayed retry on failure
 	dlog, err := dh.DeliverPayload(ctx, []byte(*pd.Payload))
 	if err != nil {
 		pd.NextDeliveryAt = c.timeNow().Add(DeliveryRetryInterval)
@@ -116,7 +116,7 @@ func (c *Context) processDelivery(ctx context.Context, tx *gorp.Transaction, pd 
 	}
 	logg.Debug("delivered %s payload for event %d (%q) was: %s", pd.PayloadType, pd.EventID, event.Description, *pd.Payload)
 
-	//on successful delivery, remove the PendingDelivery
+	// on successful delivery, remove the PendingDelivery
 	_, err = tx.Delete(&pd)
 	if err != nil {
 		return err

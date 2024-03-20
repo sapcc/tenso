@@ -33,8 +33,8 @@ type Context struct {
 	Config tenso.Configuration
 	DB     *gorp.DbMap
 
-	//dependency injection slots (usually filled by ApplyDefaults(), but filled
-	//with doubles in tests)
+	// dependency injection slots (usually filled by ApplyDefaults(), but filled
+	// with doubles in tests)
 	timeNow func() time.Time
 }
 

@@ -30,12 +30,12 @@ import (
 // MappingConfiguration is the structure of the config file at
 // $TENSO_SERVICENOW_MAPPING_CONFIG_PATH.
 type MappingConfiguration struct {
-	//rulesets per event type
+	// rulesets per event type
 	HelmDeployment            MappingRuleset `yaml:"helm-deployment"`
 	ActiveDirectoryDeployment MappingRuleset `yaml:"active-directory-deployment"`
 	AWXWorkflow               MappingRuleset `yaml:"awx-workflow"`
 	TerraformDeployment       MappingRuleset `yaml:"terraform-deployment"`
-	//datacenter mapping
+	// datacenter mapping
 	Regions           map[string][]string `yaml:"regions"`
 	AvailabilityZones map[string]struct {
 		Datacenters []string `yaml:"datacenters"`

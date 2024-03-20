@@ -60,7 +60,7 @@ func (a *API) handlePostSyntheticEvent(w http.ResponseWriter, r *http.Request) {
 func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, policyRule string, getPayload func(payloadType string) ([]byte, error)) {
 	requestTime := a.timeNow()
 
-	//collect required query parameters
+	// collect required query parameters
 	query := r.URL.Query()
 	if len(query["payload_type"]) != 1 {
 		http.Error(w, `need exactly one value for query parameter "payload_type"`, http.StatusBadRequest)
@@ -72,14 +72,14 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
-	//check authorization
+	// check authorization
 	token := a.Validator.CheckToken(r)
 	token.Context.Request = map[string]string{"target.payload_type": payloadType}
 	if !token.Require(w, policyRule) {
 		return
 	}
 
-	//check that payload type is known
+	// check that payload type is known
 	var (
 		validationHandler  tenso.ValidationHandler
 		targetPayloadTypes []string
@@ -88,8 +88,8 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		if route.SourcePayloadType == payloadType {
 			targetPayloadTypes = append(targetPayloadTypes, route.TargetPayloadType)
 			//NOTE: If there are multiple routes with the same SourcePayloadType,
-			//they will have the same ValidationHandler, so it does not matter which
-			//one we pick.
+			// they will have the same ValidationHandler, so it does not matter which
+			// one we pick.
 			validationHandler = route.ValidationHandler
 		}
 	}
@@ -98,7 +98,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
-	//validate incoming payload
+	// validate incoming payload
 	payloadBytes, err := getPayload(payloadType)
 	if respondwith.ErrorText(w, err) {
 		return
@@ -109,7 +109,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
-	//find or create user account
+	// find or create user account
 	userID, err := a.DB.SelectInt(findOrCreateUserQuery,
 		token.UserUUID(), token.UserName(), token.UserDomainName(),
 	)
@@ -117,7 +117,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
-	//create DB records for this event
+	// create DB records for this event
 	tx, err := a.DB.Begin()
 	if respondwith.ErrorText(w, err) {
 		return
@@ -139,12 +139,12 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		err = tx.Insert(&tenso.PendingDelivery{
 			EventID:               event.ID,
 			PayloadType:           targetPayloadType,
-			Payload:               nil, //to be converted later
-			ConvertedAt:           nil, //to be converted later
+			Payload:               nil, // to be converted later
+			ConvertedAt:           nil, // to be converted later
 			FailedConversionCount: 0,
 			FailedDeliveryCount:   0,
-			NextConversionAt:      requestTime, //convert immediately
-			NextDeliveryAt:        requestTime, //deliver immediately once converted
+			NextConversionAt:      requestTime, // convert immediately
+			NextDeliveryAt:        requestTime, // deliver immediately once converted
 		})
 		if respondwith.ErrorText(w, err) {
 			return

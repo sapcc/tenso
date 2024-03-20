@@ -46,11 +46,11 @@ func jsonUnmarshalStrict[T any](payload []byte) (T, error) {
 // terraform-deployment)
 
 var (
-	regionRx      = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9]$`)                                                //e.g. "qa-de-1"
-	clusterRx     = regexp.MustCompile(`^(?:(?:|[a-z]-|ci[0-9]?-|gh-actions-)?[a-z]{2}-[a-z]{2}-[0-9]|k-master)$`) //e.g. "qa-de-1" or "s-qa-de-1" or "ci-eu-de-2" or "gh-actions-eu-de-2" or "k-master"
-	gitCommitRx   = regexp.MustCompile(`^[0-9a-f]{40}$`)                                                           //SHA-1 digest with lower-case digits
-	buildNumberRx = regexp.MustCompile(`^[1-9][0-9]*(?:\.[1-9][0-9]*)?$`)                                          //e.g. "23" or "42.1"
-	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)                                             //e.g. "D123456" or "C1234567"
+	regionRx      = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9]$`)                                                // e.g. "qa-de-1"
+	clusterRx     = regexp.MustCompile(`^(?:(?:|[a-z]-|ci[0-9]?-|gh-actions-)?[a-z]{2}-[a-z]{2}-[0-9]|k-master)$`) // e.g. "qa-de-1" or "s-qa-de-1" or "ci-eu-de-2" or "gh-actions-eu-de-2" or "k-master"
+	gitCommitRx   = regexp.MustCompile(`^[0-9a-f]{40}$`)                                                           // SHA-1 digest with lower-case digits
+	buildNumberRx = regexp.MustCompile(`^[1-9][0-9]*(?:\.[1-9][0-9]*)?$`)                                          // e.g. "23" or "42.1"
+	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)                                             // e.g. "D123456" or "C1234567"
 )
 
 func isClusterLocatedInRegion(cluster, region string) bool {
@@ -113,14 +113,14 @@ func inputDescriptorsOf(event deployevent.Event) (result []string) {
 
 	var gitVersions []string
 	for name, repo := range event.GitRepos {
-		//`name` is the name of this resource from which the Git repository was
-		//pulled, which can be readable like `helm-charts.git` or `secrets.git`,
-		//but sometimes is nonsensical without context (e.g. `qa-de-1.git` for a
+		// `name` is the name of this resource from which the Git repository was
+		// pulled, which can be readable like `helm-charts.git` or `secrets.git`,
+		// but sometimes is nonsensical without context (e.g. `qa-de-1.git` for a
 		//checkout of `secrets.git` with path filter on qa-de-1 values), so we're
 		//only using it if we don't have a better alternative
 		readableName := name
 		if repo.RemoteURL != "" {
-			//our preference is to take the basename from the remote URL, e.g.
+			// our preference is to take the basename from the remote URL, e.g.
 			//        remoteURL = "https://github.com/sapcc/helm-charts/"
 			//  -> readableName = "helm-charts.git"
 			remoteURL, err := url.Parse(repo.RemoteURL)
@@ -134,7 +134,7 @@ func inputDescriptorsOf(event deployevent.Event) (result []string) {
 
 		gitVersions = append(gitVersions, fmt.Sprintf("%s %s", readableName, repo.CommitID))
 	}
-	sort.Strings(gitVersions) //for test reproducability
+	sort.Strings(gitVersions) // for test reproducability
 
 	return append(imageVersions, gitVersions...)
 }

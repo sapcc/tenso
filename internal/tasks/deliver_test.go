@@ -37,7 +37,7 @@ func TestDeliveryCommon(t *testing.T) {
 		test.WithRoute("test-foo.v1 -> test-baz.v1"),
 	)
 
-	//set up one event with two pending deliveries, just like `POST /v1/events/new` does it
+	// set up one event with two pending deliveries, just like `POST /v1/events/new` does it
 	s.Clock.StepBy(1 * time.Hour)
 	user := tenso.User{
 		Name:       "testusername",
@@ -68,22 +68,22 @@ func TestDeliveryCommon(t *testing.T) {
 	deliveryJob := s.TaskContext.DeliveryJob(s.Registry)
 	garbageJob := s.TaskContext.GarbageCollectionJob(s.Registry)
 
-	//delivery idles until payloads are translated
+	// delivery idles until payloads are translated
 	s.Clock.StepBy(5 * time.Minute)
 	test.MustFail(t, deliveryJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
 	tr.DBChanges().AssertEmpty()
 
-	//GC does not touch events with pending deliveries
+	// GC does not touch events with pending deliveries
 	test.Must(t, garbageJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEmpty()
 
-	//provide a translated payload, but an invalid one (we use this to simulate a delivery failure in the next step)
+	// provide a translated payload, but an invalid one (we use this to simulate a delivery failure in the next step)
 	_, err := s.DB.Exec(`UPDATE pending_deliveries SET payload = $1, converted_at = $2 WHERE payload_type = $3`,
 		`{"event":"invalid","value":42}`, s.Clock.Now(), "test-bar.v1")
 	test.Must(t, err)
 	tr.DBChanges().Ignore()
 
-	//simulate delivery failure by having provided a broken target payload
+	// simulate delivery failure by having provided a broken target payload
 	s.Clock.StepBy(5 * time.Minute)
 	test.MustFail(t,
 		deliveryJob.ProcessOne(s.Ctx),
@@ -95,28 +95,28 @@ func TestDeliveryCommon(t *testing.T) {
 		s.Clock.Now().Add(tasks.DeliveryRetryInterval).Unix(),
 	)
 
-	//fix target payload
+	// fix target payload
 	_, err = s.DB.Exec(`UPDATE pending_deliveries SET payload = $1, converted_at = $2 WHERE payload_type = $3`,
 		`{"event":"bar","value":42}`, s.Clock.Now(), "test-bar.v1")
 	test.Must(t, err)
 	tr.DBChanges().Ignore()
 
-	//delivery is still postponed because of previous failure, so we stall for now
+	// delivery is still postponed because of previous failure, so we stall for now
 	test.MustFail(t, deliveryJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
 
-	//delivery goes through after waiting period is over
+	// delivery goes through after waiting period is over
 	s.Clock.StepBy(5 * time.Minute)
 	test.Must(t, deliveryJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`DELETE FROM pending_deliveries WHERE event_id = 1 AND payload_type = 'test-bar.v1';`)
 
-	//also deliver the second payload in the same way
+	// also deliver the second payload in the same way
 	_, err = s.DB.Exec(`UPDATE pending_deliveries SET payload = $1, converted_at = $2 WHERE payload_type = $3`,
 		`{"event":"baz","value":42}`, s.Clock.Now(), "test-baz.v1")
 	test.Must(t, err)
 	test.Must(t, deliveryJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`DELETE FROM pending_deliveries WHERE event_id = 1 AND payload_type = 'test-baz.v1';`)
 
-	//since all payloads were delivered, GC will clean up the event
+	// since all payloads were delivered, GC will clean up the event
 	test.Must(t, garbageJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`DELETE FROM events WHERE id = 1;`)
 }

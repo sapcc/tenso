@@ -37,7 +37,7 @@ func TestConversionCommon(t *testing.T) {
 		test.WithRoute("test-foo.v1 -> test-baz.v1"),
 	)
 
-	//set up one event with two pending deliveries, just like `POST /v1/events/new` does it
+	// set up one event with two pending deliveries, just like `POST /v1/events/new` does it
 	s.Clock.StepBy(1 * time.Hour)
 	user := tenso.User{
 		Name:       "testusername",
@@ -49,7 +49,7 @@ func TestConversionCommon(t *testing.T) {
 		CreatorID:   user.ID,
 		CreatedAt:   s.Clock.Now(),
 		PayloadType: "test-foo.v1",
-		Payload:     `{"event":"invalid","value":42}`, //see below for why "invalid"
+		Payload:     `{"event":"invalid","value":42}`, // see below for why "invalid"
 		Description: "foo event with value 42",
 	}
 	test.Must(t, s.DB.Insert(&event))
@@ -67,7 +67,7 @@ func TestConversionCommon(t *testing.T) {
 	tr, _ := easypg.NewTracker(t, s.DB.Db)
 	conversionJob := s.TaskContext.ConversionJob(s.Registry)
 
-	//simulate conversion failure by having provided a broken source payload
+	// simulate conversion failure by having provided a broken source payload
 	s.Clock.StepBy(5 * time.Minute)
 	test.MustFail(t,
 		conversionJob.ProcessOne(s.Ctx),
@@ -79,12 +79,12 @@ func TestConversionCommon(t *testing.T) {
 		s.Clock.Now().Add(tasks.ConversionRetryInterval).Unix(),
 	)
 
-	//fix source payload to enable a successful conversion
+	// fix source payload to enable a successful conversion
 	_, err := s.DB.Exec(`UPDATE events SET payload = $1`, `{"event":"foo","value":42}`)
 	test.Must(t, err)
 	tr.DBChanges().Ignore()
 
-	//check successful conversion (this touches the second PendingDelivery since it's NextConversionAt is lower)
+	// check successful conversion (this touches the second PendingDelivery since it's NextConversionAt is lower)
 	test.Must(t, conversionJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET payload = '%[1]s', converted_at = %[2]d WHERE event_id = 1 AND payload_type = 'test-baz.v1';
@@ -93,10 +93,10 @@ func TestConversionCommon(t *testing.T) {
 		s.Clock.Now().Unix(),
 	)
 
-	//second conversion is still postponed, so we stall for now
+	// second conversion is still postponed, so we stall for now
 	test.MustFail(t, conversionJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
 
-	//second conversion goes through after waiting period is over
+	// second conversion goes through after waiting period is over
 	s.Clock.StepBy(5 * time.Minute)
 	test.Must(t, conversionJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`
@@ -106,7 +106,7 @@ func TestConversionCommon(t *testing.T) {
 		s.Clock.Now().Unix(),
 	)
 
-	//nothing left to convert now
+	// nothing left to convert now
 	test.MustFail(t, conversionJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
 	tr.DBChanges().AssertEmpty()
 }

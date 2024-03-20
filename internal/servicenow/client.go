@@ -47,8 +47,8 @@ func NewClientFromEnv(envPrefix string) (*Client, error) {
 		return nil, err
 	}
 
-	//in unit tests, we are setting this dummy value to circumvent the
-	//client-cert loading
+	// in unit tests, we are setting this dummy value to circumvent the
+	// client-cert loading
 	if endpointURL == "http://www.example.com" {
 		return &Client{
 			EndpointURL: endpointURL,
@@ -87,7 +87,7 @@ func NewClientFromEnv(envPrefix string) (*Client, error) {
 // has the same interface as DeliverPayload() in the tenso.DeliveryHandler
 // interface.
 func (c *Client) DeliverChangePayload(ctx context.Context, payload []byte) (*tenso.DeliveryLog, error) {
-	//if the TranslationHandler wants us to ignore this payload, skip the delivery
+	// if the TranslationHandler wants us to ignore this payload, skip the delivery
 	if string(payload) == "skip" {
 		return nil, nil
 	}
@@ -104,8 +104,8 @@ func (c *Client) DeliverChangePayload(ctx context.Context, payload []byte) (*ten
 	}
 	defer resp.Body.Close()
 
-	//on success, make a best-effort attempt to retrieve the object ID from the
-	//response...
+	// on success, make a best-effort attempt to retrieve the object ID from the
+	// response...
 	if resp.StatusCode < 400 {
 		var respData struct {
 			Result struct {
@@ -120,12 +120,12 @@ func (c *Client) DeliverChangePayload(ctx context.Context, payload []byte) (*ten
 				Message: fmt.Sprintf("created %s in ServiceNow", respData.Result.Number.Value),
 			}, nil
 		}
-		//...but failure to retrieve it is not an error, because we want
-		//to avoid double delivery of the same payload if at all possible
+		// ...but failure to retrieve it is not an error, because we want
+		// to avoid double delivery of the same payload if at all possible
 		return nil, nil
 	}
 
-	//unexpected error -> log response body
+	// unexpected error -> log response body
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("while reading response body for failed POST %s: %w", c.EndpointURL, err)

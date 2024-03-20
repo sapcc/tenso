@@ -119,7 +119,7 @@ func (a *awxWorkflowValidator) PluginTypeID() string {
 }
 
 var (
-	availabilityZoneRx = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9][a-z]$`) //e.g. "qa-de-1a"
+	availabilityZoneRx = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9][a-z]$`) // e.g. "qa-de-1a"
 )
 
 func (a *awxWorkflowValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
@@ -219,7 +219,7 @@ var (
 	// "configuration_item" is a reference to objects that exist in the SNow DB,
 	// so we need to be reasonably sure that SNow knows about the object in
 	// question.)
-	configurationItemRx = regexp.MustCompile(`^node\d{3}-bb\d{3}\.cc\.[a-z]{2}-[a-z]{2}-[0-9]\.cloud\.sap$`) //e.g. "node002-bb091.cc.qa-de-1.cloud.sap"
+	configurationItemRx = regexp.MustCompile(`^node\d{3}-bb\d{3}\.cc\.[a-z]{2}-[a-z]{2}-[0-9]\.cloud\.sap$`) // e.g. "node002-bb091.cc.qa-de-1.cloud.sap"
 )
 
 func (a *awxWorkflowToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
@@ -265,7 +265,7 @@ func (a *awxWorkflowToSNowDeliverer) PluginTypeID() string {
 }
 
 func (a *awxWorkflowToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte) (*tenso.DeliveryLog, error) {
-	//if the TranslationHandler wants us to ignore this payload, skip the delivery
+	// if the TranslationHandler wants us to ignore this payload, skip the delivery
 	if string(payload) == "skip" {
 		return nil, nil
 	}

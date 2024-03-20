@@ -48,7 +48,7 @@ type Change struct {
 
 // Serialize returns the payload that we can send into SNow.
 func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([]byte, error) {
-	//we will not create a change object in ServiceNow if:
+	// we will not create a change object in ServiceNow if:
 	//- we did not start deploying (OutcomeNotDeployed)
 	//- the deployment did not finish (e.g. OutcomeHelmUpgradeFailed) -- as
 	//  requested by our change coordinator, because the state of the Helm
@@ -57,7 +57,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		return []byte("skip"), nil
 	}
 
-	//find AZs for this change
+	// find AZs for this change
 	if chg.Region == "" && chg.AvailabilityZone == "" {
 		return nil, errors.New("cannot serialize a servicenow.Change without a value for either Region or AvailabilityZone")
 	}
@@ -73,7 +73,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		}
 	}
 
-	//find datacenters and environment for this change from AZ mapping config
+	// find datacenters and environment for this change from AZ mapping config
 	var (
 		datacenters []string
 		environment string
@@ -121,7 +121,7 @@ func sNowTimeStr(t *time.Time) string {
 }
 
 func nl2br(text string) string {
-	//SNow ignores "\n", but I'm going to guess that it accepts "<br>"
+	// SNow ignores "\n", but I'm going to guess that it accepts "<br>"
 	text = template.HTMLEscapeString(text)
-	return strings.Replace(text, "\n", "<br>", -1)
+	return strings.ReplaceAll(text, "\n", "<br>")
 }

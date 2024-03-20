@@ -31,9 +31,9 @@ import (
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
-//For tests, we define the payload types "test-foo.v1" and "test-bar.v1". The
-//foo type can be ingested only, and the bar type can be delivered only.
-//Payloads for "test-foo.v1" must be JSON documents like {"foo":<integer>}, and
+// For tests, we define the payload types "test-foo.v1" and "test-bar.v1". The
+// foo type can be ingested only, and the bar type can be delivered only.
+// Payloads for "test-foo.v1" must be JSON documents like {"foo":<integer>}, and
 //analogously for "test-bar.v1". Conversion from foo to bar payloads just
 //renames the field, the value remains the same.
 
@@ -117,7 +117,7 @@ func (h *testDeliveryHandler) PluginTypeID() string {
 }
 
 func (h *testDeliveryHandler) DeliverPayload(_ context.Context, data []byte) (*tenso.DeliveryLog, error) {
-	//We don't actually deliver anywhere, but by giving us an invalid payload, tests can "simulate" a delivery failure.
+	// We don't actually deliver anywhere, but by giving us an invalid payload, tests can "simulate" a delivery failure.
 	_, err := parseTestPayload(data, h.Type)
 	if err != nil {
 		return nil, errors.New("simulating failed delivery because of invalid payload")

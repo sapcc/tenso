@@ -158,7 +158,7 @@ func (h *helmDeploymentToElkDeliverer) PluginTypeID() string {
 }
 
 func (h *helmDeploymentToElkDeliverer) DeliverPayload(_ context.Context, payload []byte) (*tenso.DeliveryLog, error) {
-	//Logstash wants everything on one line, so ensure we don't have unnecessary whitespace in the payload
+	// Logstash wants everything on one line, so ensure we don't have unnecessary whitespace in the payload
 	var buf bytes.Buffer
 	err := json.Compact(&buf, payload)
 	if err != nil {
@@ -170,7 +170,7 @@ func (h *helmDeploymentToElkDeliverer) DeliverPayload(_ context.Context, payload
 	}
 	payload = buf.Bytes()
 
-	//deliver payload to Logstash
+	// deliver payload to Logstash
 	conn, err := net.Dial("tcp", h.LogstashHost)
 	if err != nil {
 		return nil, err

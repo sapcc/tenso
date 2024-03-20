@@ -40,7 +40,7 @@ func TestPostNewEvent(t *testing.T) {
 	tr, tr0 := easypg.NewTracker(t, s.DB.Db)
 	tr0.AssertEmpty()
 
-	//test error cases: invalid payload type
+	// test error cases: invalid payload type
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new",
@@ -70,7 +70,7 @@ func TestPostNewEvent(t *testing.T) {
 		ExpectBody:   assert.StringData("cannot accept events with payload_type \"test-bar.v1\"\n"),
 	}.Check(t, s.Handler)
 
-	//test error cases: invalid payload
+	// test error cases: invalid payload
 	assert.HTTPRequest{
 		Method:       "POST",
 		Path:         "/v1/events/new?payload_type=test-foo.v1",
@@ -79,7 +79,7 @@ func TestPostNewEvent(t *testing.T) {
 		ExpectBody:   assert.StringData("invalid event payload: expected event = \"foo\", but got \"bar\"\n"),
 	}.Check(t, s.Handler)
 
-	//test error cases: no permission
+	// test error cases: no permission
 	s.Validator.Enforcer.Forbid("event:create")
 	assert.HTTPRequest{
 		Method:       "POST",
@@ -88,7 +88,7 @@ func TestPostNewEvent(t *testing.T) {
 		ExpectStatus: http.StatusForbidden,
 	}.Check(t, s.Handler)
 
-	//test successful event ingestion
+	// test successful event ingestion
 	s.Clock.StepBy(1 * time.Minute)
 	s.Validator.Enforcer.Allow("event:create")
 	assert.HTTPRequest{
@@ -105,7 +105,7 @@ func TestPostNewEvent(t *testing.T) {
 		INSERT INTO users (id, uuid, name, domain_name) VALUES (1, 'testuserid', 'testusername', 'testdomainname');
 	`, s.Clock.Now().Unix())
 
-	//test that ingestion of a second event from the same user reuses the `users` entry we just made
+	// test that ingestion of a second event from the same user reuses the `users` entry we just made
 	s.Clock.StepBy(1 * time.Minute)
 	assert.HTTPRequest{
 		Method:       "POST",

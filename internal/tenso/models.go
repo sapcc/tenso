@@ -28,11 +28,11 @@ import (
 // Event contains a record from the `events` table.
 type Event struct {
 	ID          int64     `db:"id"`
-	CreatorID   int64     `db:"creator_id"` //ID into the `users` table
+	CreatorID   int64     `db:"creator_id"` // ID into the `users` table
 	CreatedAt   time.Time `db:"created_at"`
 	PayloadType string    `db:"payload_type"`
 	Payload     string    `db:"payload"`
-	Description string    `db:"description"` //a short summary that appears in log messages
+	Description string    `db:"description"` // a short summary that appears in log messages
 }
 
 // User contains a record from the `users` table.
@@ -47,7 +47,7 @@ type User struct {
 type PendingDelivery struct {
 	EventID     int64  `db:"event_id"`
 	PayloadType string `db:"payload_type"`
-	//Payload and ConvertedAt are nil when the payload has not been converted from event.Payload yet.
+	// Payload and ConvertedAt are nil when the payload has not been converted from event.Payload yet.
 	Payload               *string    `db:"payload"`
 	ConvertedAt           *time.Time `db:"converted_at"`
 	FailedConversionCount int64      `db:"failed_conversions"`

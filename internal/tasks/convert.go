@@ -50,7 +50,7 @@ func (c *Context) ConversionJob(registerer prometheus.Registerer) jobloop.Job {
 	return (&jobloop.TxGuardedJob[*gorp.Transaction, tenso.PendingDelivery]{
 		Metadata: jobloop.JobMetadata{
 			ReadableName:    "Event conversion",
-			ConcurrencySafe: true, //because "FOR UPDATE SKIP LOCKED" is used
+			ConcurrencySafe: true, // because "FOR UPDATE SKIP LOCKED" is used
 			CounterOpts: prometheus.CounterOpts{
 				Name: "tenso_event_conversions",
 				Help: "Counter for conversions of event payloads.",
@@ -79,7 +79,7 @@ func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd 
 		}
 	}()
 
-	//find the corresponding event
+	// find the corresponding event
 	err := tx.SelectOne(&event, `SELECT * FROM events WHERE id = $1`, pd.EventID)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd 
 
 	labels["source_payload_type"] = event.PayloadType
 
-	//find the translation handler
+	// find the translation handler
 	var th tenso.TranslationHandler
 	for _, route := range c.Config.EnabledRoutes {
 		if route.SourcePayloadType == event.PayloadType && route.TargetPayloadType == pd.PayloadType {
@@ -100,7 +100,7 @@ func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd 
 			event.PayloadType, pd.PayloadType)
 	}
 
-	//try to translate the payload, or set up a delayed retry on failure
+	// try to translate the payload, or set up a delayed retry on failure
 	targetPayloadBytes, err := th.TranslatePayload([]byte(event.Payload))
 	if err != nil {
 		pd.NextConversionAt = c.timeNow().Add(ConversionRetryInterval)
@@ -115,7 +115,7 @@ func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd 
 		return fmt.Errorf("translation failed: %w", err)
 	}
 
-	//store the translated payload
+	// store the translated payload
 	targetPayload := string(targetPayloadBytes)
 	pd.Payload = &targetPayload
 	now := c.timeNow()

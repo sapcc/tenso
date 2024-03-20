@@ -58,12 +58,12 @@ func init() {
 type activeDirectoryDeploymentV1Event struct {
 	Region       string                   `json:"region"`
 	RecordedAt   activeDirectoryEventTime `json:"recorded_at"`
-	Landscape    string                   `json:"landscape"` //e.g. "dev" or "prod"
+	Landscape    string                   `json:"landscape"` // e.g. "dev" or "prod"
 	Hostname     string                   `json:"host"`
 	ADDeployment struct {
 		Outcome   string                   `json:"outcome"`
 		StartedAt activeDirectoryEventTime `json:"started_at"`
-		//FinishedAt and DurationSeconds are not set for outcome "failed".
+		// FinishedAt and DurationSeconds are not set for outcome "failed".
 		FinishedAt      activeDirectoryEventTime `json:"finished_at,omitempty"`
 		DurationSeconds any                      `json:"duration,omitempty"`
 	} `json:"ad_deployment"`
@@ -185,11 +185,11 @@ func (t *activeDirectoryDeploymentV1ToSNowTranslator) TranslatePayload(payload [
 	}
 
 	//NOTE: Some of this is implemented in a rather roundabout way since most of
-	//our internal infrastructure revolves around deployevent types. As noted
-	//above, I want to get this delivery path rebased on deployevent.Event
-	//eventually.
+	// our internal infrastructure revolves around deployevent types. As noted
+	// above, I want to get this delivery path rebased on deployevent.Event
+	// eventually.
 
-	//get the semantically closest deployevent.Outcome value
+	// get the semantically closest deployevent.Outcome value
 	var outcome deployevent.Outcome
 	switch event.ADDeployment.Outcome {
 	case "succeeded":
@@ -203,7 +203,7 @@ func (t *activeDirectoryDeploymentV1ToSNowTranslator) TranslatePayload(payload [
 		return nil, err
 	}
 
-	//get input descriptors by stuffing the GitRepos info in a mock deployevent.Event
+	// get input descriptors by stuffing the GitRepos info in a mock deployevent.Event
 	mock := deployevent.Event{
 		GitRepos: make(map[string]deployevent.GitRepo),
 	}

@@ -68,16 +68,16 @@ type SetupOption func(*setupParams)
 
 // Setup contains all the pieces that are needed for most tests.
 type Setup struct {
-	//fields that are always set
+	// fields that are always set
 	Clock    *mock.Clock
 	Config   tenso.Configuration
 	DB       *gorp.DbMap
 	Ctx      context.Context //nolint: containedctx  // only used in tests
 	Registry *prometheus.Registry
-	//fields that are set if WithAPI is included
+	// fields that are set if WithAPI is included
 	Validator *mock.Validator[*mock.Enforcer]
 	Handler   http.Handler
-	//fields that are set if WithTaskContext is included
+	// fields that are set if WithTaskContext is included
 	TaskContext *tasks.Context
 }
 
@@ -90,7 +90,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 		option(&params)
 	}
 
-	//connect to DB
+	// connect to DB
 	dbURL := must.Return(url.Parse("postgres://postgres:postgres@localhost:54321/tenso?sslmode=disable"))
 	db, err := tenso.InitDB(dbURL)
 	if err != nil {
@@ -99,14 +99,14 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 		t.FailNow()
 	}
 
-	//wipe the DB clean if there are any leftovers from the previous test run
-	//(the table order is chosen to respect all "ON DELETE RESTRICT" constraints)
+	// wipe the DB clean if there are any leftovers from the previous test run
+	// (the table order is chosen to respect all "ON DELETE RESTRICT" constraints)
 	for _, tableName := range []string{"pending_deliveries", "events", "users"} {
 		_, err := db.Exec("DELETE FROM " + tableName)
 		Must(t, err)
 	}
 
-	//reset all primary key sequences for reproducible row IDs
+	// reset all primary key sequences for reproducible row IDs
 	for _, tableName := range []string{"events", "users"} {
 		nextID, err := db.SelectInt("SELECT 1 + COALESCE(MAX(id), 0) FROM " + tableName)
 		Must(t, err)
@@ -116,7 +116,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 		Must(t, err)
 	}
 
-	//build configuration
+	// build configuration
 	routes, err := tenso.BuildRoutes(params.RouteSpecs, nil, gophercloud.EndpointOpts{})
 	Must(t, err)
 	s := Setup{
@@ -130,7 +130,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 		Registry: prometheus.NewPedanticRegistry(),
 	}
 
-	//satisfy additional requests
+	// satisfy additional requests
 	if params.WithAPI {
 		s.Validator = mock.NewValidator(mock.NewEnforcer(), map[string]string{
 			"user_name":        "testusername",

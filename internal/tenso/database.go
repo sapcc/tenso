@@ -77,7 +77,7 @@ func InitDB(dbURL *url.URL) (*gorp.DbMap, error) {
 	if err != nil {
 		return nil, err
 	}
-	//ensure that this process does not starve other Tenso processes for DB connections
+	// ensure that this process does not starve other Tenso processes for DB connections
 	db.SetMaxOpenConns(16)
 
 	result := &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
