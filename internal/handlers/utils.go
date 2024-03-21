@@ -116,8 +116,8 @@ func inputDescriptorsOf(event deployevent.Event) (result []string) {
 		// `name` is the name of this resource from which the Git repository was
 		// pulled, which can be readable like `helm-charts.git` or `secrets.git`,
 		// but sometimes is nonsensical without context (e.g. `qa-de-1.git` for a
-		//checkout of `secrets.git` with path filter on qa-de-1 values), so we're
-		//only using it if we don't have a better alternative
+		// checkout of `secrets.git` with path filter on qa-de-1 values), so we're
+		// only using it if we don't have a better alternative
 		readableName := name
 		if repo.RemoteURL != "" {
 			// our preference is to take the basename from the remote URL, e.g.

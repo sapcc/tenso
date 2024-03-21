@@ -34,8 +34,8 @@ import (
 // For tests, we define the payload types "test-foo.v1" and "test-bar.v1". The
 // foo type can be ingested only, and the bar type can be delivered only.
 // Payloads for "test-foo.v1" must be JSON documents like {"foo":<integer>}, and
-//analogously for "test-bar.v1". Conversion from foo to bar payloads just
-//renames the field, the value remains the same.
+// analogously for "test-bar.v1". Conversion from foo to bar payloads just
+// renames the field, the value remains the same.
 
 func init() {
 	tenso.ValidationHandlerRegistry.Add(func() tenso.ValidationHandler { return &testValidationHandler{"foo"} })

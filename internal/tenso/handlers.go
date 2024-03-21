@@ -36,7 +36,7 @@ type ValidationHandler interface {
 	// is enabled in the configuration.
 	//
 	// A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
-	//talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
+	// talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	ValidatePayload(payload []byte) (*PayloadInfo, error)
@@ -59,7 +59,7 @@ type TranslationHandler interface {
 	// is enabled in the configuration.
 	//
 	// A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
-	//talk to OpenStack. During unit tests, (nil, {}) will be provided instead.
+	// talk to OpenStack. During unit tests, (nil, {}) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	TranslatePayload(payload []byte) ([]byte, error)
@@ -92,7 +92,7 @@ type DeliveryHandler interface {
 	// is enabled in the configuration.
 	//
 	// A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
-	//talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
+	// talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	DeliverPayload(ctx context.Context, payload []byte) (*DeliveryLog, error)
