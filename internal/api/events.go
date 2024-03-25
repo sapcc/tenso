@@ -20,9 +20,11 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/respondwith"
@@ -109,6 +111,17 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
+	// parse headers
+	routingInfo, err := parseRoutingInfo(r.Header.Get("X-Tenso-Routing-Info"))
+	if err != nil {
+		http.Error(w, "invalid routing info: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	routingInfoJSON, err := json.Marshal(routingInfo)
+	if respondwith.ErrorText(w, err) {
+		return
+	}
+
 	// find or create user account
 	userID, err := a.DB.SelectInt(findOrCreateUserQuery,
 		token.UserUUID(), token.UserName(), token.UserDomainName(),
@@ -125,11 +138,12 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 	defer sqlext.RollbackUnlessCommitted(tx)
 
 	event := tenso.Event{
-		CreatorID:   userID,
-		CreatedAt:   requestTime,
-		PayloadType: payloadType,
-		Payload:     string(payloadBytes),
-		Description: payloadInfo.Description,
+		CreatorID:       userID,
+		CreatedAt:       requestTime,
+		PayloadType:     payloadType,
+		Payload:         string(payloadBytes),
+		Description:     payloadInfo.Description,
+		RoutingInfoJSON: string(routingInfoJSON),
 	}
 	err = tx.Insert(&event)
 	if respondwith.ErrorText(w, err) {
@@ -156,4 +170,31 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 	}
 
 	w.WriteHeader(http.StatusAccepted)
+}
+
+// Parses the value from a X-Tenso-Routing-Info header.
+//
+// Example: "target=foobar, priority=42" -> {"target": "foobar", "priority": "42"}
+func parseRoutingInfo(input string) (map[string]string, error) {
+	result := make(map[string]string)
+	for _, field := range strings.Split(input, ",") {
+		field = strings.TrimSpace(field)
+		if field == "" {
+			continue
+		}
+
+		key, value, ok := strings.Cut(field, "=")
+		if !ok || key == "" || value == "" {
+			return nil, fmt.Errorf(`expected a "key=value" pair, but found %q`, field)
+		}
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+
+		if result[key] != "" {
+			return nil, fmt.Errorf("multiple values for key %q", key)
+		}
+		result[key] = value
+	}
+
+	return result, nil
 }

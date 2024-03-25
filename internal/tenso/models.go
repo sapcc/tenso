@@ -27,12 +27,13 @@ import (
 
 // Event contains a record from the `events` table.
 type Event struct {
-	ID          int64     `db:"id"`
-	CreatorID   int64     `db:"creator_id"` // ID into the `users` table
-	CreatedAt   time.Time `db:"created_at"`
-	PayloadType string    `db:"payload_type"`
-	Payload     string    `db:"payload"`
-	Description string    `db:"description"` // a short summary that appears in log messages
+	ID              int64     `db:"id"`
+	CreatorID       int64     `db:"creator_id"` // ID into the `users` table
+	CreatedAt       time.Time `db:"created_at"`
+	PayloadType     string    `db:"payload_type"`
+	Payload         string    `db:"payload"`
+	Description     string    `db:"description"`       // a short summary that appears in log messages
+	RoutingInfoJSON string    `db:"routing_info_json"` // from the X-Tenso-Routing-Info header
 }
 
 // User contains a record from the `users` table.

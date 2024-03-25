@@ -181,7 +181,7 @@ func (a *awxWorkflowToSwiftDeliverer) PluginTypeID() string {
 	return "infra-workflow-to-swift.v1"
 }
 
-func (a *awxWorkflowToSwiftDeliverer) DeliverPayload(_ context.Context, payload []byte) (*tenso.DeliveryLog, error) {
+func (a *awxWorkflowToSwiftDeliverer) DeliverPayload(_ context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[awxWorkflowEvent](payload)
 	if err != nil {
 		return nil, err
@@ -264,7 +264,7 @@ func (a *awxWorkflowToSNowDeliverer) PluginTypeID() string {
 	return "infra-workflow-to-servicenow.v1"
 }
 
-func (a *awxWorkflowToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte) (*tenso.DeliveryLog, error) {
+func (a *awxWorkflowToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	// if the TranslationHandler wants us to ignore this payload, skip the delivery
 	if string(payload) == "skip" {
 		return nil, nil

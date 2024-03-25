@@ -138,7 +138,7 @@ func (h *terraformDeploymentToSwiftDeliverer) PluginTypeID() string {
 	return "terraform-deployment-to-swift.v1"
 }
 
-func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(_ context.Context, payload []byte) (*tenso.DeliveryLog, error) {
+func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(_ context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err
@@ -246,6 +246,6 @@ func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
 	return "terraform-deployment-to-servicenow.v1"
 }
 
-func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte) (*tenso.DeliveryLog, error) {
+func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	return d.Client.DeliverChangePayload(ctx, payload)
 }

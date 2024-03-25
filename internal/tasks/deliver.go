@@ -21,6 +21,7 @@ package tasks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -85,6 +86,14 @@ func (c *Context) processDelivery(ctx context.Context, tx *gorp.Transaction, pd 
 		return err
 	}
 
+	var routingInfo map[string]string
+	if event.RoutingInfoJSON != "" {
+		err := json.Unmarshal([]byte(event.RoutingInfoJSON), &routingInfo)
+		if err != nil {
+			return fmt.Errorf("while parsing event routing info: %w", err)
+		}
+	}
+
 	// find the delivery handler
 	var dh tenso.DeliveryHandler
 	for _, route := range c.Config.EnabledRoutes {
@@ -98,7 +107,7 @@ func (c *Context) processDelivery(ctx context.Context, tx *gorp.Transaction, pd 
 	}
 
 	// try to translate the payload, or set up a delayed retry on failure
-	dlog, err := dh.DeliverPayload(ctx, []byte(*pd.Payload))
+	dlog, err := dh.DeliverPayload(ctx, []byte(*pd.Payload), routingInfo)
 	if err != nil {
 		pd.NextDeliveryAt = c.timeNow().Add(DeliveryRetryInterval)
 		pd.FailedDeliveryCount++

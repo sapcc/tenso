@@ -66,6 +66,12 @@ var sqlMigrations = map[string]string{
 	"002_add_events_description.down.sql": `
 		ALTER TABLE events DROP COLUMN description;
 	`,
+	"003_add_events_routing_info.up.sql": `
+		ALTER TABLE events ADD COLUMN routing_info_json TEXT NOT NULL DEFAULT '';
+	`,
+	"003_add_events_routing_info.down.sql": `
+		ALTER TABLE events DROP COLUMN routing_info_json;
+	`,
 }
 
 // InitDB connects to the Postgres database.

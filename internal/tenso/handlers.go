@@ -95,7 +95,9 @@ type DeliveryHandler interface {
 	// talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
-	DeliverPayload(ctx context.Context, payload []byte) (*DeliveryLog, error)
+	// The `routingInfo` argument contains the metadata that was supplied in the
+	// `X-Tenso-Routing-Info` header when posting the original event.
+	DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*DeliveryLog, error)
 }
 
 // DeliveryLog can be returned by DeliverPayload() to produce additional log

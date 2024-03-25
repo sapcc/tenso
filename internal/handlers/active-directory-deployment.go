@@ -351,6 +351,6 @@ func (d *activeDirectoryDeploymentV1ToSNowDeliverer) PluginTypeID() string {
 	return "active-directory-deployment-to-servicenow.v1"
 }
 
-func (d *activeDirectoryDeploymentV1ToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte) (*tenso.DeliveryLog, error) {
+func (d *activeDirectoryDeploymentV1ToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	return d.Client.DeliverChangePayload(ctx, payload)
 }
