@@ -161,7 +161,7 @@ type terraformDeploymentToSNowTranslator struct {
 }
 
 func (t *terraformDeploymentToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
-	t.Mapping, err = servicenow.LoadMappingConfiguration()
+	t.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 

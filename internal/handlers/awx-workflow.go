@@ -205,7 +205,7 @@ var awxOutcomes = map[string]deployevent.Outcome{
 }
 
 func (a *awxWorkflowToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	a.Mapping, err = servicenow.LoadMappingConfiguration()
+	a.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 

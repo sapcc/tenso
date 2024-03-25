@@ -43,12 +43,18 @@ type MappingConfiguration struct {
 	} `yaml:"availability_zones"`
 }
 
-// LoadMappingConfiguration loads the mapping configuration from
-// $TENSO_SERVICENOW_MAPPING_CONFIG_PATH.
-func LoadMappingConfiguration() (MappingConfiguration, error) {
-	filePath, err := osext.NeedGetenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
+var mappingConfigAtPath = map[string]MappingConfiguration{}
+
+// LoadMappingConfiguration loads the mapping configuration from the file specified in the given environment variable.
+func LoadMappingConfiguration(envVarName string) (MappingConfiguration, error) {
+	filePath, err := osext.NeedGetenv(envVarName)
 	if err != nil {
 		return MappingConfiguration{}, err
+	}
+
+	// reuse cached result if possible
+	if _, ok := mappingConfigAtPath[filePath]; ok {
+		return mappingConfigAtPath[filePath], nil
 	}
 
 	buf, err := os.ReadFile(filePath)
@@ -58,6 +64,9 @@ func LoadMappingConfiguration() (MappingConfiguration, error) {
 
 	var result MappingConfiguration
 	err = yaml.UnmarshalStrict(buf, &result)
+	if err == nil {
+		mappingConfigAtPath[filePath] = result
+	}
 	return result, err
 }
 

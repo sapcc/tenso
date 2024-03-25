@@ -221,7 +221,7 @@ type helmDeploymentToSNowTranslator struct {
 }
 
 func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	h.Mapping, err = servicenow.LoadMappingConfiguration()
+	h.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 

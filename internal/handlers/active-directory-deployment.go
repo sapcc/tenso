@@ -170,7 +170,7 @@ type activeDirectoryDeploymentV1ToSNowTranslator struct {
 }
 
 func (t *activeDirectoryDeploymentV1ToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
-	t.Mapping, err = servicenow.LoadMappingConfiguration()
+	t.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
@@ -304,7 +304,7 @@ type activeDirectoryDeploymentV2ToSNowTranslator struct {
 }
 
 func (t *activeDirectoryDeploymentV2ToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
-	t.Mapping, err = servicenow.LoadMappingConfiguration()
+	t.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
