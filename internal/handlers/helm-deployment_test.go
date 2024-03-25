@@ -77,7 +77,7 @@ func TestHelmDeploymentConversionToSNow(t *testing.T) {
 
 	sourcePayloadBytes, err := os.ReadFile("fixtures/helm-deployment-from-concourse.v1.swift.json")
 	test.Must(t, err)
-	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes)
+	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes, nil)
 	test.Must(t, err)
 	assert.JSONFixtureFile("fixtures/helm-deployment-to-servicenow.v1.swift.json").
 		AssertResponseBody(t, "translated payload", targetPayloadBytes)

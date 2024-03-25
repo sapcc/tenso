@@ -46,8 +46,9 @@ func init() {
 }
 
 type testPayload struct {
-	Event string `json:"event"`
-	Value int    `json:"value"`
+	Event       string            `json:"event"`
+	RoutingInfo map[string]string `json:"routing_info"`
+	Value       int               `json:"value"`
 }
 
 func parseTestPayload(data []byte, expectedType string) (p testPayload, err error) {
@@ -96,12 +97,13 @@ func (h *testTranslationHandler) PluginTypeID() string {
 	return fmt.Sprintf("test-%s.v1->test-%s.v1", h.SourceType, h.TargetType)
 }
 
-func (h *testTranslationHandler) TranslatePayload(data []byte) ([]byte, error) {
+func (h *testTranslationHandler) TranslatePayload(data []byte, routingInfo map[string]string) ([]byte, error) {
 	p, err := parseTestPayload(data, h.SourceType)
 	if err != nil {
 		return nil, err
 	}
 	p.Event = h.TargetType
+	p.RoutingInfo = routingInfo
 	return json.Marshal(p)
 }
 

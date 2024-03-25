@@ -222,7 +222,7 @@ var (
 	configurationItemRx = regexp.MustCompile(`^node\d{3}-bb\d{3}\.cc\.[a-z]{2}-[a-z]{2}-[0-9]\.cloud\.sap$`) // e.g. "node002-bb091.cc.qa-de-1.cloud.sap"
 )
 
-func (a *awxWorkflowToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
+func (a *awxWorkflowToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[awxWorkflowEvent](payload)
 	if err != nil {
 		return nil, err

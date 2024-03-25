@@ -46,11 +46,12 @@ func TestConversionCommon(t *testing.T) {
 	}
 	test.Must(t, s.DB.Insert(&user))
 	event := tenso.Event{
-		CreatorID:   user.ID,
-		CreatedAt:   s.Clock.Now(),
-		PayloadType: "test-foo.v1",
-		Payload:     `{"event":"invalid","value":42}`, // see below for why "invalid"
-		Description: "foo event with value 42",
+		CreatorID:       user.ID,
+		CreatedAt:       s.Clock.Now(),
+		PayloadType:     "test-foo.v1",
+		Payload:         `{"event":"invalid","value":42}`, // see below for why "invalid"
+		Description:     "foo event with value 42",
+		RoutingInfoJSON: `{"target":"test"}`,
 	}
 	test.Must(t, s.DB.Insert(&event))
 	for _, targetPayloadType := range []string{"test-bar.v1", "test-baz.v1"} {
@@ -89,7 +90,7 @@ func TestConversionCommon(t *testing.T) {
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET payload = '%[1]s', converted_at = %[2]d WHERE event_id = 1 AND payload_type = 'test-baz.v1';
 		`,
-		`{"event":"baz","value":42}`,
+		`{"event":"baz","routing_info":{"target":"test"},"value":42}`,
 		s.Clock.Now().Unix(),
 	)
 
@@ -102,7 +103,7 @@ func TestConversionCommon(t *testing.T) {
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET payload = '%[1]s', converted_at = %[2]d WHERE event_id = 1 AND payload_type = 'test-bar.v1';
 		`,
-		`{"event":"bar","value":42}`,
+		`{"event":"bar","routing_info":{"target":"test"},"value":42}`,
 		s.Clock.Now().Unix(),
 	)
 

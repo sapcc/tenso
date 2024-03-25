@@ -53,6 +53,6 @@ func (h *dummyTranslator) Init(*gophercloud.ProviderClient, gophercloud.Endpoint
 	return nil
 }
 
-func (h *dummyTranslator) TranslatePayload(payload []byte) ([]byte, error) {
+func (h *dummyTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	return payload, nil
 }

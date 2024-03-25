@@ -229,7 +229,7 @@ func (h *helmDeploymentToSNowTranslator) PluginTypeID() string {
 	return "helm-deployment-from-concourse.v1->helm-deployment-to-servicenow.v1"
 }
 
-func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
+func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err

@@ -169,7 +169,7 @@ func (t *terraformDeploymentToSNowTranslator) PluginTypeID() string {
 	return "terraform-deployment-from-concourse.v1->terraform-deployment-to-servicenow.v1"
 }
 
-func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
+func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err

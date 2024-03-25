@@ -62,7 +62,7 @@ type TranslationHandler interface {
 	// talk to OpenStack. During unit tests, (nil, {}) will be provided instead.
 	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
-	TranslatePayload(payload []byte) ([]byte, error)
+	TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error)
 }
 
 // SourcePayloadTypeOf extracts the source payload type from h.PluginTypeID().

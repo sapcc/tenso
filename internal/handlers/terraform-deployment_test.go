@@ -64,7 +64,7 @@ func TestTerraformDeploymentConversionToSNow(t *testing.T) {
 
 	sourcePayloadBytes, err := os.ReadFile("fixtures/terraform-deployment-from-concourse.v1.terragrunt-virtual-apod.json")
 	test.Must(t, err)
-	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes)
+	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes, nil)
 	test.Must(t, err)
 	assert.JSONFixtureFile("fixtures/terraform-deployment-to-servicenow.v1.terragrunt-virtual-apod.json").
 		AssertResponseBody(t, "translated payload", targetPayloadBytes)

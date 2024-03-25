@@ -45,7 +45,7 @@ func TestAWXWorkflowValidationAndConversionToSNow(t *testing.T) {
 	payloadInfo, err := vh.ValidatePayload(sourcePayloadBytes)
 	test.Must(t, err)
 	assert.DeepEqual(t, "event description", payloadInfo.Description, "ESX upgrade, qa-de-1a, node002-bb091.cc.qa-de-1.cloud.sap")
-	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes)
+	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes, nil)
 	test.Must(t, err)
 	assert.JSONFixtureFile("fixtures/infra-workflow-to-servicenow.v1.good.json").
 		AssertResponseBody(t, "translated payload", targetPayloadBytes)

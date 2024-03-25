@@ -21,6 +21,7 @@ package tasks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -85,6 +86,14 @@ func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd 
 		return err
 	}
 
+	var routingInfo map[string]string
+	if event.RoutingInfoJSON != "" {
+		err := json.Unmarshal([]byte(event.RoutingInfoJSON), &routingInfo)
+		if err != nil {
+			return fmt.Errorf("while parsing event routing info: %w", err)
+		}
+	}
+
 	labels["source_payload_type"] = event.PayloadType
 
 	// find the translation handler
@@ -101,7 +110,7 @@ func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd 
 	}
 
 	// try to translate the payload, or set up a delayed retry on failure
-	targetPayloadBytes, err := th.TranslatePayload([]byte(event.Payload))
+	targetPayloadBytes, err := th.TranslatePayload([]byte(event.Payload), routingInfo)
 	if err != nil {
 		pd.NextConversionAt = c.timeNow().Add(ConversionRetryInterval)
 		pd.FailedConversionCount++

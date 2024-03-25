@@ -178,7 +178,7 @@ func (t *activeDirectoryDeploymentV1ToSNowTranslator) PluginTypeID() string {
 	return "active-directory-deployment-from-concourse.v1->active-directory-deployment-to-servicenow.v1"
 }
 
-func (t *activeDirectoryDeploymentV1ToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
+func (t *activeDirectoryDeploymentV1ToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[activeDirectoryDeploymentV1Event](payload)
 	if err != nil {
 		return nil, err
@@ -312,7 +312,7 @@ func (t *activeDirectoryDeploymentV2ToSNowTranslator) PluginTypeID() string {
 	return "active-directory-deployment-from-concourse.v2->active-directory-deployment-to-servicenow.v1"
 }
 
-func (t *activeDirectoryDeploymentV2ToSNowTranslator) TranslatePayload(payload []byte) ([]byte, error) {
+func (t *activeDirectoryDeploymentV2ToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err
