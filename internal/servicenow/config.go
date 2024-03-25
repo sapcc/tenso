@@ -20,6 +20,7 @@
 package servicenow
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/sapcc/go-bits/osext"
@@ -30,11 +31,17 @@ import (
 // MappingConfiguration is the structure of the config file at
 // $TENSO_SERVICENOW_MAPPING_CONFIG_PATH.
 type MappingConfiguration struct {
+	// endpoints (TODO: support more than one)
+	Endpoints struct {
+		Default *Client `yaml:"default"`
+	} `yaml:"endpoints"`
+
 	// rulesets per event type
 	HelmDeployment            MappingRuleset `yaml:"helm-deployment"`
 	ActiveDirectoryDeployment MappingRuleset `yaml:"active-directory-deployment"`
 	AWXWorkflow               MappingRuleset `yaml:"awx-workflow"`
 	TerraformDeployment       MappingRuleset `yaml:"terraform-deployment"`
+
 	// datacenter mapping
 	Regions           map[string][]string `yaml:"regions"`
 	AvailabilityZones map[string]struct {
@@ -64,10 +71,16 @@ func LoadMappingConfiguration(envVarName string) (MappingConfiguration, error) {
 
 	var result MappingConfiguration
 	err = yaml.UnmarshalStrict(buf, &result)
-	if err == nil {
-		mappingConfigAtPath[filePath] = result
+	if err != nil {
+		return MappingConfiguration{}, fmt.Errorf("while parsing %s: %w", filePath, err)
 	}
-	return result, err
+	err = result.Endpoints.Default.Init()
+	if err != nil {
+		return MappingConfiguration{}, fmt.Errorf("while parsing %s: in initialization of endpoint client %q: %w", filePath, "default", err)
+	}
+
+	mappingConfigAtPath[filePath] = result
+	return result, nil
 }
 
 // MappingRuleset is a set of rules for filling missing fields in a Change object.
