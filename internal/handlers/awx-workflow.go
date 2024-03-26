@@ -252,11 +252,11 @@ func (a *awxWorkflowToSNowTranslator) TranslatePayload(payload []byte, routingIn
 // DeliveryHandler for SNow
 
 type awxWorkflowToSNowDeliverer struct {
-	Client *servicenow.Client
+	Mapping servicenow.MappingConfiguration
 }
 
 func (a *awxWorkflowToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	a.Client, err = servicenow.NewClientFromEnv("TENSO_SERVICENOW")
+	a.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
@@ -269,5 +269,5 @@ func (a *awxWorkflowToSNowDeliverer) DeliverPayload(ctx context.Context, payload
 	if string(payload) == "skip" {
 		return nil, nil
 	}
-	return a.Client.DeliverChangePayload(ctx, payload)
+	return a.Mapping.Endpoints.Default.DeliverChangePayload(ctx, payload)
 }

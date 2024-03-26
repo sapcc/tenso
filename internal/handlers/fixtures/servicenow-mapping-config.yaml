@@ -1,3 +1,8 @@
+endpoints:
+  default:
+    # we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
+    url: http://www.example.com
+
 helm-deployment:
 - change_model: "My Test Model"
   fallbacks:

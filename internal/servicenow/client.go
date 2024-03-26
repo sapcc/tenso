@@ -24,63 +24,55 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/sapcc/go-bits/osext"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
 // Client can submit change payloads to ServiceNow.
+//
+// This type appears in type MappingConfiguration.
 type Client struct {
-	EndpointURL string
-	HTTPClient  *http.Client
+	EndpointURL    string       `yaml:"url"`
+	ClientCertPath string       `yaml:"client_cert"`
+	PrivateKeyPath string       `yaml:"private_key"`
+	httpClient     *http.Client `yaml:"-"`
 }
 
-// NewClientFromEnv returns a Client that uses a TLS client certificate to
-// authenticate with the ServiceNow integration API.
-func NewClientFromEnv(envPrefix string) (*Client, error) {
-	endpointURL, err := osext.NeedGetenv(envPrefix + "_CREATE_CHANGE_URL")
-	if err != nil {
-		return nil, err
-	}
-
+// Init validates the provided Client config and initializes the internal HTTP client.
+func (c *Client) Init() error {
 	// in unit tests, we are setting this dummy value to circumvent the
 	// client-cert loading
-	if endpointURL == "http://www.example.com" {
-		return &Client{
-			EndpointURL: endpointURL,
-			HTTPClient:  http.DefaultClient,
-		}, nil
+	if c.EndpointURL == "http://www.example.com" {
+		return nil
 	}
 
-	certPath, err := osext.NeedGetenv(envPrefix + "_CLIENT_CERT")
-	if err != nil {
-		return nil, err
+	switch {
+	case c.EndpointURL == "":
+		return errors.New(`missing "url" attribute`)
+	case c.ClientCertPath == "":
+		return errors.New(`missing "client_cert" attribute`)
+	case c.PrivateKeyPath == "":
+		return errors.New(`missing "private_key" attribute`)
 	}
-	keyPath, err := osext.NeedGetenv(envPrefix + "_PRIVATE_KEY")
+	cert, err := tls.LoadX509KeyPair(c.ClientCertPath, c.PrivateKeyPath)
 	if err != nil {
-		return nil, err
-	}
-	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
-	if err != nil {
-		return nil, fmt.Errorf("cannot load client certificate from %s: %w", certPath, err)
+		return fmt.Errorf("cannot load client certificate: %w", err)
 	}
 
-	return &Client{
-		EndpointURL: endpointURL,
-		HTTPClient: &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					Certificates: []tls.Certificate{cert},
-					MinVersion:   tls.VersionTLS12,
-				},
-				Proxy: http.ProxyFromEnvironment,
+	c.httpClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{cert},
+				MinVersion:   tls.VersionTLS12,
 			},
+			Proxy: http.ProxyFromEnvironment,
 		},
-	}, nil
+	}
+	return nil
 }
 
 // DeliverChangePayload delivers a change payload to ServiceNow. This function
@@ -98,7 +90,7 @@ func (c *Client) DeliverChangePayload(ctx context.Context, payload []byte) (*ten
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("during POST %s: %w", c.EndpointURL, err)
 	}

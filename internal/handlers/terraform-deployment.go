@@ -234,11 +234,11 @@ func summaryOfRun(run deployevent.TerraformRun) string {
 // DeliveryHandler for SNow
 
 type terraformDeploymentToSNowDeliverer struct {
-	Client *servicenow.Client
+	Mapping servicenow.MappingConfiguration
 }
 
 func (d *terraformDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
-	d.Client, err = servicenow.NewClientFromEnv("TENSO_SERVICENOW")
+	d.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
@@ -247,5 +247,5 @@ func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
 }
 
 func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
-	return d.Client.DeliverChangePayload(ctx, payload)
+	return d.Mapping.Endpoints.Default.DeliverChangePayload(ctx, payload)
 }

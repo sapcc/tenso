@@ -254,11 +254,11 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte, routin
 // DeliveryHandler for SNow
 
 type helmDeploymentToSNowDeliverer struct {
-	Client *servicenow.Client
+	Mapping servicenow.MappingConfiguration
 }
 
 func (h *helmDeploymentToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	h.Client, err = servicenow.NewClientFromEnv("TENSO_SERVICENOW")
+	h.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
@@ -267,5 +267,5 @@ func (h *helmDeploymentToSNowDeliverer) PluginTypeID() string {
 }
 
 func (h *helmDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
-	return h.Client.DeliverChangePayload(ctx, payload)
+	return h.Mapping.Endpoints.Default.DeliverChangePayload(ctx, payload)
 }
