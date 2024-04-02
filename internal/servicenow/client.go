@@ -32,9 +32,44 @@ import (
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
-// Client can submit change payloads to ServiceNow.
+// ClientSet is a set of Client objects.
 //
 // This type appears in type MappingConfiguration.
+type ClientSet map[string]*Client
+
+// Init validates the provided clientset and recurses into Client.Init().
+func (cs ClientSet) Init() error {
+	if _, exists := cs["default"]; !exists {
+		return errors.New(`no "default" endpoint client declared`)
+	}
+
+	for clientName, client := range cs {
+		err := client.Init()
+		if err != nil {
+			return fmt.Errorf("in initialization of endpoint client %q: %w", clientName, err)
+		}
+	}
+	return nil
+}
+
+// DeliverChangePayload delivers a change payload to ServiceNow. This function
+// has the same interface as DeliverPayload() in the tenso.DeliveryHandler
+// interface.
+func (cs ClientSet) DeliverChangePayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
+	clientName, exists := routingInfo["servicenow-target"]
+	if !exists {
+		clientName = "default"
+	}
+	client, exists := cs[clientName]
+	if !exists {
+		return nil, fmt.Errorf("unknown routing info: servicenow-target=%q", clientName)
+	}
+	return client.DeliverChangePayload(ctx, payload)
+}
+
+// Client can submit change payloads to ServiceNow.
+//
+// This type appears in type MappingConfiguration through type ClientSet.
 type Client struct {
 	EndpointURL    string       `yaml:"url"`
 	ClientCertPath string       `yaml:"client_cert"`
@@ -75,9 +110,8 @@ func (c *Client) Init() error {
 	return nil
 }
 
-// DeliverChangePayload delivers a change payload to ServiceNow. This function
-// has the same interface as DeliverPayload() in the tenso.DeliveryHandler
-// interface.
+// DeliverChangePayload delivers a change payload to ServiceNow.
+// It is usually called through ClientSet.DeliverChangePayload().
 func (c *Client) DeliverChangePayload(ctx context.Context, payload []byte) (*tenso.DeliveryLog, error) {
 	// if the TranslationHandler wants us to ignore this payload, skip the delivery
 	if string(payload) == "skip" {

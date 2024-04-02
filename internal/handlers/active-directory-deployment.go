@@ -352,5 +352,5 @@ func (d *activeDirectoryDeploymentV1ToSNowDeliverer) PluginTypeID() string {
 }
 
 func (d *activeDirectoryDeploymentV1ToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
-	return d.Mapping.Endpoints.Default.DeliverChangePayload(ctx, payload)
+	return d.Mapping.Endpoints.DeliverChangePayload(ctx, payload, routingInfo)
 }

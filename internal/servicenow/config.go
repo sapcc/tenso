@@ -31,10 +31,8 @@ import (
 // MappingConfiguration is the structure of the config file at
 // $TENSO_SERVICENOW_MAPPING_CONFIG_PATH.
 type MappingConfiguration struct {
-	// endpoints (TODO: support more than one)
-	Endpoints struct {
-		Default *Client `yaml:"default"`
-	} `yaml:"endpoints"`
+	// endpoints
+	Endpoints ClientSet `yaml:"endpoints"`
 
 	// rulesets per event type
 	HelmDeployment            MappingRuleset `yaml:"helm-deployment"`
@@ -75,12 +73,9 @@ func LoadMappingConfiguration(envVarName string) (MappingConfiguration, error) {
 		return MappingConfiguration{}, fmt.Errorf("while parsing %s: %w", filePath, err)
 	}
 
-	if result.Endpoints.Default == nil {
-		return MappingConfiguration{}, fmt.Errorf("while parsing %s: no default endpoint declared", filePath)
-	}
-	err = result.Endpoints.Default.Init()
+	err = result.Endpoints.Init()
 	if err != nil {
-		return MappingConfiguration{}, fmt.Errorf("while parsing %s: in initialization of endpoint client %q: %w", filePath, "default", err)
+		return MappingConfiguration{}, fmt.Errorf("while parsing %s: %w", filePath, err)
 	}
 
 	mappingConfigAtPath[filePath] = result

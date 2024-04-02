@@ -265,9 +265,5 @@ func (a *awxWorkflowToSNowDeliverer) PluginTypeID() string {
 }
 
 func (a *awxWorkflowToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
-	// if the TranslationHandler wants us to ignore this payload, skip the delivery
-	if string(payload) == "skip" {
-		return nil, nil
-	}
-	return a.Mapping.Endpoints.Default.DeliverChangePayload(ctx, payload)
+	return a.Mapping.Endpoints.DeliverChangePayload(ctx, payload, routingInfo)
 }

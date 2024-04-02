@@ -267,5 +267,5 @@ func (h *helmDeploymentToSNowDeliverer) PluginTypeID() string {
 }
 
 func (h *helmDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
-	return h.Mapping.Endpoints.Default.DeliverChangePayload(ctx, payload)
+	return h.Mapping.Endpoints.DeliverChangePayload(ctx, payload, routingInfo)
 }
