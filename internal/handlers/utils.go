@@ -118,21 +118,21 @@ func inputDescriptorsOf(event deployevent.Event) (result []string) {
 		// but sometimes is nonsensical without context (e.g. `qa-de-1.git` for a
 		// checkout of `secrets.git` with path filter on qa-de-1 values), so we're
 		// only using it if we don't have a better alternative
-
+		readableName := name
 		if repo.RemoteURL != "" {
 			// our preference is to take the basename from the remote URL, e.g.
-			// remoteURL = "https://github.com/sapcc/helm-charts/"
-			//   -> name = "helm-charts.git"
+			//        remoteURL = "https://github.com/sapcc/helm-charts/"
+			//  -> readableName = "helm-charts.git"
 			remoteURL, err := url.Parse(repo.RemoteURL)
 			if err == nil {
-				name = strings.TrimSuffix(path.Base(strings.TrimSuffix(remoteURL.Path, "/")), ".git")
+				readableName = strings.TrimSuffix(path.Base(strings.TrimSuffix(remoteURL.Path, "/")), ".git")
 			}
 		}
-		if !strings.HasSuffix(name, ".git") {
-			name += ".git"
+		if !strings.HasSuffix(readableName, ".git") {
+			readableName += ".git"
 		}
 
-		gitVersions = append(gitVersions, fmt.Sprintf("%s %s", name, repo.CommitID))
+		gitVersions = append(gitVersions, fmt.Sprintf("%s %s", readableName, repo.CommitID))
 	}
 	sort.Strings(gitVersions) // for test reproducability
 
