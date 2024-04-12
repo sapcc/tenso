@@ -12,7 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.19.0
 	github.com/rs/cors v1.10.1
 	github.com/sapcc/go-api-declarations v1.10.11
-	github.com/sapcc/go-bits v0.0.0-20240404145041-8c313ab7cd29
+	github.com/sapcc/go-bits v0.0.0-20240411125018-95b87ec589ac
 	go.uber.org/automaxprocs v1.5.3
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -30,7 +30,7 @@ require (
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/prometheus/client_model v0.6.0 // indirect
-	github.com/prometheus/common v0.52.2 // indirect
+	github.com/prometheus/common v0.52.3 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
