@@ -57,6 +57,9 @@ func isClusterLocatedInRegion(cluster, region string) bool {
 	if cluster == "k-master" {
 		return region == "eu-nl-1"
 	}
+	if cluster == "a-qa-de-100" {
+		return region == "qa-de-1"
+	}
 	return strings.HasSuffix(cluster, region)
 }
 
