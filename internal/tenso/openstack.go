@@ -20,10 +20,10 @@
 package tenso
 
 import (
-	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/openstack"
-	"github.com/majewsky/schwift"
-	"github.com/majewsky/schwift/gopherschwift"
+	"github.com/gophercloud/gophercloud/v2"
+	"github.com/gophercloud/gophercloud/v2/openstack"
+	"github.com/majewsky/schwift/v2"
+	"github.com/majewsky/schwift/v2/gopherschwift"
 	"github.com/sapcc/go-bits/osext"
 )
 

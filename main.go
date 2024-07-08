@@ -27,8 +27,8 @@ import (
 
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/go-gorp/gorp/v3"
-	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/v2"
+	"github.com/gophercloud/gophercloud/v2/openstack"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"

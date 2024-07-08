@@ -20,7 +20,7 @@
 package handlers
 
 import (
-	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/v2"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )

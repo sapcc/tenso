@@ -27,7 +27,7 @@ import (
 	"testing"
 
 	"github.com/go-gorp/gorp/v3"
-	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"

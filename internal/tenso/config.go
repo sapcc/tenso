@@ -27,9 +27,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/openstack"
-	"github.com/gophercloud/utils/openstack/clientconfig"
+	"github.com/gophercloud/gophercloud/v2"
+	"github.com/gophercloud/gophercloud/v2/openstack"
+	"github.com/gophercloud/utils/v2/openstack/clientconfig"
 	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/must"

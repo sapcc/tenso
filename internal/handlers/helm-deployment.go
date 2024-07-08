@@ -29,8 +29,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gophercloud/gophercloud"
-	"github.com/majewsky/schwift"
+	"github.com/gophercloud/gophercloud/v2"
+	"github.com/majewsky/schwift/v2"
 	"github.com/sapcc/go-api-declarations/deployevent"
 	"github.com/sapcc/go-bits/osext"
 
