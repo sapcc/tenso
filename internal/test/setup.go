@@ -27,7 +27,7 @@ import (
 	"testing"
 
 	"github.com/go-gorp/gorp/v3"
-	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"
@@ -117,7 +117,8 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	}
 
 	// build configuration
-	routes, err := tenso.BuildRoutes(params.RouteSpecs, nil, gophercloud.EndpointOpts{})
+	ctx := context.Background()
+	routes, err := tenso.BuildRoutes(ctx, params.RouteSpecs, nil, gophercloud.EndpointOpts{})
 	Must(t, err)
 	s := Setup{
 		Clock: mock.NewClock(),
@@ -125,7 +126,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 			DatabaseURL:   dbURL,
 			EnabledRoutes: routes,
 		},
-		Ctx:      context.Background(),
+		Ctx:      ctx,
 		DB:       db,
 		Registry: prometheus.NewPedanticRegistry(),
 	}

@@ -20,7 +20,9 @@
 package handlers
 
 import (
-	"github.com/gophercloud/gophercloud"
+	"context"
+
+	"github.com/gophercloud/gophercloud/v2"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -49,7 +51,7 @@ func (h *dummyTranslator) PluginTypeID() string {
 	return h.pluginTypeID
 }
 
-func (h *dummyTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (h *dummyTranslator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
