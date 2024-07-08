@@ -103,7 +103,7 @@ func (a *activeDirectoryEventTime) UnmarshalJSON(buf []byte) error {
 type activeDirectoryDeploymentV1Validator struct {
 }
 
-func (v *activeDirectoryDeploymentV1Validator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (v *activeDirectoryDeploymentV1Validator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
@@ -169,7 +169,7 @@ type activeDirectoryDeploymentV1ToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-func (t *activeDirectoryDeploymentV1ToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+func (t *activeDirectoryDeploymentV1ToSNowTranslator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	t.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
@@ -241,7 +241,7 @@ func (t *activeDirectoryDeploymentV1ToSNowTranslator) TranslatePayload(payload [
 type activeDirectoryDeploymentV2Validator struct {
 }
 
-func (v *activeDirectoryDeploymentV2Validator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (v *activeDirectoryDeploymentV2Validator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
@@ -303,7 +303,7 @@ type activeDirectoryDeploymentV2ToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-func (t *activeDirectoryDeploymentV2ToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+func (t *activeDirectoryDeploymentV2ToSNowTranslator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	t.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
@@ -342,7 +342,7 @@ type activeDirectoryDeploymentV1ToSNowDeliverer struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-func (d *activeDirectoryDeploymentV1ToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+func (d *activeDirectoryDeploymentV1ToSNowDeliverer) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	d.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }

@@ -68,7 +68,7 @@ type testValidationHandler struct {
 	Type string
 }
 
-func (h *testValidationHandler) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (h *testValidationHandler) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 func (h *testValidationHandler) PluginTypeID() string {
@@ -90,7 +90,7 @@ type testTranslationHandler struct {
 	TargetType string
 }
 
-func (h *testTranslationHandler) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (h *testTranslationHandler) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 func (h *testTranslationHandler) PluginTypeID() string {
@@ -111,7 +111,7 @@ type testDeliveryHandler struct {
 	Type string
 }
 
-func (h *testDeliveryHandler) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (h *testDeliveryHandler) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 func (h *testDeliveryHandler) PluginTypeID() string {

@@ -50,7 +50,7 @@ func init() {
 type terraformDeploymentValidator struct {
 }
 
-func (v *terraformDeploymentValidator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (v *terraformDeploymentValidator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
@@ -129,8 +129,8 @@ type terraformDeploymentToSwiftDeliverer struct {
 	Container *schwift.Container
 }
 
-func (h *terraformDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	h.Container, err = tenso.InitializeSwiftDelivery(pc, eo, "TENSO_TERRAFORM_DEPLOYMENT_SWIFT_CONTAINER")
+func (h *terraformDeploymentToSwiftDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+	h.Container, err = tenso.InitializeSwiftDelivery(ctx, pc, eo, "TENSO_TERRAFORM_DEPLOYMENT_SWIFT_CONTAINER")
 	return err
 }
 
@@ -138,7 +138,7 @@ func (h *terraformDeploymentToSwiftDeliverer) PluginTypeID() string {
 	return "terraform-deployment-to-swift.v1"
 }
 
-func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(_ context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
+func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(_ context.Context, 
 		string(event.CombinedOutcome()),
 		event.RecordedAt.Format(time.RFC3339),
 	)
-	return nil, h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
+	return nil, h.Container.Object(objectName).Upload(ctx, bytes.NewReader(payload), nil, nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -160,7 +160,7 @@ type terraformDeploymentToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-func (t *terraformDeploymentToSNowTranslator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+func (t *terraformDeploymentToSNowTranslator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	t.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
@@ -237,7 +237,7 @@ type terraformDeploymentToSNowDeliverer struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-func (d *terraformDeploymentToSNowDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
+func (d *terraformDeploymentToSNowDeliverer) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	d.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }

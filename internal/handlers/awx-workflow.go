@@ -110,7 +110,7 @@ func (t *awxWorkflowTime) UnmarshalJSON(buf []byte) error {
 type awxWorkflowValidator struct {
 }
 
-func (a *awxWorkflowValidator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (a *awxWorkflowValidator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
@@ -157,7 +157,7 @@ type awxWorkflowToSwiftDeliverer struct {
 	Container *schwift.Container
 }
 
-func (a *awxWorkflowToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
+func (a *awxWorkflowToSwiftDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
 	containerName, err := osext.NeedGetenv("TENSO_AWX_WORKFLOW_SWIFT_CONTAINER")
 	if err != nil {
 		return err
@@ -173,7 +173,7 @@ func (a *awxWorkflowToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo go
 		return err
 	}
 
-	a.Container, err = swiftAccount.Container(containerName).EnsureExists()
+	a.Container, err = swiftAccount.Container(containerName).EnsureExists(ctx)
 	return err
 }
 
@@ -181,7 +181,7 @@ func (a *awxWorkflowToSwiftDeliverer) PluginTypeID() string {
 	return "infra-workflow-to-swift.v1"
 }
 
-func (a *awxWorkflowToSwiftDeliverer) DeliverPayload(_ context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
+func (a *awxWorkflowToSwiftDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[awxWorkflowEvent](payload)
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (a *awxWorkflowToSwiftDeliverer) DeliverPayload(_ context.Context, payload 
 	objectName := fmt.Sprintf("%s/%d/%s.json",
 		event.Name, event.ID, event.FinishedAt.Format(time.RFC3339),
 	)
-	return nil, a.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
+	return nil, a.Container.Object(objectName).Upload(ctx, bytes.NewReader(payload), nil, nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -204,7 +204,7 @@ var awxOutcomes = map[string]deployevent.Outcome{
 	"successful": deployevent.OutcomeSucceeded,
 }
 
-func (a *awxWorkflowToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+func (a *awxWorkflowToSNowTranslator) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	a.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
@@ -255,7 +255,7 @@ type awxWorkflowToSNowDeliverer struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-func (a *awxWorkflowToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+func (a *awxWorkflowToSNowDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	a.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }

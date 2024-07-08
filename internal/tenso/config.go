@@ -20,6 +20,7 @@
 package tenso
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -50,7 +51,7 @@ var (
 
 // ParseConfiguration obtains a tenso.Configuration instance from the
 // corresponding environment variables. Aborts on error.
-func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gophercloud.EndpointOpts) {
+func ParseConfiguration(ctx context.Context) (Configuration, *gophercloud.ProviderClient, gophercloud.EndpointOpts) {
 	var cfg Configuration
 	cfg.DatabaseURL = must.Return(easypg.URLFrom(easypg.URLParts{
 		HostName:          osext.GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost"),
@@ -67,7 +68,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		logg.Fatal("cannot find OpenStack credentials: " + err.Error())
 	}
 	ao.AllowReauth = true
-	provider, err := openstack.AuthenticatedClient(*ao)
+	provider, err := openstack.AuthenticatedClient(ctx, *ao)
 	if err != nil {
 		logg.Fatal("cannot connect to OpenStack: " + err.Error())
 	}
@@ -77,7 +78,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 		Availability: gophercloud.Availability(os.Getenv("OS_INTERFACE")),
 	}
 
-	cfg.EnabledRoutes = must.Return(BuildRoutes(strings.Split(osext.MustGetenv("TENSO_ROUTES"), ","), provider, eo))
+	cfg.EnabledRoutes = must.Return(BuildRoutes(ctx, strings.Split(osext.MustGetenv("TENSO_ROUTES"), ","), provider, eo))
 	return cfg, provider, eo
 }
 
@@ -85,7 +86,7 @@ func ParseConfiguration() (Configuration, *gophercloud.ProviderClient, gopherclo
 // variable. It is an exported function to make it accessible in unit tests.
 //
 // The `pc` and `eo` args are passed to the handlers' Init() methods verbatim.
-func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) ([]Route, error) {
+func BuildRoutes(ctx context.Context, routeSpecs []string, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) ([]Route, error) {
 	var (
 		result              []Route
 		validationHandlers  = make(map[string]ValidationHandler)
@@ -117,7 +118,7 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 				return nil, fmt.Errorf("route specification %q is invalid: cannot validate %s",
 					routeSpec, route.SourcePayloadType)
 			}
-			err := vh.Init(pc, eo)
+			err := vh.Init(ctx, pc, eo)
 			if err != nil {
 				return nil, fmt.Errorf("while parsing route specification %q: cannot initialize validation for %s: %s",
 					routeSpec, route.SourcePayloadType, err.Error())
@@ -134,7 +135,7 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 				return nil, fmt.Errorf("route specification %q is invalid: do not know how to translate from %s to %s",
 					routeSpec, route.SourcePayloadType, route.TargetPayloadType)
 			}
-			err := th.Init(pc, eo)
+			err := th.Init(ctx, pc, eo)
 			if err != nil {
 				return nil, fmt.Errorf("while parsing route specification %q: cannot initialize translation from %s to %s: %s",
 					routeSpec, route.SourcePayloadType, route.TargetPayloadType, err.Error())
@@ -150,7 +151,7 @@ func BuildRoutes(routeSpecs []string, pc *gophercloud.ProviderClient, eo gopherc
 				return nil, fmt.Errorf("route specification %q is invalid: cannot deliver %s",
 					routeSpec, route.TargetPayloadType)
 			}
-			err := dh.Init(pc, eo)
+			err := dh.Init(ctx, pc, eo)
 			if err != nil {
 				return nil, fmt.Errorf("while parsing route specification %q: cannot initialize delivery for %s: %s",
 					routeSpec, route.TargetPayloadType, err.Error())

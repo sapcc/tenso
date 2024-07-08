@@ -60,7 +60,7 @@ func releaseDescriptorsOf(event deployevent.Event, sep string) (result []string)
 type helmDeploymentValidator struct {
 }
 
-func (h *helmDeploymentValidator) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (h *helmDeploymentValidator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
@@ -139,7 +139,7 @@ type helmDeploymentToElkDeliverer struct {
 	LogstashHost string
 }
 
-func (h *helmDeploymentToElkDeliverer) Init(*gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+func (h *helmDeploymentToElkDeliverer) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	var err error
 	h.LogstashHost, err = osext.NeedGetenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST")
 	if err != nil {
@@ -189,8 +189,8 @@ type helmDeploymentToSwiftDeliverer struct {
 	Container *schwift.Container
 }
 
-func (h *helmDeploymentToSwiftDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
-	h.Container, err = tenso.InitializeSwiftDelivery(pc, eo, "TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
+func (h *helmDeploymentToSwiftDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+	h.Container, err = tenso.InitializeSwiftDelivery(ctx, pc, eo, "TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
 	return err
 }
 
@@ -198,7 +198,7 @@ func (h *helmDeploymentToSwiftDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-swift.v1"
 }
 
-func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(_ context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
+func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return nil, err
@@ -210,7 +210,7 @@ func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(_ context.Context, paylo
 		string(event.CombinedOutcome()),
 		event.RecordedAt.Format(time.RFC3339),
 	)
-	return nil, h.Container.Object(objectName).Upload(bytes.NewReader(payload), nil, nil)
+	return nil, h.Container.Object(objectName).Upload(ctx, bytes.NewReader(payload), nil, nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -220,7 +220,7 @@ type helmDeploymentToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-func (h *helmDeploymentToSNowTranslator) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+func (h *helmDeploymentToSNowTranslator) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	h.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
@@ -257,7 +257,7 @@ type helmDeploymentToSNowDeliverer struct {
 	Mapping servicenow.MappingConfiguration
 }
 
-func (h *helmDeploymentToSNowDeliverer) Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
+func (h *helmDeploymentToSNowDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	h.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }

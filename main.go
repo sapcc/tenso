@@ -66,23 +66,23 @@ func main() {
 	wrap.SetInsecureSkipVerify(osext.GetenvBool("TENSO_INSECURE")) // for debugging with mitmproxy etc. (DO NOT SET IN PRODUCTION)
 	wrap.SetOverrideUserAgent(bininfo.Component(), bininfo.VersionOr("rolling"))
 
-	cfg, provider, eo := tenso.ParseConfiguration()
+	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
+
+	cfg, provider, eo := tenso.ParseConfiguration(ctx)
 	db := must.Return(tenso.InitDB(cfg.DatabaseURL))
 	prometheus.MustRegister(sqlstats.NewStatsCollector("tenso", db.Db))
 
 	switch commandWord {
 	case "api":
-		runAPI(cfg, db, provider, eo)
+		runAPI(ctx, cfg, db, provider, eo)
 	case "worker":
-		runWorker(cfg, db)
+		runWorker(ctx, cfg, db)
 	default:
 		logg.Fatal("usage: %s [api|worker]", os.Args[0])
 	}
 }
 
-func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
-	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
-
+func runAPI(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
 	identityV3, err := openstack.NewIdentityV3(provider, eo)
 	if err != nil {
 		logg.Fatal("cannot find Keystone V3 API: " + err.Error())
@@ -114,9 +114,7 @@ func runAPI(cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.Provi
 	must.Succeed(httpext.ListenAndServeContext(ctx, apiListenAddress, mux))
 }
 
-func runWorker(cfg tenso.Configuration, db *gorp.DbMap) {
-	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
-
+func runWorker(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap) {
 	// start worker loops (we have a budget of 16 DB connections, which we
 	// distribute between converting and delivering with some headroom to spare)
 	c := tasks.NewContext(cfg, db)

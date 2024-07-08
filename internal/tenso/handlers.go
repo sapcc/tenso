@@ -37,7 +37,7 @@ type ValidationHandler interface {
 	//
 	// A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
 	// talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
-	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
+	Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	ValidatePayload(payload []byte) (*PayloadInfo, error)
 }
@@ -60,7 +60,7 @@ type TranslationHandler interface {
 	//
 	// A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
 	// talk to OpenStack. During unit tests, (nil, {}) will be provided instead.
-	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
+	Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error)
 }
@@ -93,7 +93,7 @@ type DeliveryHandler interface {
 	//
 	// A (ProviderClient, EndpointOpts) pair is provided for handlers that need to
 	// talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
-	Init(pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
+	Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
 	// The `routingInfo` argument contains the metadata that was supplied in the
 	// `X-Tenso-Routing-Info` header when posting the original event.
