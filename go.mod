@@ -11,8 +11,8 @@ require (
 	github.com/majewsky/schwift/v2 v2.0.0
 	github.com/prometheus/client_golang v1.20.2
 	github.com/rs/cors v1.11.1
-	github.com/sapcc/go-api-declarations v1.12.4
-	github.com/sapcc/go-bits v0.0.0-20240829073103-7495f31d66ad
+	github.com/sapcc/go-api-declarations v1.12.5
+	github.com/sapcc/go-bits v0.0.0-20240905070742-0ac071bc79e7
 	go.uber.org/automaxprocs v1.5.3
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -32,7 +32,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.57.0 // indirect
+	github.com/prometheus/common v0.58.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
