@@ -109,6 +109,9 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		"close_code":               "Implemented - Successfully",
 		"close_notes":              nl2br(chg.Description),
 		"short_description":        chg.Summary,
+		// This field is required, but since we don't have a way to judge security-relevance of changes,
+		// we have been told to always report false. The truthy value would be "Change is Security relevant".
+		"u_lob_field_1": "Change not Security relevant",
 	}
 	if chg.ConfigurationItem != "" {
 		data["cmdb_ci"] = chg.ConfigurationItem
