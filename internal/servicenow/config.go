@@ -25,7 +25,7 @@ import (
 
 	"github.com/sapcc/go-bits/osext"
 	"github.com/sapcc/go-bits/regexpext"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // MappingConfiguration is the structure of the config file at
