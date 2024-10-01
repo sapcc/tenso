@@ -103,6 +103,12 @@ func (rs MappingRuleset) Evaluate(chg Change) (result MappingRule) {
 		if r.Fallbacks.ResponsibleManager != "" {
 			result.Fallbacks.ResponsibleManager = r.Fallbacks.ResponsibleManager
 		}
+		if r.Fallbacks.BusinessUnit != "" {
+			result.Fallbacks.BusinessUnit = r.Fallbacks.BusinessUnit
+		}
+		if r.Fallbacks.BusinessService != "" {
+			result.Fallbacks.BusinessService = r.Fallbacks.BusinessService
+		}
 		if r.Fallbacks.ServiceOffering != "" {
 			result.Fallbacks.ServiceOffering = r.Fallbacks.ServiceOffering
 		}
@@ -122,6 +128,8 @@ type MappingRule struct {
 		Assignee           string `yaml:"assignee"`
 		Requester          string `yaml:"requester"`
 		ResponsibleManager string `yaml:"responsible_manager"`
+		BusinessUnit       string `yaml:"business_unit"`
+		BusinessService    string `yaml:"business_service"`
 		ServiceOffering    string `yaml:"service_offering"`
 	} `yaml:"fallbacks"`
 	Overrides struct {
@@ -160,6 +168,16 @@ func (r MappingRule) Requester(value string) string {
 		return r.Fallbacks.Requester
 	}
 	return value
+}
+
+// BusinessUnit chooses the appropriate value for "service_offering".
+func (r MappingRule) BusinessUnit() string {
+	return r.Fallbacks.BusinessUnit
+}
+
+// BusinessService chooses the appropriate value for "service_offering".
+func (r MappingRule) BusinessService() string {
+	return r.Fallbacks.BusinessService
 }
 
 // ServiceOffering chooses the appropriate value for "service_offering".

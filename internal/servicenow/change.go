@@ -113,6 +113,12 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		// we have been told to always report false. The truthy value would be "Change is Security relevant".
 		"u_lob_field_1": "Change not Security relevant",
 	}
+	if rule.BusinessUnit() != "" {
+		data["u_business_unit"] = rule.BusinessUnit()
+	}
+	if rule.BusinessService() != "" {
+		data["business_service"] = rule.BusinessService()
+	}
 	if chg.ConfigurationItem != "" {
 		data["cmdb_ci"] = chg.ConfigurationItem
 	}
