@@ -91,7 +91,7 @@ func runAPI(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap, provid
 		IdentityV3: identityV3,
 		Cacher:     gopherpolicy.InMemoryCacher(),
 	}
-	must.Succeed(tv.LoadPolicyFile(osext.MustGetenv("TENSO_OSLO_POLICY_PATH")))
+	must.Succeed(tv.LoadPolicyFile(osext.MustGetenv("TENSO_OSLO_POLICY_PATH"), nil))
 
 	// wire up HTTP handlers
 	corsMiddleware := cors.New(cors.Options{

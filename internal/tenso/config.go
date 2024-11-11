@@ -29,10 +29,8 @@ import (
 	"strings"
 
 	"github.com/gophercloud/gophercloud/v2"
-	"github.com/gophercloud/gophercloud/v2/openstack"
-	"github.com/gophercloud/utils/v2/openstack/clientconfig"
 	"github.com/sapcc/go-bits/easypg"
-	"github.com/sapcc/go-bits/logg"
+	"github.com/sapcc/go-bits/gophercloudext"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
 )
@@ -63,20 +61,8 @@ func ParseConfiguration(ctx context.Context) (Configuration, *gophercloud.Provid
 	}))
 
 	// initialize OpenStack connection
-	ao, err := clientconfig.AuthOptions(nil)
-	if err != nil {
-		logg.Fatal("cannot find OpenStack credentials: " + err.Error())
-	}
-	ao.AllowReauth = true
-	provider, err := openstack.AuthenticatedClient(ctx, *ao)
-	if err != nil {
-		logg.Fatal("cannot connect to OpenStack: " + err.Error())
-	}
-	eo := gophercloud.EndpointOpts{
-		// note that empty values are acceptable in both fields
-		Region:       os.Getenv("OS_REGION_NAME"),
-		Availability: gophercloud.Availability(os.Getenv("OS_INTERFACE")),
-	}
+	provider, eo, err := gophercloudext.NewProviderClient(ctx, nil)
+	must.Succeed(err)
 
 	cfg.EnabledRoutes = must.Return(BuildRoutes(ctx, strings.Split(osext.MustGetenv("TENSO_ROUTES"), ","), provider, eo))
 	return cfg, provider, eo
