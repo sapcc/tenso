@@ -100,7 +100,7 @@ github.com/rs/cors/internal
 ## explicit; go 1.21
 github.com/sapcc/go-api-declarations/bininfo
 github.com/sapcc/go-api-declarations/deployevent
-# github.com/sapcc/go-bits v0.0.0-20241111142343-42fa891b5aae
+# github.com/sapcc/go-bits v0.0.0-20241112121120-a312b675efd7
 ## explicit; go 1.23
 github.com/sapcc/go-bits/assert
 github.com/sapcc/go-bits/easypg
