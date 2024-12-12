@@ -20,7 +20,7 @@
 package tenso
 
 import (
-	"net/url"
+	"database/sql"
 
 	"github.com/go-gorp/gorp/v3"
 	"github.com/sapcc/go-bits/easypg"
@@ -74,19 +74,19 @@ var sqlMigrations = map[string]string{
 	`,
 }
 
-// InitDB connects to the Postgres database.
-func InitDB(dbURL *url.URL) (*gorp.DbMap, error) {
-	db, err := easypg.Connect(easypg.Configuration{
-		PostgresURL: dbURL,
-		Migrations:  sqlMigrations,
-	})
-	if err != nil {
-		return nil, err
+// DBConfiguration returns the easypg.Configuration object that func main() needs to initialize the DB connection.
+func DBConfiguration() easypg.Configuration {
+	return easypg.Configuration{
+		Migrations: sqlMigrations,
 	}
-	// ensure that this process does not starve other Tenso processes for DB connections
-	db.SetMaxOpenConns(16)
+}
 
-	result := &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
+// InitORM wraps a database connection into a gorp.DbMap instance.
+func InitORM(dbConn *sql.DB) *gorp.DbMap {
+	// ensure that this process does not starve other Tenso processes for DB connections
+	dbConn.SetMaxOpenConns(16)
+
+	result := &gorp.DbMap{Db: dbConn, Dialect: gorp.PostgresDialect{}}
 	initModels(result)
-	return result, nil
+	return result
 }

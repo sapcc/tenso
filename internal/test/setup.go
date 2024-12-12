@@ -21,18 +21,16 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"net/url"
 	"testing"
 
 	"github.com/go-gorp/gorp/v3"
 	"github.com/gophercloud/gophercloud/v2"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/mock"
-	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
 
 	"github.com/sapcc/tenso/internal/api"
@@ -91,30 +89,10 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	}
 
 	// connect to DB
-	dbURL := must.Return(url.Parse("postgres://postgres:postgres@localhost:54321/tenso?sslmode=disable"))
-	db, err := tenso.InitDB(dbURL)
-	if err != nil {
-		t.Error(err)
-		t.Log("Try prepending ./testing/with-postgres-db.sh to your command.")
-		t.FailNow()
-	}
-
-	// wipe the DB clean if there are any leftovers from the previous test run
-	// (the table order is chosen to respect all "ON DELETE RESTRICT" constraints)
-	for _, tableName := range []string{"pending_deliveries", "events", "users"} {
-		_, err := db.Exec("DELETE FROM " + tableName)
-		Must(t, err)
-	}
-
-	// reset all primary key sequences for reproducible row IDs
-	for _, tableName := range []string{"events", "users"} {
-		nextID, err := db.SelectInt("SELECT 1 + COALESCE(MAX(id), 0) FROM " + tableName)
-		Must(t, err)
-
-		query := fmt.Sprintf(`ALTER SEQUENCE %s_id_seq RESTART WITH %d`, tableName, nextID)
-		_, err = db.Exec(query)
-		Must(t, err)
-	}
+	db := tenso.InitORM(easypg.ConnectForTest(t, tenso.DBConfiguration(),
+		easypg.ClearTables("pending_deliveries", "events", "users"),
+		easypg.ResetPrimaryKeys("events", "users"),
+	))
 
 	// build configuration
 	ctx := context.Background()
@@ -123,7 +101,6 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	s := Setup{
 		Clock: mock.NewClock(),
 		Config: tenso.Configuration{
-			DatabaseURL:   dbURL,
 			EnabledRoutes: routes,
 		},
 		Ctx:      ctx,

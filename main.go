@@ -33,6 +33,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/sapcc/go-api-declarations/bininfo"
+	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/gopherpolicy"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/httpapi/pprofapi"
@@ -67,10 +68,21 @@ func main() {
 	wrap.SetOverrideUserAgent(bininfo.Component(), bininfo.VersionOr("rolling"))
 
 	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
-
 	cfg, provider, eo := tenso.ParseConfiguration(ctx)
-	db := must.Return(tenso.InitDB(cfg.DatabaseURL))
-	prometheus.MustRegister(sqlstats.NewStatsCollector("tenso", db.Db))
+
+	// initialize DB connection
+	dbName := osext.GetenvOrDefault("TENSO_DB_NAME", "tenso")
+	dbURL := must.Return(easypg.URLFrom(easypg.URLParts{
+		HostName:          osext.GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost"),
+		Port:              osext.GetenvOrDefault("TENSO_DB_PORT", "5432"),
+		UserName:          osext.GetenvOrDefault("TENSO_DB_USERNAME", "postgres"),
+		Password:          os.Getenv("TENSO_DB_PASSWORD"),
+		ConnectionOptions: os.Getenv("TENSO_DB_CONNECTION_OPTIONS"),
+		DatabaseName:      dbName,
+	}))
+	dbConn := must.Return(easypg.Connect(dbURL, tenso.DBConfiguration()))
+	prometheus.MustRegister(sqlstats.NewStatsCollector(dbName, dbConn))
+	db := tenso.InitORM(dbConn)
 
 	switch commandWord {
 	case "api":

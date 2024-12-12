@@ -30,6 +30,10 @@ import (
 	"github.com/sapcc/tenso/internal/test"
 )
 
+func TestMain(m *testing.M) {
+	easypg.WithTestDB(m, func() int { return m.Run() })
+}
+
 func TestPostNewEvent(t *testing.T) {
 	s := test.NewSetup(t,
 		test.WithAPI,
