@@ -24,12 +24,10 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"regexp"
 	"strings"
 
 	"github.com/gophercloud/gophercloud/v2"
-	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/gophercloudext"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
@@ -37,7 +35,7 @@ import (
 
 // Configuration contains all configuration values that we collect from the environment.
 type Configuration struct {
-	DatabaseURL   *url.URL
+	DatabaseURL   url.URL
 	EnabledRoutes []Route
 }
 
@@ -51,14 +49,6 @@ var (
 // corresponding environment variables. Aborts on error.
 func ParseConfiguration(ctx context.Context) (Configuration, *gophercloud.ProviderClient, gophercloud.EndpointOpts) {
 	var cfg Configuration
-	cfg.DatabaseURL = must.Return(easypg.URLFrom(easypg.URLParts{
-		HostName:          osext.GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost"),
-		Port:              osext.GetenvOrDefault("TENSO_DB_PORT", "5432"),
-		UserName:          osext.GetenvOrDefault("TENSO_DB_USERNAME", "postgres"),
-		Password:          os.Getenv("TENSO_DB_PASSWORD"),
-		ConnectionOptions: os.Getenv("TENSO_DB_CONNECTION_OPTIONS"),
-		DatabaseName:      osext.GetenvOrDefault("TENSO_DB_NAME", "tenso"),
-	}))
 
 	// initialize OpenStack connection
 	provider, eo, err := gophercloudext.NewProviderClient(ctx, nil)
