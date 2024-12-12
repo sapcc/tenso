@@ -71,16 +71,17 @@ func main() {
 	cfg, provider, eo := tenso.ParseConfiguration(ctx)
 
 	// initialize DB connection
+	dbName := osext.GetenvOrDefault("TENSO_DB_NAME", "tenso")
 	dbURL := must.Return(easypg.URLFrom(easypg.URLParts{
 		HostName:          osext.GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost"),
 		Port:              osext.GetenvOrDefault("TENSO_DB_PORT", "5432"),
 		UserName:          osext.GetenvOrDefault("TENSO_DB_USERNAME", "postgres"),
 		Password:          os.Getenv("TENSO_DB_PASSWORD"),
 		ConnectionOptions: os.Getenv("TENSO_DB_CONNECTION_OPTIONS"),
-		DatabaseName:      osext.GetenvOrDefault("TENSO_DB_NAME", "tenso"),
+		DatabaseName:      dbName,
 	}))
 	dbConn := must.Return(easypg.Connect(dbURL, tenso.DBConfiguration()))
-	prometheus.MustRegister(sqlstats.NewStatsCollector("tenso", dbConn))
+	prometheus.MustRegister(sqlstats.NewStatsCollector(dbName, dbConn))
 	db := tenso.InitORM(dbConn)
 
 	switch commandWord {
