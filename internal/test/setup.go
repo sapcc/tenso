@@ -95,15 +95,14 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	))
 
 	// build configuration
-	ctx := context.Background()
-	routes, err := tenso.BuildRoutes(ctx, params.RouteSpecs, nil, gophercloud.EndpointOpts{})
+	routes, err := tenso.BuildRoutes(t.Context(), params.RouteSpecs, nil, gophercloud.EndpointOpts{})
 	Must(t, err)
 	s := Setup{
 		Clock: mock.NewClock(),
 		Config: tenso.Configuration{
 			EnabledRoutes: routes,
 		},
-		Ctx:      ctx,
+		Ctx:      t.Context(),
 		DB:       db,
 		Registry: prometheus.NewPedanticRegistry(),
 	}
