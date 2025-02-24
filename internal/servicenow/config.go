@@ -91,29 +91,20 @@ func (rs MappingRuleset) Evaluate(chg Change) (result MappingRule) {
 		if !r.matches(chg) {
 			continue
 		}
-		if r.ChangeModel != "" {
-			result.ChangeModel = r.ChangeModel
+		if r.ChangeTemplateID != "" {
+			result.ChangeTemplateID = r.ChangeTemplateID
 		}
-		if r.Fallbacks.Assignee != "" {
-			result.Fallbacks.Assignee = r.Fallbacks.Assignee
+		if r.Assignee != "" {
+			result.Assignee = r.Assignee
 		}
-		if r.Fallbacks.Requester != "" {
-			result.Fallbacks.Requester = r.Fallbacks.Requester
+		if r.ResponsibleManager != "" {
+			result.ResponsibleManager = r.ResponsibleManager
 		}
-		if r.Fallbacks.ResponsibleManager != "" {
-			result.Fallbacks.ResponsibleManager = r.Fallbacks.ResponsibleManager
+		if r.ServiceOffering != "" {
+			result.ServiceOffering = r.ServiceOffering
 		}
-		if r.Fallbacks.BusinessUnit != "" {
-			result.Fallbacks.BusinessUnit = r.Fallbacks.BusinessUnit
-		}
-		if r.Fallbacks.BusinessService != "" {
-			result.Fallbacks.BusinessService = r.Fallbacks.BusinessService
-		}
-		if r.Fallbacks.ServiceOffering != "" {
-			result.Fallbacks.ServiceOffering = r.Fallbacks.ServiceOffering
-		}
-		if r.Overrides.Assignee != "" {
-			result.Overrides.Assignee = r.Overrides.Assignee
+		if r.Requester != "" {
+			result.Requester = r.Requester
 		}
 	}
 	return result
@@ -121,71 +112,17 @@ func (rs MappingRuleset) Evaluate(chg Change) (result MappingRule) {
 
 // MappingRule is a rule for filling missing fields in a Change object.
 type MappingRule struct {
-	MatchEnvVars map[string]regexpext.BoundedRegexp `yaml:"match_env_vars"`
-	MatchSummary regexpext.BoundedRegexp            `yaml:"match_summary"`
-	ChangeModel  string                             `yaml:"change_model"`
-	Fallbacks    struct {
-		Assignee           string `yaml:"assignee"`
-		Requester          string `yaml:"requester"`
-		ResponsibleManager string `yaml:"responsible_manager"`
-		BusinessUnit       string `yaml:"business_unit"`
-		BusinessService    string `yaml:"business_service"`
-		ServiceOffering    string `yaml:"service_offering"`
-	} `yaml:"fallbacks"`
-	Overrides struct {
-		Assignee string `yaml:"assignee"`
-	} `yaml:"overrides"`
+	MatchSummary       regexpext.BoundedRegexp `yaml:"match_summary"`
+	ChangeTemplateID   string                  `yaml:"change_template_id"`
+	Assignee           string                  `yaml:"assignee"`
+	ResponsibleManager string                  `yaml:"responsible_manager"`
+	ServiceOffering    string                  `yaml:"service_offering"`
+	Requester          string                  `yaml:"requester"`
 }
 
 func (r MappingRule) matches(chg Change) bool {
-	for key, rx := range r.MatchEnvVars {
-		if !rx.MatchString(os.Getenv(key)) {
-			return false
-		}
-	}
 	if r.MatchSummary != "" && !r.MatchSummary.MatchString(chg.Summary) {
 		return false
 	}
 	return true
-}
-
-// Assignee chooses the appropriate value for "assigned_to". The given value
-// may be overridden, or a fallback may be applied if no value is given.
-func (r MappingRule) Assignee(value string) string {
-	if r.Overrides.Assignee != "" {
-		return r.Overrides.Assignee
-	}
-	if value == "" {
-		return r.Fallbacks.Assignee
-	}
-	return value
-}
-
-// Requester chooses the appropriate value for "requested_by". A fallback may
-// be applied if no value is given.
-func (r MappingRule) Requester(value string) string {
-	if value == "" {
-		return r.Fallbacks.Requester
-	}
-	return value
-}
-
-// BusinessUnit chooses the appropriate value for "service_offering".
-func (r MappingRule) BusinessUnit() string {
-	return r.Fallbacks.BusinessUnit
-}
-
-// BusinessService chooses the appropriate value for "service_offering".
-func (r MappingRule) BusinessService() string {
-	return r.Fallbacks.BusinessService
-}
-
-// ServiceOffering chooses the appropriate value for "service_offering".
-func (r MappingRule) ServiceOffering() string {
-	return r.Fallbacks.ServiceOffering
-}
-
-// ResponsibleManager chooses the appropriate value for "u_responsible_manager".
-func (r MappingRule) ResponsibleManager() string {
-	return r.Fallbacks.ResponsibleManager
 }
