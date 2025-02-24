@@ -4,32 +4,32 @@ endpoints:
     url: http://www.example.com
 
 helm-deployment:
-- change_model: "My Test Model"
+- change_template_id: "My Test Template"
   assignee: D123456
   requester: D234567
   responsible_manager: John Doe (D123456)
   service_offering: GCS-Network-Security
 
 awx-workflow:
-- change_model: "My Test Model"
-  assignee: I1234567
+- change_template_id: "My Test Template"
   requester: I2345678
   responsible_manager: Jane Doe (I1234567)
   service_offering: GCS-Network-Security
+  assignee: I1234567
 
 active-directory-deployment:
-- change_model: "My Test Model"
-  assignee: I0123456
+- change_template_id: "My Test Template"
   requester: I1234567
   responsible_manager: Max Mustermann (D001234)
   service_offering: GCS-Network-Security
+  assignee: I0123456
 
 terraform-deployment:
-- change_model: "My Test Model"
-  assignee: I0123456
+- change_template_id: "My Test Template"
   requester: I1234567
   responsible_manager: Max Mustermann (D001234)
   service_offering: GCS-Network-Security
+  assignee: I0123456
 
 regions:
   qa-de-1: [ qa-de-1a, qa-de-1b, qa-de-1d ]
