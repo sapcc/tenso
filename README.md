@@ -179,41 +179,44 @@ The config file for `TENSO_SERVICENOW_MAPPING_CONFIG_PATH` must be a YAML docume
 
 | Field | Data type | Explanation |
 | ----- | --------- | ----------- |
-| `helm-deployment` | list of objects | Mapping rules for `helm-deployment-from-concourse.v1` translation to ServiceNow (see below). |
-| `awx-workflow` | list of objects | Mapping rules for `infra-workflow-from-awx.v1` translation to ServiceNow (see below). |
-| `active-directory-deployment` | list of objects | Mapping rules for `active-directory-deployment-from-concourse.v[1-2]` translation to ServiceNow (see below). |
-| `terraform-deployment` | list of objects | Mapping rules for `infra-workflow-concourse-awx.v1` translation to ServiceNow (see below). |
+| `helm-deployment` | list of 1-n objects | Mapping rules for `helm-deployment-from-concourse.v1` translation to ServiceNow (see below). |
+| `awx-workflow` | list of 1-n objects | Mapping rules for `infra-workflow-from-awx.v1` translation to ServiceNow (see below). |
+| `active-directory-deployment` | list of 1-n objects | Mapping rules for `active-directory-deployment-from-concourse.v[1-2]` translation to ServiceNow (see below). |
+| `terraform-deployment` | list of 1-n objects | Mapping rules for `infra-workflow-concourse-awx.v1` translation to ServiceNow (see below). |
 | `regions.<region>` | list of strings | Availability zones belonging to this region. |
 | `availability_zones.<az>.datacenters` | list of strings | Data centers belonging to this AZ, using the names that ServiceNow expects. |
 | `availability_zones.<az>.environment` | string | Either "Development", "QA" or "Production". |
 
-The "mapping rule" objects mentioned above can have the following fields:
+The lists of "mapping rule" objects mentioned above are used to set fixed default fields in Service Now API depending on context. 
+They are evaluated in the order given in the config: for each individual field the last matched rule will be applied.
+At least one mapping rule for a type of payload should match all changes. The rule structure is as follows:
 
-| Field | Data type | Explanation |
-| ----- | --------- | ----------- |
-| `match_summary` | string | If present, the rule only applies to changes whose summary matches this regular expression. A leading `^` and trailing `$` anchor is added automatically, thus the regex has to match the whole summary. |
-| `change_model` | string | Value for the `chg_model` field. |
-| `fallbacks.assignee` | string | User ID of the user that we will put into `assigned_to` when we don't have a better option. |
-| `fallbacks.requester` | string | User ID of the user that we will put into `requested_by` when we don't have a better option. |
-| `fallbacks.responsible_manager` | string | User name and ID of the user that we will put as `responsible_manager` when we don't have a better option. |
-| `fallbacks.service_offering` | string | Value that we will put as `service_offering` when we don't have a better option. |
-| `overrides.assignee` | string | If given, we will always put this into `assigned_to`. |
+| Field | Required (once in all matching rules for a payload type) | Data type | Explanation |
+| ----- | -------------------------------------------------------- | --------- | ----------- |
+| `match_summary` | no | string | If present, the rule only applies to changes whose summary matches this regular expression. A leading `^` and trailing `$` anchor is added automatically, thus the regex has to match the whole summary. |
+| `change_template_id` | yes | string | Value for the `standard_change_template_id` which determines most static properties. |
+| `assignee` | yes | string | SNOW technical user that we will put into `assigned_to`. |
+| `responsible_manager` | yes | string | User ID (C/D/I) of the user that we will put as `responsible_manager`. |
+| `service_offering` | yes | string | Value that we will put as `service_offering`. |
+| `requester` | yes | string | User ID (C/D/I) of the user that we will put into `requested_by`. This content was previously used as `assigned_to` but that one has to be a technical user (see last section). |
 
 If multiple mapping rules match, attributes set in later rules override those set in earlier rules. In other words, put the more general rules at the top and the more specific rules at the bottom.
 
 ## tl;dr about the SNOW API
 
-In order to make development easier, these are the most important points to know about the Service Now (SNOW) API:
+In order to get going in case of necessary changes to the process, these are the most important points to know about the Service Now (SNOW) API:
 
-* we don't interact with the SNOW api directly, but with a kind of proxy provided by CPI team
-  * we use certificate auth and get notified at `DL_67B5FEDE4D699DF1B5294E27@global.corp.sap` for cert renewal
-* tenso's API interactions aim to retroactively generate changes under pre-approved changes:
+* tenso does not interact with the SNOW api directly, but with a kind middleware API provided by CPI team
+  * tenso uses certificate auth and maintainers get notified at `DL_67B5FEDE4D699DF1B5294E27@global.corp.sap` for cert renewal by CPI team
+* tenso's API interactions aim to retroactively generate changes (`CHG` in SNOW) under pre-approved changes:
   * `Change Model`: models the lifecycle of a change in SNOW, e.g. which steps it has
   * `Change Template`: a template necessary for creation of a change via API with some default values, e.g. `Category`, `Implementation Plan`, `Business Unit` and also the `Change Model`
-* configurations changes on `Models` and `Templates` can only be done by SNOW consultants
-* `Change Model`s imply values/consistency of fields and might fail silently in some cases
+* configurations changes on `Models` and `Templates` can only be done by SNOW admins in prod
+  * in test + dev system you can raise so called `Proposal`s on a `Template` and have them approved by SNOW admins ([list in dev](https://sapextdev.service-now.com/now/nav/ui/classic/params/target/std_change_proposal_list.do%3Fsysparm_query%3D%26sysparm_first_row%3D1%26sysparm_view%3D)) 
+* `Change Model`s require fields/consistency of fields
   * e.g. `u_lob_field_1=(Change not Security relevant|Change is Security relevant)` fails with error
-  * e.g. `Assigned To` must be a user ID of the `Assignment Group` recorded in the template and fails silently
-    * this relation cannot be circumvented as per SNOW design
-    * unfortunately assignment groups can only be managed via CAM profile assignments and people will forget to renew them --> changes will fail
-    * workaround: technical users as `Assigned To` cause the change to progress always --> we always have to use our technical user for this field
+  * e.g. `Assigned To` must be a user ID of the `Assignment Group` recorded in the template and fails silently/ cause `CHG`s to be stuck in open 
+    * this relation cannot be circumvented by SNOW-design
+    * `Assignment Group`s are managed via CAM profile assignments --> people forget to renew them --> assignment groups change --> CHGs will not progress to `Closed`
+    * workaround: technical users as `Assigned To` can circumvent the validation
+* if you want to find changes in SNOW, you could search by `Model`, `Assigned To`, `Requested By` (=overall responsible for this type of change), `Implementation Contact` (=person triggering the change) or `Responsible Manager` (=manager of the overall responsible for this type of change)

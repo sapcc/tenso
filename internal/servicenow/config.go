@@ -91,26 +91,20 @@ func (rs MappingRuleset) Evaluate(chg Change) (result MappingRule) {
 		if !r.matches(chg) {
 			continue
 		}
-		if r.ChangeModel != "" {
-			result.ChangeModel = r.ChangeModel
+		if r.ChangeTemplateID != "" {
+			result.ChangeTemplateID = r.ChangeTemplateID
 		}
 		if r.Assignee != "" {
 			result.Assignee = r.Assignee
 		}
-		if r.Requester != "" {
-			result.Requester = r.Requester
-		}
 		if r.ResponsibleManager != "" {
 			result.ResponsibleManager = r.ResponsibleManager
 		}
-		if r.BusinessUnit != "" {
-			result.BusinessUnit = r.BusinessUnit
-		}
-		if r.BusinessService != "" {
-			result.BusinessService = r.BusinessService
-		}
 		if r.ServiceOffering != "" {
 			result.ServiceOffering = r.ServiceOffering
+		}
+		if r.Requester != "" {
+			result.Requester = r.Requester
 		}
 	}
 	return result
@@ -118,23 +112,15 @@ func (rs MappingRuleset) Evaluate(chg Change) (result MappingRule) {
 
 // MappingRule is a rule for filling missing fields in a Change object.
 type MappingRule struct {
-	MatchEnvVars       map[string]regexpext.BoundedRegexp `yaml:"match_env_vars"`
-	MatchSummary       regexpext.BoundedRegexp            `yaml:"match_summary"`
-	ChangeModel        string                             `yaml:"change_model"`
-	Assignee           string                             `yaml:"assignee"`
-	Requester          string                             `yaml:"requester"`
-	ResponsibleManager string                             `yaml:"responsible_manager"`
-	BusinessUnit       string                             `yaml:"business_unit"`
-	BusinessService    string                             `yaml:"business_service"`
-	ServiceOffering    string                             `yaml:"service_offering"`
+	MatchSummary       regexpext.BoundedRegexp `yaml:"match_summary"`
+	ChangeTemplateID   string                  `yaml:"change_template_id"`
+	Assignee           string                  `yaml:"assignee"`
+	ResponsibleManager string                  `yaml:"responsible_manager"`
+	ServiceOffering    string                  `yaml:"service_offering"`
+	Requester          string                  `yaml:"requester"`
 }
 
 func (r MappingRule) matches(chg Change) bool {
-	for key, rx := range r.MatchEnvVars {
-		if !rx.MatchString(os.Getenv(key)) {
-			return false
-		}
-	}
 	if r.MatchSummary != "" && !r.MatchSummary.MatchString(chg.Summary) {
 		return false
 	}
