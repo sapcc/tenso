@@ -47,7 +47,7 @@ type Change struct {
 }
 
 // Serialize returns the payload that we can send into SNow.
-func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([]byte, error) {
+func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset, routingInfo map[string]string) ([]byte, error) {
 	// we will not create a change object in ServiceNow if:
 	//- we did not start deploying (OutcomeNotDeployed)
 	//- the deployment did not finish (e.g. OutcomeHelmUpgradeFailed) -- as
@@ -91,7 +91,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		}
 	}
 
-	rule := ruleset.Evaluate(chg)
+	rule := ruleset.Evaluate(chg, routingInfo)
 	data := map[string]interface{}{
 		"standard_change_template_id": rule.ChangeTemplateID,
 		"assigned_to":                 rule.Assignee,
@@ -101,7 +101,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		"u_data_center":               strings.Join(datacenters, ", "),
 		"u_responsible_manager":       rule.ResponsibleManager,
 		// Custom fields cannot be baked into the template, therefore statically setting it here.
-		"u_impacted_lobs":          "d367e6471ba388d020c8fddacd4bcb45", // "GCS Global Cloud Services" --> robust against naming changes
+		"u_impacted_lobs":         "d367e6471ba388d020c8fddacd4bcb45", // "GCS Global Cloud Services" --> robust against naming changes
 		"u_affected_environments": environment,
 		"start_date":              sNowTimeStr(chg.StartedAt),
 		"end_date":                sNowTimeStr(chg.EndedAt),

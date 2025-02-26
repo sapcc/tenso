@@ -210,7 +210,7 @@ func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte, r
 		Region:      event.Region,
 	}
 
-	return chg.Serialize(t.Mapping, t.Mapping.TerraformDeployment)
+	return chg.Serialize(t.Mapping, t.Mapping.TerraformDeployment, routingInfo)
 }
 
 func summaryOfRun(run deployevent.TerraformRun) string {

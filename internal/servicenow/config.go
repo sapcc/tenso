@@ -86,9 +86,10 @@ func LoadMappingConfiguration(envVarName string) (MappingConfiguration, error) {
 type MappingRuleset []MappingRule
 
 // Evaluate returns the sum of all rules in this ruleset that match the given Change object.
-func (rs MappingRuleset) Evaluate(chg Change) (result MappingRule) {
+// For each field, the last matching rule takes precedence.
+func (rs MappingRuleset) Evaluate(chg Change, routingInfo map[string]string) (result MappingRule) {
 	for _, r := range rs {
-		if !r.matches(chg) {
+		if !r.matches(chg, routingInfo) {
 			continue
 		}
 		if r.ChangeTemplateID != "" {
@@ -112,16 +113,18 @@ func (rs MappingRuleset) Evaluate(chg Change) (result MappingRule) {
 
 // MappingRule is a rule for filling missing fields in a Change object.
 type MappingRule struct {
-	MatchSummary       regexpext.BoundedRegexp `yaml:"match_summary"`
-	ChangeTemplateID   string                  `yaml:"change_template_id"`
-	Assignee           string                  `yaml:"assignee"`
-	ResponsibleManager string                  `yaml:"responsible_manager"`
-	ServiceOffering    string                  `yaml:"service_offering"`
-	Requester          string                  `yaml:"requester"`
+	MatchSummary          regexpext.BoundedRegexp `yaml:"match_summary"`
+	MatchServiceNowTarget string                  `yaml:"match_servicenow_target"`
+	ChangeTemplateID      string                  `yaml:"change_template_id"`
+	Assignee              string                  `yaml:"assignee"`
+	ResponsibleManager    string                  `yaml:"responsible_manager"`
+	ServiceOffering       string                  `yaml:"service_offering"`
+	Requester             string                  `yaml:"requester"`
 }
 
-func (r MappingRule) matches(chg Change) bool {
-	if r.MatchSummary != "" && !r.MatchSummary.MatchString(chg.Summary) {
+func (r MappingRule) matches(chg Change, routingInfo map[string]string) bool {
+	if (r.MatchServiceNowTarget != "" && r.MatchServiceNowTarget != routingInfo["servicenow-target"]) ||
+		r.MatchSummary != "" && !r.MatchSummary.MatchString(chg.Summary) {
 		return false
 	}
 	return true
