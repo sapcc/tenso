@@ -41,7 +41,7 @@
   "pipeline": {
     "build-number": "1",
     "build-url": "https://concourse.example.org/teams/dummy/pipelines/synthetic/jobs/qa-de-1/builds/1",
-    "created-by": "I012345",
+    "created-by": "D012345",
     "job": "qa-de-1",
     "name": "synthetic",
     "team": "dummy"
