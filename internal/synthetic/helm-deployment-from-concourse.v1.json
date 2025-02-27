@@ -24,7 +24,8 @@
     "build-url": "https://concourse.example.org/teams/dummy/pipelines/synthetic/jobs/qa-de-1-deploy/builds/1",
     "job": "qa-de-1-deploy",
     "name": "synthetic",
-    "team": "dummy"
+    "team": "dummy",
+    "created-by": "D012345"
   }
 }
 

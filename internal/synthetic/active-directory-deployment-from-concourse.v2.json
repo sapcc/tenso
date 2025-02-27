@@ -1,0 +1,29 @@
+{
+  "region": "qa-de-1",
+  "recorded_at": "2022-01-01T00:00:06Z",
+  "git": {
+    "qa-de-1": {
+      "authored-at": "2021-12-31T01:00:00Z",
+      "committed-at": "2021-12-31T00:00:00Z",
+      "branch": "testing",
+      "commit-id": "abcd123456789abcd123456789abcd123456789a",
+      "remote-url": "https://git.example.org/somedummyservice.git"
+    }
+  },
+  "active-directory-deployment": {
+    "landscape": "dev",
+    "host": "somedummyservice.tools.sap",
+    "outcome": "succeeded",
+    "started-at": "2022-01-01T00:00:00Z",
+    "finished-at": "2022-01-01T00:00:04Z",
+    "duration": 4
+  },
+  "pipeline": {
+    "build-number": "1",
+    "build-url": "https://concourse.example.org/teams/dummy/pipelines/synthetic/jobs/qa-de-1-deploy/builds/1",
+    "job": "qa-de-1-deploy",
+    "name": "synthetic",
+    "team": "dummy",
+    "created-by": "D012345"
+  }
+}

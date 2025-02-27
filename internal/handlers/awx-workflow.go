@@ -245,7 +245,7 @@ func (a *awxWorkflowToSNowTranslator) TranslatePayload(payload []byte, routingIn
 		chg.Executee = ""
 	}
 
-	return chg.Serialize(a.Mapping, a.Mapping.AWXWorkflow)
+	return chg.Serialize(a.Mapping, a.Mapping.AWXWorkflow, routingInfo)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
