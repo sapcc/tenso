@@ -228,7 +228,7 @@ func (t *activeDirectoryDeploymentV1ToSNowTranslator) TranslatePayload(payload [
 		Region:      event.Region,
 	}
 
-	return chg.Serialize(t.Mapping, t.Mapping.ActiveDirectoryDeployment)
+	return chg.Serialize(t.Mapping, t.Mapping.ActiveDirectoryDeployment, routingInfo)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -332,7 +332,7 @@ func (t *activeDirectoryDeploymentV2ToSNowTranslator) TranslatePayload(payload [
 		Region:   event.Region,
 	}
 
-	return chg.Serialize(t.Mapping, t.Mapping.ActiveDirectoryDeployment)
+	return chg.Serialize(t.Mapping, t.Mapping.ActiveDirectoryDeployment, routingInfo)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
