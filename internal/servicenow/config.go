@@ -94,26 +94,23 @@ func (rs MappingRuleset) Evaluate(chg Change) (result MappingRule) {
 		if r.ChangeModel != "" {
 			result.ChangeModel = r.ChangeModel
 		}
-		if r.Fallbacks.Assignee != "" {
-			result.Fallbacks.Assignee = r.Fallbacks.Assignee
+		if r.Assignee != "" {
+			result.Assignee = r.Assignee
 		}
-		if r.Fallbacks.Requester != "" {
-			result.Fallbacks.Requester = r.Fallbacks.Requester
+		if r.Requester != "" {
+			result.Requester = r.Requester
 		}
-		if r.Fallbacks.ResponsibleManager != "" {
-			result.Fallbacks.ResponsibleManager = r.Fallbacks.ResponsibleManager
+		if r.ResponsibleManager != "" {
+			result.ResponsibleManager = r.ResponsibleManager
 		}
-		if r.Fallbacks.BusinessUnit != "" {
-			result.Fallbacks.BusinessUnit = r.Fallbacks.BusinessUnit
+		if r.BusinessUnit != "" {
+			result.BusinessUnit = r.BusinessUnit
 		}
-		if r.Fallbacks.BusinessService != "" {
-			result.Fallbacks.BusinessService = r.Fallbacks.BusinessService
+		if r.BusinessService != "" {
+			result.BusinessService = r.BusinessService
 		}
-		if r.Fallbacks.ServiceOffering != "" {
-			result.Fallbacks.ServiceOffering = r.Fallbacks.ServiceOffering
-		}
-		if r.Overrides.Assignee != "" {
-			result.Overrides.Assignee = r.Overrides.Assignee
+		if r.ServiceOffering != "" {
+			result.ServiceOffering = r.ServiceOffering
 		}
 	}
 	return result
@@ -121,20 +118,15 @@ func (rs MappingRuleset) Evaluate(chg Change) (result MappingRule) {
 
 // MappingRule is a rule for filling missing fields in a Change object.
 type MappingRule struct {
-	MatchEnvVars map[string]regexpext.BoundedRegexp `yaml:"match_env_vars"`
-	MatchSummary regexpext.BoundedRegexp            `yaml:"match_summary"`
-	ChangeModel  string                             `yaml:"change_model"`
-	Fallbacks    struct {
-		Assignee           string `yaml:"assignee"`
-		Requester          string `yaml:"requester"`
-		ResponsibleManager string `yaml:"responsible_manager"`
-		BusinessUnit       string `yaml:"business_unit"`
-		BusinessService    string `yaml:"business_service"`
-		ServiceOffering    string `yaml:"service_offering"`
-	} `yaml:"fallbacks"`
-	Overrides struct {
-		Assignee string `yaml:"assignee"`
-	} `yaml:"overrides"`
+	MatchEnvVars       map[string]regexpext.BoundedRegexp `yaml:"match_env_vars"`
+	MatchSummary       regexpext.BoundedRegexp            `yaml:"match_summary"`
+	ChangeModel        string                             `yaml:"change_model"`
+	Assignee           string                             `yaml:"assignee"`
+	Requester          string                             `yaml:"requester"`
+	ResponsibleManager string                             `yaml:"responsible_manager"`
+	BusinessUnit       string                             `yaml:"business_unit"`
+	BusinessService    string                             `yaml:"business_service"`
+	ServiceOffering    string                             `yaml:"service_offering"`
 }
 
 func (r MappingRule) matches(chg Change) bool {
@@ -147,45 +139,4 @@ func (r MappingRule) matches(chg Change) bool {
 		return false
 	}
 	return true
-}
-
-// Assignee chooses the appropriate value for "assigned_to". The given value
-// may be overridden, or a fallback may be applied if no value is given.
-func (r MappingRule) Assignee(value string) string {
-	if r.Overrides.Assignee != "" {
-		return r.Overrides.Assignee
-	}
-	if value == "" {
-		return r.Fallbacks.Assignee
-	}
-	return value
-}
-
-// Requester chooses the appropriate value for "requested_by". A fallback may
-// be applied if no value is given.
-func (r MappingRule) Requester(value string) string {
-	if value == "" {
-		return r.Fallbacks.Requester
-	}
-	return value
-}
-
-// BusinessUnit chooses the appropriate value for "service_offering".
-func (r MappingRule) BusinessUnit() string {
-	return r.Fallbacks.BusinessUnit
-}
-
-// BusinessService chooses the appropriate value for "service_offering".
-func (r MappingRule) BusinessService() string {
-	return r.Fallbacks.BusinessService
-}
-
-// ServiceOffering chooses the appropriate value for "service_offering".
-func (r MappingRule) ServiceOffering() string {
-	return r.Fallbacks.ServiceOffering
-}
-
-// ResponsibleManager chooses the appropriate value for "u_responsible_manager".
-func (r MappingRule) ResponsibleManager() string {
-	return r.Fallbacks.ResponsibleManager
 }

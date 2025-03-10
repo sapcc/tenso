@@ -94,15 +94,15 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 	rule := ruleset.Evaluate(chg)
 	data := map[string]interface{}{
 		"chg_model":                rule.ChangeModel,
-		"assigned_to":              rule.Assignee(chg.Executee),
-		"requested_by":             rule.Requester(chg.Executee),
+		"assigned_to":              rule.Assignee,
+		"requested_by":             rule.Requester,
 		"u_implementation_contact": chg.Executee,
-		"service_offering":         rule.ServiceOffering(),
+		"service_offering":         rule.ServiceOffering,
 		"u_data_center":            strings.Join(datacenters, ", "),
 		"u_customer_impact":        "No Impact",
-		"u_responsible_manager":    rule.ResponsibleManager(),
+		"u_responsible_manager":    rule.ResponsibleManager,
 		"u_customer_notification":  "No",
-		"u_impacted_lobs":          "Global Cloud Services",
+		"u_impacted_lobs":          "d367e6471ba388d020c8fddacd4bcb45", // "GCS Global Cloud Services" --> robust against naming changes
 		"u_affected_environments":  environment,
 		"start_date":               sNowTimeStr(chg.StartedAt),
 		"end_date":                 sNowTimeStr(chg.EndedAt),
@@ -113,11 +113,11 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset) ([
 		// we have been told to always report false. The truthy value would be "Change is Security relevant".
 		"u_lob_field_1": "Change not Security relevant",
 	}
-	if rule.BusinessUnit() != "" {
-		data["u_business_unit"] = rule.BusinessUnit()
+	if rule.BusinessUnit != "" {
+		data["u_business_unit"] = rule.BusinessUnit
 	}
-	if rule.BusinessService() != "" {
-		data["business_service"] = rule.BusinessService()
+	if rule.BusinessService != "" {
+		data["business_service"] = rule.BusinessService
 	}
 	if chg.ConfigurationItem != "" {
 		data["cmdb_ci"] = chg.ConfigurationItem
