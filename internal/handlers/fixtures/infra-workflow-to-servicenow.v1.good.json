@@ -1,6 +1,5 @@
 {
   "assigned_to": "I1234567",
-  "chg_model": "My Test Model",
   "close_code": "Implemented - Successfully",
   "close_notes": "Workflow \u0026#34;ESX upgrade\u0026#34; started by D012345 finished successful\u003cbr\u003eInventory: qa-de-1a Limit: node002-bb091.cc.qa-de-1.cloud.sap\u003cbr\u003eLink: https://awx.scaleout.qa-de-1.cloud.sap/#/jobs/workflow/174195\u003cbr\u003e{\u0026#34;maintenance_reason\u0026#34;: \u0026#34;CHG0193757\u0026#34;}\u003cbr\u003eWorkflow job summary:\u003cbr\u003e\u003cbr\u003e- node #109639 spawns job #174196, \u0026#34;AAAtest\u0026#34;, which finished with status successful.",
   "cmdb_ci": "node002-bb091.cc.qa-de-1.cloud.sap",
@@ -8,10 +7,9 @@
   "requested_by": "I2345678",
   "service_offering": "GCS-Network-Security",
   "short_description": "ESX upgrade, qa-de-1a, node002-bb091.cc.qa-de-1.cloud.sap",
+  "standard_change_template_id": "My Test Template",
   "start_date": "2022-11-21 16:51:04",
   "u_affected_environments": "Development",
-  "u_customer_impact": "No Impact",
-  "u_customer_notification": "No",
   "u_data_center": "ROT 1",
   "u_impacted_lobs": "d367e6471ba388d020c8fddacd4bcb45",
   "u_implementation_contact": "D012345",
