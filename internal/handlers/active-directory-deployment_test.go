@@ -30,9 +30,6 @@ import (
 )
 
 func TestActiveDirectoryDeploymentValidationSuccess(t *testing.T) {
-	// we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
-	t.Setenv("TENSO_SERVICENOW_CREATE_CHANGE_URL", "http://www.example.com")
-	// this one we actually need
 	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
 
 	for _, eventFormat := range []string{"v1", "v2"} {
@@ -67,9 +64,6 @@ func TestActiveDirectoryDeploymentValidationSuccess(t *testing.T) {
 // TODO test validation errors
 
 func TestActiveDirectoryDeploymentConversionToSNow(t *testing.T) {
-	// we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
-	t.Setenv("TENSO_SERVICENOW_CREATE_CHANGE_URL", "http://www.example.com")
-	// this one we actually need
 	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
 
 	for _, eventFormat := range []string{"v1", "v2"} {

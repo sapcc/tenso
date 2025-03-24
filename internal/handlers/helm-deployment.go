@@ -247,7 +247,7 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte, routin
 		Region:      event.Region,
 	}
 
-	return chg.Serialize(h.Mapping, h.Mapping.HelmDeployment)
+	return chg.Serialize(h.Mapping, h.Mapping.HelmDeployment, routingInfo)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

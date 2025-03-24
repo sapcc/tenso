@@ -1,0 +1,22 @@
+{
+  "region": "qa-de-1",
+  "recorded_at": "2022-01-01T00:00:06",
+  "landscape": "dev",
+  "host": "somedummyservice.tools.sap",
+  "ad_deployment" : {
+    "outcome": "succeeded",
+    "started_at": "2022-01-01T00:00:00",
+    "finished_at": "2022-01-01T00:00:04",
+    "duration": 4
+  },
+  "git": {
+    "qa-de-1": {
+      "author": "d012345",
+      "authored-at": 123456789,
+      "branch": "testing",
+      "commit-id": "abcd123456789abcd123456789abcd123456789a",
+      "commit-message": "Add some dummy feature",
+      "remote-url": "https://git.example.org/somedummyservice.git"
+    }
+  }
+}
