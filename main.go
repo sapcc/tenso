@@ -113,7 +113,12 @@ func runAPI(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap, provid
 	})
 	handler := httpapi.Compose(
 		api.NewAPI(cfg, db, &tv),
-		httpapi.HealthCheckAPI{SkipRequestLog: true},
+		httpapi.HealthCheckAPI{
+			SkipRequestLog: true,
+			Check: func() error {
+				return db.Db.PingContext(ctx)
+			},
+		},
 		httpapi.WithGlobalMiddleware(corsMiddleware.Handler),
 		pprofapi.API{IsAuthorized: pprofapi.IsRequestFromLocalhost},
 	)
@@ -136,7 +141,12 @@ func runWorker(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap) {
 
 	// wire up HTTP handlers for Prometheus metrics and health check
 	handler := httpapi.Compose(
-		httpapi.HealthCheckAPI{SkipRequestLog: true},
+		httpapi.HealthCheckAPI{
+			SkipRequestLog: true,
+			Check: func() error {
+				return db.Db.PingContext(ctx)
+			},
+		},
 		pprofapi.API{IsAuthorized: pprofapi.IsRequestFromLocalhost},
 	)
 	mux := http.NewServeMux()
