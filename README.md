@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2025 SAP SE
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Tenso
 
 Tenso is a microservice that is used within Converged Cloud to deliver and
