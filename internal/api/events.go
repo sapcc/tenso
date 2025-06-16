@@ -161,7 +161,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 // Example: "target=foobar, priority=42" -> {"target": "foobar", "priority": "42"}
 func parseRoutingInfo(input string) (map[string]string, error) {
 	result := make(map[string]string)
-	for _, field := range strings.Split(input, ",") {
+	for field := range strings.SplitSeq(input, ",") {
 		field = strings.TrimSpace(field)
 		if field == "" {
 			continue

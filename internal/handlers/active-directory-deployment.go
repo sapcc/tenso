@@ -48,7 +48,7 @@ type activeDirectoryDeploymentV1Event struct {
 		Outcome   string                   `json:"outcome"`
 		StartedAt activeDirectoryEventTime `json:"started_at"`
 		// FinishedAt and DurationSeconds are not set for outcome "failed".
-		FinishedAt      activeDirectoryEventTime `json:"finished_at,omitempty"`
+		FinishedAt      activeDirectoryEventTime `json:"finished_at"`
 		DurationSeconds any                      `json:"duration,omitempty"`
 	} `json:"ad_deployment"`
 	GitRepos map[string]struct {
