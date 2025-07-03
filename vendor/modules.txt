@@ -13,6 +13,9 @@ github.com/dlmiddlecote/sqlstats
 # github.com/go-gorp/gorp/v3 v3.1.0
 ## explicit; go 1.18
 github.com/go-gorp/gorp/v3
+# github.com/gofrs/uuid/v5 v5.3.2
+## explicit; go 1.19
+github.com/gofrs/uuid/v5
 # github.com/golang-migrate/migrate/v4 v4.18.3
 ## explicit; go 1.23.0
 github.com/golang-migrate/migrate/v4
@@ -96,7 +99,7 @@ github.com/rs/cors/internal
 github.com/sapcc/go-api-declarations/bininfo
 github.com/sapcc/go-api-declarations/cadf
 github.com/sapcc/go-api-declarations/deployevent
-# github.com/sapcc/go-bits v0.0.0-20250626145224-6afa1101f97e
+# github.com/sapcc/go-bits v0.0.0-20250703114242-4e8a4e02e33f
 ## explicit; go 1.24
 github.com/sapcc/go-bits/assert
 github.com/sapcc/go-bits/easypg
