@@ -86,7 +86,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 
 	// validate incoming payload
 	payloadBytes, err := getPayload(payloadType)
-	if respondwith.ErrorText(w, err) {
+	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
 	payloadInfo, err := validationHandler.ValidatePayload(payloadBytes)
@@ -102,7 +102,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 	routingInfoJSON, err := json.Marshal(routingInfo)
-	if respondwith.ErrorText(w, err) {
+	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
 
@@ -110,13 +110,13 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 	userID, err := a.DB.SelectInt(findOrCreateUserQuery,
 		token.UserUUID(), token.UserName(), token.UserDomainName(),
 	)
-	if respondwith.ErrorText(w, err) {
+	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
 
 	// create DB records for this event
 	tx, err := a.DB.Begin()
-	if respondwith.ErrorText(w, err) {
+	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
 	defer sqlext.RollbackUnlessCommitted(tx)
@@ -130,7 +130,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		RoutingInfoJSON: string(routingInfoJSON),
 	}
 	err = tx.Insert(&event)
-	if respondwith.ErrorText(w, err) {
+	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
 	for _, targetPayloadType := range targetPayloadTypes {
@@ -144,12 +144,12 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 			NextConversionAt:      requestTime, // convert immediately
 			NextDeliveryAt:        requestTime, // deliver immediately once converted
 		})
-		if respondwith.ErrorText(w, err) {
+		if respondwith.ObfuscatedErrorText(w, err) {
 			return
 		}
 	}
 	err = tx.Commit()
-	if respondwith.ErrorText(w, err) {
+	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
 
