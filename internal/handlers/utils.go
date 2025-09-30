@@ -30,11 +30,12 @@ func jsonUnmarshalStrict[T any](payload []byte) (T, error) {
 // terraform-deployment)
 
 var (
-	regionRx      = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9]$`)                                                                                                    // e.g. "qa-de-1"
-	clusterRx     = regexp.MustCompile(`^(?:(?:|[a-z]-|ci[0-9]?-|st[0-9]?-|gh-actions-|cc[0-9]{3}-|cc-[a-z][0-9]-|rt-|mgmt-)?[a-z]{2}-[a-z]{2}-[0-9]{1,3}|k-master)$`) // e.g. "qa-de-1" or "s-qa-de-1" or "ci-eu-de-2" or "st3-qa-de-1" or "a-qa-de-100" or "gh-actions-eu-de-2" or "cc274-qa-de-1" or "cc-b0-qa-de-1" or "rt-qa-de-1" or "mgmt-qa-de-1" or "k-master"
-	gitCommitRx   = regexp.MustCompile(`^[0-9a-f]{40}$`)                                                                                                               // SHA-1 digest with lower-case digits
-	buildNumberRx = regexp.MustCompile(`^[1-9][0-9]*(?:\.[1-9][0-9]*)?$`)                                                                                              // e.g. "23" or "42.1"
-	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)                                                                                                 // e.g. "D123456" or "C1234567"
+	regionRx = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9]$`) // e.g. "qa-de-1"
+	// e.g. "qa-de-1" or "s-qa-de-1" or "ci-eu-de-2" or "st3-qa-de-1" or "a-qa-de-100" or "gh-actions-eu-de-2" or "cc274-qa-de-1" or "cc-b0-qa-de-1" or "rt-qa-de-1" or "rtc-qa-de-1" or "mgmt-qa-de-1" or "k-master"
+	clusterRx     = regexp.MustCompile(`^(?:(?:|[a-z]-|ci[0-9]?-|st[0-9]?-|gh-actions-|cc[0-9]{3}-|cc-[a-z][0-9]-|rt-|rtc-|mgmt-)?[a-z]{2}-[a-z]{2}-[0-9]{1,3}|k-master)$`)
+	gitCommitRx   = regexp.MustCompile(`^[0-9a-f]{40}$`)                  // SHA-1 digest with lower-case digits
+	buildNumberRx = regexp.MustCompile(`^[1-9][0-9]*(?:\.[1-9][0-9]*)?$`) // e.g. "23" or "42.1"
+	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)    // e.g. "D123456" or "C1234567"
 )
 
 func isClusterLocatedInRegion(cluster, region string) bool {
