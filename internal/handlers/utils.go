@@ -47,6 +47,8 @@ func isClusterLocatedInRegion(cluster, region string) bool {
 		"a-qa-de-200": {},
 		"g-qa-de-100": {},
 		"g-qa-de-200": {},
+		"m-qa-de-100": {},
+		"m-qa-de-200": {},
 	}
 	if _, ok := qaClusters[cluster]; ok {
 		return region == "qa-de-1"
