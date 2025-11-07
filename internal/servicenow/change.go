@@ -76,7 +76,7 @@ func (chg Change) Serialize(cfg MappingConfiguration, ruleset MappingRuleset, ro
 	}
 
 	rule := ruleset.Evaluate(chg, routingInfo)
-	data := map[string]interface{}{
+	data := map[string]any{
 		"standard_change_template_id": rule.ChangeTemplateID,
 		"assigned_to":                 rule.Assignee,
 		"requested_by":                rule.Requester,
