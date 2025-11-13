@@ -55,10 +55,10 @@ func (cs ClientSet) DeliverChangePayload(ctx context.Context, payload []byte, ro
 //
 // This type appears in type MappingConfiguration through type ClientSet.
 type Client struct {
-	EndpointURL    string       `yaml:"url"`
-	ClientCertPath string       `yaml:"client_cert"`
-	PrivateKeyPath string       `yaml:"private_key"`
-	httpClient     *http.Client `yaml:"-"`
+	EndpointURL    string       `json:"url"`
+	ClientCertPath string       `json:"client_cert"`
+	PrivateKeyPath string       `json:"private_key"`
+	httpClient     *http.Client `json:"-"`
 }
 
 // Init validates the provided Client config and initializes the internal HTTP client.
