@@ -13,7 +13,7 @@ import (
 )
 
 func TestAWXWorkflowValidationAndConversionToSNow(t *testing.T) {
-	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
+	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
 
 	s := test.NewSetup(t,
 		test.WithRoute("infra-workflow-from-awx.v1 -> infra-workflow-to-servicenow.v1"),

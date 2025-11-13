@@ -184,7 +184,7 @@ To configure these delivery paths, the following environment variables are inspe
 | `TENSO_TERRAFORM_DEPLOYMENT_SWIFT_CONTAINER` | *(required)* | The name of the target Swift container for `terraform-deployment-to-swift.v1` delivery. |
 | `TENSO_SERVICENOW_MAPPING_CONFIG_PATH` | *(required)* | Path to a config file containing additional configuration for the mapping between incoming events and ServiceNow change events. |
 
-The config file for `TENSO_SERVICENOW_MAPPING_CONFIG_PATH` must be a YAML document with the following fields:
+The config file for `TENSO_SERVICENOW_MAPPING_CONFIG_PATH` must be a JSON document with the following fields:
 
 | Field | Data type | Explanation |
 | ----- | --------- | ----------- |

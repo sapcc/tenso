@@ -14,7 +14,7 @@ import (
 )
 
 func TestActiveDirectoryDeploymentValidationSuccess(t *testing.T) {
-	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
+	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
 
 	for _, eventFormat := range []string{"v1", "v2"} {
 		t.Logf("-- testing event format %s", eventFormat)
@@ -48,7 +48,7 @@ func TestActiveDirectoryDeploymentValidationSuccess(t *testing.T) {
 // TODO test validation errors
 
 func TestActiveDirectoryDeploymentConversionToSNow(t *testing.T) {
-	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
+	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
 
 	for _, eventFormat := range []string{"v1", "v2"} {
 		t.Logf("-- testing event format %s", eventFormat)
