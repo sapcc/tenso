@@ -15,6 +15,7 @@ import (
 	"github.com/sapcc/go-bits/httptest"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/mock"
+	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
 
 	"github.com/sapcc/tenso/internal/api"
@@ -79,12 +80,10 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	))
 
 	// build configuration
-	routes, err := tenso.BuildRoutes(t.Context(), params.RouteSpecs, nil, gophercloud.EndpointOpts{})
-	Must(t, err)
 	s := Setup{
 		Clock: mock.NewClock(),
 		Config: tenso.Configuration{
-			EnabledRoutes: routes,
+			EnabledRoutes: must.ReturnT(tenso.BuildRoutes(t.Context(), params.RouteSpecs, nil, gophercloud.EndpointOpts{}))(t),
 		},
 		Ctx:      t.Context(),
 		DB:       db,

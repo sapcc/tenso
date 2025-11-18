@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/sapcc/go-bits/assert"
+	"github.com/sapcc/go-bits/must"
 
 	"github.com/sapcc/tenso/internal/test"
 )
@@ -20,14 +21,9 @@ func TestTerraformDeploymentValidationSuccess(t *testing.T) {
 	)
 	vh := s.Config.EnabledRoutes[0].ValidationHandler
 
-	sourcePayloadBytes, err := os.ReadFile("fixtures/terraform-deployment-from-concourse.v1.terragrunt-virtual-apod.json")
-	test.Must(t, err)
-	payloadInfo, err := vh.ValidatePayload(sourcePayloadBytes)
-	test.Must(t, err)
-	assert.DeepEqual(t, "event description",
-		payloadInfo.Description,
-		"services/terragrunt-virtual-apod: Terraform run for vnode4-v-qa-de-1",
-	)
+	sourcePayloadBytes := must.ReturnT(os.ReadFile("fixtures/terraform-deployment-from-concourse.v1.terragrunt-virtual-apod.json"))(t)
+	payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes))(t)
+	assert.Equal(t, payloadInfo.Description, "services/terragrunt-virtual-apod: Terraform run for vnode4-v-qa-de-1")
 }
 
 // TODO test validation errors
@@ -40,10 +36,8 @@ func TestTerraformDeploymentConversionToSNow(t *testing.T) {
 	)
 	th := s.Config.EnabledRoutes[0].TranslationHandler
 
-	sourcePayloadBytes, err := os.ReadFile("fixtures/terraform-deployment-from-concourse.v1.terragrunt-virtual-apod.json")
-	test.Must(t, err)
-	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes, nil)
-	test.Must(t, err)
+	sourcePayloadBytes := must.ReturnT(os.ReadFile("fixtures/terraform-deployment-from-concourse.v1.terragrunt-virtual-apod.json"))(t)
+	targetPayloadBytes := must.ReturnT(th.TranslatePayload(sourcePayloadBytes, nil))(t)
 	assert.JSONFixtureFile("fixtures/terraform-deployment-to-servicenow.v1.terragrunt-virtual-apod.json").
 		AssertResponseBody(t, "translated payload", targetPayloadBytes)
 }
