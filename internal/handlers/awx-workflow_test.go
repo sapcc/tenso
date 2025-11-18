@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company
 // SPDX-License-Identifier: Apache-2.0
 
-package handlers
+package handlers_test
 
 import (
 	"os"
@@ -27,6 +27,5 @@ func TestAWXWorkflowValidationAndConversionToSNow(t *testing.T) {
 	assert.Equal(t, payloadInfo.Description, "ESX upgrade, qa-de-1a, node002-bb091.cc.qa-de-1.cloud.sap")
 
 	targetPayloadBytes := must.ReturnT(th.TranslatePayload(sourcePayloadBytes, nil))(t)
-	assert.JSONFixtureFile("fixtures/infra-workflow-to-servicenow.v1.good.json").
-		AssertResponseBody(t, "translated payload", targetPayloadBytes)
+	expectTranslatedPayload(t, targetPayloadBytes, "fixtures/infra-workflow-to-servicenow.v1.good.json")
 }

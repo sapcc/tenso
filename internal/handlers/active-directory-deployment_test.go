@@ -59,7 +59,6 @@ func TestActiveDirectoryDeploymentConversionToSNow(t *testing.T) {
 
 		sourcePayloadBytes := must.ReturnT(os.ReadFile(fmt.Sprintf("fixtures/active-directory-deployment-from-concourse.%s.dev.json", eventFormat)))(t)
 		targetPayloadBytes := must.ReturnT(th.TranslatePayload(sourcePayloadBytes, nil))(t)
-		assert.JSONFixtureFile("fixtures/active-directory-deployment-to-servicenow.v1.dev.json").
-			AssertResponseBody(t, "translated payload", targetPayloadBytes)
+		expectTranslatedPayload(t, targetPayloadBytes, "fixtures/active-directory-deployment-to-servicenow.v1.dev.json")
 	}
 }
