@@ -5,7 +5,6 @@ package test
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/go-gorp/gorp/v3"
@@ -13,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/httpapi"
+	"github.com/sapcc/go-bits/httptest"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/mock"
 	"github.com/sapcc/go-bits/osext"
@@ -58,7 +58,7 @@ type Setup struct {
 	Registry *prometheus.Registry
 	// fields that are set if WithAPI is included
 	Validator *mock.Validator[*mock.Enforcer]
-	Handler   http.Handler
+	Handler   httptest.Handler
 	// fields that are set if WithTaskContext is included
 	TaskContext *tasks.Context
 }
@@ -98,10 +98,10 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 			"user_id":          "testuserid",
 			"user_domain_name": "testdomainname",
 		})
-		s.Handler = httpapi.Compose(
+		s.Handler = httptest.NewHandler(httpapi.Compose(
 			api.NewAPI(s.Config, s.DB, s.Validator).OverrideTimeNow(s.Clock.Now),
 			httpapi.WithoutLogging(),
-		)
+		))
 	}
 	if params.WithTaskContext {
 		s.TaskContext = tasks.NewContext(s.Config, s.DB).OverrideTimeNow(s.Clock.Now)
