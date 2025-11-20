@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/sapcc/go-bits/assert"
+	"github.com/sapcc/go-bits/must"
 
 	_ "github.com/sapcc/tenso/internal/handlers"
 	"github.com/sapcc/tenso/internal/test"
@@ -38,11 +39,9 @@ func TestHelmDeploymentValidationSuccess(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		sourcePayloadBytes, err := os.ReadFile(fmt.Sprintf("fixtures/helm-deployment-from-concourse.v1.%s.json", tc.ReleaseName))
-		test.Must(t, err)
-		payloadInfo, err := vh.ValidatePayload(sourcePayloadBytes)
-		test.Must(t, err)
-		assert.DeepEqual(t, "event description", payloadInfo.Description, tc.ExpectedDescription)
+		sourcePayloadBytes := must.ReturnT(os.ReadFile(fmt.Sprintf("fixtures/helm-deployment-from-concourse.v1.%s.json", tc.ReleaseName)))(t)
+		payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes))(t)
+		assert.Equal(t, payloadInfo.Description, tc.ExpectedDescription)
 	}
 }
 
@@ -56,10 +55,7 @@ func TestHelmDeploymentConversionToSNow(t *testing.T) {
 	)
 	th := s.Config.EnabledRoutes[0].TranslationHandler
 
-	sourcePayloadBytes, err := os.ReadFile("fixtures/helm-deployment-from-concourse.v1.swift.json")
-	test.Must(t, err)
-	targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes, nil)
-	test.Must(t, err)
-	assert.JSONFixtureFile("fixtures/helm-deployment-to-servicenow.v1.swift.json").
-		AssertResponseBody(t, "translated payload", targetPayloadBytes)
+	sourcePayloadBytes := must.ReturnT(os.ReadFile("fixtures/helm-deployment-from-concourse.v1.swift.json"))(t)
+	targetPayloadBytes := must.ReturnT(th.TranslatePayload(sourcePayloadBytes, nil))(t)
+	expectTranslatedPayload(t, targetPayloadBytes, "fixtures/helm-deployment-to-servicenow.v1.swift.json")
 }

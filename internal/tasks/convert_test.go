@@ -8,7 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sapcc/go-bits/assert"
 	"github.com/sapcc/go-bits/easypg"
+	"github.com/sapcc/go-bits/must"
 
 	"github.com/sapcc/tenso/internal/tasks"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -29,7 +31,7 @@ func TestConversionCommon(t *testing.T) {
 		UUID:       "testuserid",
 		DomainName: "testdomainname",
 	}
-	test.Must(t, s.DB.Insert(&user))
+	must.SucceedT(t, s.DB.Insert(&user))
 	event := tenso.Event{
 		CreatorID:       user.ID,
 		CreatedAt:       s.Clock.Now(),
@@ -38,9 +40,9 @@ func TestConversionCommon(t *testing.T) {
 		Description:     "foo event with value 42",
 		RoutingInfoJSON: `{"target":"test"}`,
 	}
-	test.Must(t, s.DB.Insert(&event))
+	must.SucceedT(t, s.DB.Insert(&event))
 	for _, targetPayloadType := range []string{"test-bar.v1", "test-baz.v1"} {
-		test.Must(t, s.DB.Insert(&tenso.PendingDelivery{
+		must.SucceedT(t, s.DB.Insert(&tenso.PendingDelivery{
 			EventID:          event.ID,
 			PayloadType:      targetPayloadType,
 			Payload:          nil,
@@ -55,7 +57,7 @@ func TestConversionCommon(t *testing.T) {
 
 	// simulate conversion failure by having provided a broken source payload
 	s.Clock.StepBy(5 * time.Minute)
-	test.MustFail(t,
+	assert.ErrEqual(t,
 		conversionJob.ProcessOne(s.Ctx),
 		`while trying to convert payload for event 1 ("foo event with value 42") into test-bar.v1: translation failed: expected event = "foo", but got "invalid"`,
 	)
@@ -66,12 +68,11 @@ func TestConversionCommon(t *testing.T) {
 	)
 
 	// fix source payload to enable a successful conversion
-	_, err := s.DB.Exec(`UPDATE events SET payload = $1`, `{"event":"foo","value":42}`)
-	test.Must(t, err)
+	_ = must.ReturnT(s.DB.Exec(`UPDATE events SET payload = $1`, `{"event":"foo","value":42}`))(t)
 	tr.DBChanges().Ignore()
 
 	// check successful conversion (this touches the second PendingDelivery since it's NextConversionAt is lower)
-	test.Must(t, conversionJob.ProcessOne(s.Ctx))
+	must.SucceedT(t, conversionJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET payload = '%[1]s', converted_at = %[2]d WHERE event_id = 1 AND payload_type = 'test-baz.v1';
 		`,
@@ -80,11 +81,11 @@ func TestConversionCommon(t *testing.T) {
 	)
 
 	// second conversion is still postponed, so we stall for now
-	test.MustFail(t, conversionJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
+	assert.ErrEqual(t, conversionJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
 
 	// second conversion goes through after waiting period is over
 	s.Clock.StepBy(5 * time.Minute)
-	test.Must(t, conversionJob.ProcessOne(s.Ctx))
+	must.SucceedT(t, conversionJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`
 			UPDATE pending_deliveries SET payload = '%[1]s', converted_at = %[2]d WHERE event_id = 1 AND payload_type = 'test-bar.v1';
 		`,
@@ -93,6 +94,6 @@ func TestConversionCommon(t *testing.T) {
 	)
 
 	// nothing left to convert now
-	test.MustFail(t, conversionJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
+	assert.ErrEqual(t, conversionJob.ProcessOne(s.Ctx), sql.ErrNoRows.Error())
 	tr.DBChanges().AssertEmpty()
 }

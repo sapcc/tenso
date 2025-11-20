@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/sapcc/go-bits/assert"
+	"github.com/sapcc/go-bits/must"
 
 	"github.com/sapcc/tenso/internal/test"
 )
@@ -33,14 +34,9 @@ func TestActiveDirectoryDeploymentValidationSuccess(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			sourcePayloadBytes, err := os.ReadFile(tc)
-			test.Must(t, err)
-			payloadInfo, err := vh.ValidatePayload(sourcePayloadBytes)
-			test.Must(t, err)
-			assert.DeepEqual(t, "event description",
-				payloadInfo.Description,
-				"core/active-directory: deploy AD to ad-dev.example.sap",
-			)
+			sourcePayloadBytes := must.ReturnT(os.ReadFile(tc))(t)
+			payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes))(t)
+			assert.Equal(t, payloadInfo.Description, "core/active-directory: deploy AD to ad-dev.example.sap")
 		}
 	}
 }
@@ -61,11 +57,8 @@ func TestActiveDirectoryDeploymentConversionToSNow(t *testing.T) {
 		)
 		th := s.Config.EnabledRoutes[0].TranslationHandler
 
-		sourcePayloadBytes, err := os.ReadFile(fmt.Sprintf("fixtures/active-directory-deployment-from-concourse.%s.dev.json", eventFormat))
-		test.Must(t, err)
-		targetPayloadBytes, err := th.TranslatePayload(sourcePayloadBytes, nil)
-		test.Must(t, err)
-		assert.JSONFixtureFile("fixtures/active-directory-deployment-to-servicenow.v1.dev.json").
-			AssertResponseBody(t, "translated payload", targetPayloadBytes)
+		sourcePayloadBytes := must.ReturnT(os.ReadFile(fmt.Sprintf("fixtures/active-directory-deployment-from-concourse.%s.dev.json", eventFormat)))(t)
+		targetPayloadBytes := must.ReturnT(th.TranslatePayload(sourcePayloadBytes, nil))(t)
+		expectTranslatedPayload(t, targetPayloadBytes, "fixtures/active-directory-deployment-to-servicenow.v1.dev.json")
 	}
 }
