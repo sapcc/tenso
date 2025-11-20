@@ -62,6 +62,14 @@ SPDX-License-Identifier = "BSD-3-Clause"
 
 [[annotations]]
 path = [
+  "vendor/github.com/majewsky/gg/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Other"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
   "vendor/github.com/majewsky/schwift/v2/**",
 ]
 precedence = "aggregate"
@@ -355,14 +363,6 @@ path = [
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Other"
 SPDX-License-Identifier = "MIT"
-
-[[annotations]]
-path = [
-  "vendor/github.com/majewsky/gg/**",
-]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Other"
-SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
 path = [
