@@ -14,7 +14,7 @@ import (
 )
 
 func TestTerraformDeploymentValidationSuccess(t *testing.T) {
-	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
+	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
 
 	s := test.NewSetup(t,
 		test.WithRoute("terraform-deployment-from-concourse.v1 -> terraform-deployment-to-servicenow.v1"),
@@ -29,7 +29,7 @@ func TestTerraformDeploymentValidationSuccess(t *testing.T) {
 // TODO test validation errors
 
 func TestTerraformDeploymentConversionToSNow(t *testing.T) {
-	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
+	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
 
 	s := test.NewSetup(t,
 		test.WithRoute("terraform-deployment-from-concourse.v1 -> terraform-deployment-to-servicenow.v1"),

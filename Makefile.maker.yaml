@@ -40,7 +40,6 @@ reuse:
   annotations:
     - paths:
       - internal/*/fixtures/*.json
-      - internal/*/fixtures/*.yaml
       - internal/synthetic/*.json
       SPDX-FileCopyrightText: SAP SE or an SAP affiliate company
       SPDX-License-Identifier: Apache-2.0
