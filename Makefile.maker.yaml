@@ -14,6 +14,10 @@ coverageTest:
 
 dockerfile:
   enabled: true
+  extraBuildDirectives:
+    # If ihe CI has supplied additional CA certificates, include them in the CA bundle
+    - 'COPY certs/*.crt /usr/local/share/ca-certificates/'
+    - 'RUN update-ca-certificates'
 
 golang:
   autoupdateableDeps: ^github.com/(?:sapcc|sap-cloud-infrastructure)/
