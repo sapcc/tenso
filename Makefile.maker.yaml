@@ -43,6 +43,7 @@ renovate:
 reuse:
   annotations:
     - paths:
+      - certs/*.crt
       - internal/*/fixtures/*.json
       - internal/*/fixtures/*.yaml
       - internal/synthetic/*.json
