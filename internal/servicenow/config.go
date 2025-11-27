@@ -4,32 +4,32 @@
 package servicenow
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/sapcc/go-bits/osext"
 	"github.com/sapcc/go-bits/regexpext"
-	"gopkg.in/yaml.v2"
 )
 
 // MappingConfiguration is the structure of the config file at
 // $TENSO_SERVICENOW_MAPPING_CONFIG_PATH.
 type MappingConfiguration struct {
 	// endpoints
-	Endpoints ClientSet `yaml:"endpoints"`
+	Endpoints ClientSet `json:"endpoints"`
 
 	// rulesets per event type
-	HelmDeployment            MappingRuleset `yaml:"helm-deployment"`
-	ActiveDirectoryDeployment MappingRuleset `yaml:"active-directory-deployment"`
-	AWXWorkflow               MappingRuleset `yaml:"awx-workflow"`
-	TerraformDeployment       MappingRuleset `yaml:"terraform-deployment"`
+	HelmDeployment            MappingRuleset `json:"helm-deployment"`
+	ActiveDirectoryDeployment MappingRuleset `json:"active-directory-deployment"`
+	AWXWorkflow               MappingRuleset `json:"awx-workflow"`
+	TerraformDeployment       MappingRuleset `json:"terraform-deployment"`
 
 	// datacenter mapping
-	Regions           map[string][]string `yaml:"regions"`
+	Regions           map[string][]string `json:"regions"`
 	AvailabilityZones map[string]struct {
-		Datacenters []string `yaml:"datacenters"`
-		Environment string   `yaml:"environment"`
-	} `yaml:"availability_zones"`
+		Datacenters []string `json:"datacenters"`
+		Environment string   `json:"environment"`
+	} `json:"availability_zones"`
 }
 
 var mappingConfigAtPath = map[string]MappingConfiguration{}
@@ -52,7 +52,7 @@ func LoadMappingConfiguration(envVarName string) (MappingConfiguration, error) {
 	}
 
 	var result MappingConfiguration
-	err = yaml.UnmarshalStrict(buf, &result)
+	err = json.Unmarshal(buf, &result)
 	if err != nil {
 		return MappingConfiguration{}, fmt.Errorf("while parsing %s: %w", filePath, err)
 	}
@@ -97,13 +97,13 @@ func (rs MappingRuleset) Evaluate(chg Change, routingInfo map[string]string) (re
 
 // MappingRule is a rule for filling missing fields in a Change object.
 type MappingRule struct {
-	MatchSummary          regexpext.BoundedRegexp `yaml:"match_summary"`
-	MatchServiceNowTarget string                  `yaml:"match_servicenow_target"`
-	ChangeTemplateID      string                  `yaml:"change_template_id"`
-	Assignee              string                  `yaml:"assignee"`
-	ResponsibleManager    string                  `yaml:"responsible_manager"`
-	ServiceOffering       string                  `yaml:"service_offering"`
-	Requester             string                  `yaml:"requester"`
+	MatchSummary          regexpext.BoundedRegexp `json:"match_summary"`
+	MatchServiceNowTarget string                  `json:"match_servicenow_target"`
+	ChangeTemplateID      string                  `json:"change_template_id"`
+	Assignee              string                  `json:"assignee"`
+	ResponsibleManager    string                  `json:"responsible_manager"`
+	ServiceOffering       string                  `json:"service_offering"`
+	Requester             string                  `json:"requester"`
 }
 
 func (r MappingRule) matches(chg Change, routingInfo map[string]string) bool {

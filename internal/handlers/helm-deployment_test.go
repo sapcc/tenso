@@ -48,7 +48,7 @@ func TestHelmDeploymentValidationSuccess(t *testing.T) {
 // TODO test validation errors
 
 func TestHelmDeploymentConversionToSNow(t *testing.T) {
-	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.yaml")
+	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
 
 	s := test.NewSetup(t,
 		test.WithRoute("helm-deployment-from-concourse.v1 -> helm-deployment-to-servicenow.v1"),
