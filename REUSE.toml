@@ -11,6 +11,12 @@ path = [
   ".gitignore",
   ".license-scan-overrides.jsonl",
   ".license-scan-rules.json",
+]
+SPDX-FileCopyrightText = "SAP SE or an SAP affiliate company"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
   "go.mod",
   "go.sum",
   "Makefile.maker.yaml",
@@ -283,22 +289,6 @@ path = [
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Other"
 SPDX-License-Identifier = "BSD-3-Clause"
-
-[[annotations]]
-path = [
-  "vendor/github.com/hashicorp/errwrap/**",
-]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Other"
-SPDX-License-Identifier = "MPL-2.0"
-
-[[annotations]]
-path = [
-  "vendor/github.com/hashicorp/go-multierror/**",
-]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Other"
-SPDX-License-Identifier = "MPL-2.0"
 
 [[annotations]]
 path = [
