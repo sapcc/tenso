@@ -130,7 +130,7 @@ func inputDescriptorsOf(event deployevent.Event) (result []string) {
 
 		gitVersions = append(gitVersions, fmt.Sprintf("%s %s", readableName, repo.CommitID))
 	}
-	sort.Strings(gitVersions) // for test reproducability
+	sort.Strings(gitVersions) // for test reproducibility
 
 	return append(imageVersions, gitVersions...)
 }
