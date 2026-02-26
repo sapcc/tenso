@@ -57,7 +57,7 @@ func (cs ClientSet) DeliverChangePayload(ctx context.Context, payload []byte, ro
 type Client struct {
 	EndpointURL    string       `json:"url"`
 	ClientCertPath string       `json:"client_cert"`
-	PrivateKeyPath string       `json:"private_key"`
+	PrivateKeyPath string       `json:"private_key"` //nolint:gosec // G117: this is a file path
 	httpClient     *http.Client `json:"-"`
 }
 
