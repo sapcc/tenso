@@ -52,13 +52,17 @@ type testValidationHandler struct {
 	Type string
 }
 
+// Init implements the tenso.ValidationHandler interface.
 func (h *testValidationHandler) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
+
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *testValidationHandler) PluginTypeID() string {
 	return fmt.Sprintf("test-%s.v1", h.Type)
 }
 
+// ValidatePayload implements the tenso.ValidationHandler interface.
 func (h *testValidationHandler) ValidatePayload(data []byte) (*tenso.PayloadInfo, error) {
 	p, err := parseTestPayload(data, h.Type)
 	if err != nil {
@@ -74,13 +78,17 @@ type testTranslationHandler struct {
 	TargetType string
 }
 
+// Init implements the tenso.TranslationHandler interface.
 func (h *testTranslationHandler) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
+
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *testTranslationHandler) PluginTypeID() string {
 	return fmt.Sprintf("test-%s.v1->test-%s.v1", h.SourceType, h.TargetType)
 }
 
+// TranslatePayload implements the tenso.TranslationHandler interface.
 func (h *testTranslationHandler) TranslatePayload(data []byte, routingInfo map[string]string) ([]byte, error) {
 	p, err := parseTestPayload(data, h.SourceType)
 	if err != nil {
@@ -95,13 +103,17 @@ type testDeliveryHandler struct {
 	Type string
 }
 
+// Init implements the tenso.DeliveryHandler interface.
 func (h *testDeliveryHandler) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
+
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *testDeliveryHandler) PluginTypeID() string {
 	return fmt.Sprintf("test-%s.v1", h.Type)
 }
 
+// DeliverPayload implements the tenso.DeliveryHandler interface.
 func (h *testDeliveryHandler) DeliverPayload(_ context.Context, data []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	// We don't actually deliver anywhere, but by giving us an invalid payload, tests can "simulate" a delivery failure.
 	_, err := parseTestPayload(data, h.Type)

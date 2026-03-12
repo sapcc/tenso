@@ -53,7 +53,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 	payloadType := query.Get("payload_type")
-	if !tenso.IsWellformedPayloadType(payloadType) {
+	if !tenso.IsWellFormedPayloadType(payloadType) {
 		http.Error(w, `invalid value provided for query parameter "payload_type"`, http.StatusBadRequest)
 		return
 	}
@@ -73,7 +73,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 	for _, route := range a.Config.EnabledRoutes {
 		if route.SourcePayloadType == payloadType {
 			targetPayloadTypes = append(targetPayloadTypes, route.TargetPayloadType)
-			//NOTE: If there are multiple routes with the same SourcePayloadType,
+			// NOTE: If there are multiple routes with the same SourcePayloadType,
 			// they will have the same ValidationHandler, so it does not matter which
 			// one we pick.
 			validationHandler = route.ValidationHandler

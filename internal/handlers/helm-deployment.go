@@ -44,14 +44,17 @@ func releaseDescriptorsOf(event deployevent.Event, sep string) (result []string)
 type helmDeploymentValidator struct {
 }
 
+// Init implements the tenso.ValidationHandler interface.
 func (h *helmDeploymentValidator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *helmDeploymentValidator) PluginTypeID() string {
 	return "helm-deployment-from-concourse.v1"
 }
 
+// ValidatePayload implements the tenso.ValidationHandler interface.
 func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
 	event, err := parseAndValidateDeployEvent(payload)
 	if err != nil {
@@ -123,6 +126,7 @@ type helmDeploymentToElkDeliverer struct {
 	LogstashHost string
 }
 
+// Init implements the tenso.DeliveryHandler interface.
 func (h *helmDeploymentToElkDeliverer) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	var err error
 	h.LogstashHost, err = osext.NeedGetenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST")
@@ -137,10 +141,12 @@ func (h *helmDeploymentToElkDeliverer) Init(context.Context, *gophercloud.Provid
 	return nil
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *helmDeploymentToElkDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-elk.v1"
 }
 
+// DeliverPayload implements the tenso.DeliveryHandler interface.
 func (h *helmDeploymentToElkDeliverer) DeliverPayload(_ context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	// Logstash wants everything on one line, so ensure we don't have unnecessary whitespace in the payload
 	var buf bytes.Buffer
@@ -173,15 +179,18 @@ type helmDeploymentToSwiftDeliverer struct {
 	Container *schwift.Container
 }
 
+// Init implements the tenso.DeliveryHandler interface.
 func (h *helmDeploymentToSwiftDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	h.Container, err = tenso.InitializeSwiftDelivery(ctx, pc, eo, "TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *helmDeploymentToSwiftDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-swift.v1"
 }
 
+// DeliverPayload implements the tenso.DeliveryHandler interface.
 func (h *helmDeploymentToSwiftDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
@@ -204,15 +213,18 @@ type helmDeploymentToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
+// Init implements the tenso.TranslationHandler interface.
 func (h *helmDeploymentToSNowTranslator) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	h.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *helmDeploymentToSNowTranslator) PluginTypeID() string {
 	return "helm-deployment-from-concourse.v1->helm-deployment-to-servicenow.v1"
 }
 
+// TranslatePayload implements the tenso.TranslationHandler interface.
 func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
@@ -241,15 +253,18 @@ type helmDeploymentToSNowDeliverer struct {
 	Mapping servicenow.MappingConfiguration
 }
 
+// Init implements the tenso.DeliveryHandler interface.
 func (h *helmDeploymentToSNowDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	h.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *helmDeploymentToSNowDeliverer) PluginTypeID() string {
 	return "helm-deployment-to-servicenow.v1"
 }
 
+// DeliverPayload implements the tenso.DeliveryHandler interface.
 func (h *helmDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	return h.Mapping.Endpoints.DeliverChangePayload(ctx, payload, routingInfo)
 }
