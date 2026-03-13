@@ -49,6 +49,8 @@ type awxWorkflowEvent struct {
 	ExtraVarsJSON    string           `json:"extra_vars"`
 }
 
+// GetSummary creates the concatenated Summary for the awxWorkflowEvent
+// out of the Name, AvailabilityZone and possibly the SearchQuery (if set).
 func (e awxWorkflowEvent) GetSummary() string {
 	fields := []string{e.Name, e.AvailabilityZone}
 	if e.SearchQuery != "" {
@@ -57,6 +59,8 @@ func (e awxWorkflowEvent) GetSummary() string {
 	return strings.Join(fields, ", ")
 }
 
+// GetDescription creates the concatenated multi-line Description for the awxWorkflowEvent
+// out of multiple different fields.
 func (e awxWorkflowEvent) GetDescription() string {
 	queryLine := "Inventory: " + e.AvailabilityZone
 	if e.SearchQuery != "" {
@@ -78,6 +82,7 @@ type awxWorkflowTime struct {
 	time.Time
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (t *awxWorkflowTime) UnmarshalJSON(buf []byte) error {
 	var in string
 	err := json.Unmarshal(buf, &in)
@@ -94,10 +99,12 @@ func (t *awxWorkflowTime) UnmarshalJSON(buf []byte) error {
 type awxWorkflowValidator struct {
 }
 
+// Init implements the tenso.ValidationHandler interface.
 func (a *awxWorkflowValidator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (a *awxWorkflowValidator) PluginTypeID() string {
 	return "infra-workflow-from-awx.v1"
 }
@@ -106,6 +113,7 @@ var (
 	availabilityZoneRx = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9][a-z]$`) // e.g. "qa-de-1a"
 )
 
+// ValidatePayload implements the tenso.ValidationHandler interface.
 func (a *awxWorkflowValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
 	event, err := jsonUnmarshalStrict[awxWorkflowEvent](payload)
 	if err != nil {
@@ -141,6 +149,7 @@ type awxWorkflowToSwiftDeliverer struct {
 	Container *schwift.Container
 }
 
+// Init implements the tenso.DeliveryHandler interface.
 func (a *awxWorkflowToSwiftDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error {
 	containerName, err := osext.NeedGetenv("TENSO_AWX_WORKFLOW_SWIFT_CONTAINER")
 	if err != nil {
@@ -161,10 +170,12 @@ func (a *awxWorkflowToSwiftDeliverer) Init(ctx context.Context, pc *gophercloud.
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (a *awxWorkflowToSwiftDeliverer) PluginTypeID() string {
 	return "infra-workflow-to-swift.v1"
 }
 
+// DeliverPayload implements the tenso.DeliveryHandler interface.
 func (a *awxWorkflowToSwiftDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[awxWorkflowEvent](payload)
 	if err != nil {
@@ -188,11 +199,13 @@ var awxOutcomes = map[string]deployevent.Outcome{
 	"successful": deployevent.OutcomeSucceeded,
 }
 
+// Init implements the tenso.TranslationHandler interface.
 func (a *awxWorkflowToSNowTranslator) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	a.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (a *awxWorkflowToSNowTranslator) PluginTypeID() string {
 	return "infra-workflow-from-awx.v1->infra-workflow-to-servicenow.v1"
 }
@@ -206,6 +219,7 @@ var (
 	configurationItemRx = regexp.MustCompile(`^node\d{3}-bb\d{3}\.cc\.[a-z]{2}-[a-z]{2}-[0-9]\.cloud\.sap$`) // e.g. "node002-bb091.cc.qa-de-1.cloud.sap"
 )
 
+// TranslatePayload implements the tenso.TranslationHandler interface.
 func (a *awxWorkflowToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[awxWorkflowEvent](payload)
 	if err != nil {
@@ -239,15 +253,18 @@ type awxWorkflowToSNowDeliverer struct {
 	Mapping servicenow.MappingConfiguration
 }
 
+// Init implements the tenso.DeliveryHandler interface.
 func (a *awxWorkflowToSNowDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	a.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (a *awxWorkflowToSNowDeliverer) PluginTypeID() string {
 	return "infra-workflow-to-servicenow.v1"
 }
 
+// DeliverPayload implements the tenso.DeliveryHandler interface.
 func (a *awxWorkflowToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	return a.Mapping.Endpoints.DeliverChangePayload(ctx, payload, routingInfo)
 }

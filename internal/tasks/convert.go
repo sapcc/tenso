@@ -31,6 +31,8 @@ const (
 	ConversionRetryInterval = 2 * time.Minute
 )
 
+// ConversionJob is a jobloop.Job. Each task run takes one event to be converted
+// from the database and invokes the respective conversion.
 func (c *Context) ConversionJob(registerer prometheus.Registerer) jobloop.Job {
 	return (&jobloop.TxGuardedJob[*gorp.Transaction, tenso.PendingDelivery]{
 		Metadata: jobloop.JobMetadata{

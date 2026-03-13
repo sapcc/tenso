@@ -31,6 +31,8 @@ const (
 	DeliveryRetryInterval = 2 * time.Minute
 )
 
+// DeliveryJob is a jobloop.Job. Each task run takes one event to be delivered
+// from the database and invokes the respective delivery.
 func (c *Context) DeliveryJob(registerer prometheus.Registerer) jobloop.Job {
 	return (&jobloop.TxGuardedJob[*gorp.Transaction, tenso.PendingDelivery]{
 		Metadata: jobloop.JobMetadata{

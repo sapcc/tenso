@@ -13,6 +13,7 @@ import (
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
+// API is a httpapi.API that serves the tenso API.
 type API struct {
 	Config    tenso.Configuration
 	DB        *gorp.DbMap
@@ -20,6 +21,7 @@ type API struct {
 	timeNow   func() time.Time
 }
 
+// NewAPI creates an tenso API.
 func NewAPI(cfg tenso.Configuration, db *gorp.DbMap, validator gopherpolicy.Validator) *API {
 	return &API{cfg, db, validator, time.Now}
 }
@@ -30,7 +32,7 @@ func (a *API) OverrideTimeNow(now func() time.Time) *API {
 	return a
 }
 
-// Handler implements the httpapi.API interface.
+// AddTo implements the httpapi.API interface.
 func (a *API) AddTo(r *mux.Router) {
 	r.Methods("POST").Path("/v1/events/new").HandlerFunc(a.handlePostNewEvent)
 	r.Methods("POST").Path("/v1/events/synthetic").HandlerFunc(a.handlePostSyntheticEvent)
