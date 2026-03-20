@@ -130,6 +130,7 @@ func BuildRoutes(ctx context.Context, routeSpecs []string, pc *gophercloud.Provi
 	return result, nil
 }
 
-func IsWellformedPayloadType(val string) bool {
+// IsWellFormedPayloadType checks the payload value against a regex.
+func IsWellFormedPayloadType(val string) bool {
 	return payloadTypeRx.MatchString(val)
 }

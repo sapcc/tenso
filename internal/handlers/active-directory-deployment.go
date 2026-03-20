@@ -65,6 +65,7 @@ type activeDirectoryEventTime struct {
 	Value *time.Time
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (a *activeDirectoryEventTime) UnmarshalJSON(buf []byte) error {
 	var s string
 	err := json.Unmarshal(buf, &s)
@@ -87,14 +88,17 @@ func (a *activeDirectoryEventTime) UnmarshalJSON(buf []byte) error {
 type activeDirectoryDeploymentV1Validator struct {
 }
 
+// Init implements the tenso.ValidationHandler interface.
 func (v *activeDirectoryDeploymentV1Validator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (v *activeDirectoryDeploymentV1Validator) PluginTypeID() string {
 	return "active-directory-deployment-from-concourse.v1"
 }
 
+// ValidatePayload implements the tenso.ValidationHandler interface.
 func (v *activeDirectoryDeploymentV1Validator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
 	event, err := jsonUnmarshalStrict[activeDirectoryDeploymentV1Event](payload)
 	if err != nil {
@@ -153,15 +157,18 @@ type activeDirectoryDeploymentV1ToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
+// Init implements the tenso.TranslationHandler interface.
 func (t *activeDirectoryDeploymentV1ToSNowTranslator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	t.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (t *activeDirectoryDeploymentV1ToSNowTranslator) PluginTypeID() string {
 	return "active-directory-deployment-from-concourse.v1->active-directory-deployment-to-servicenow.v1"
 }
 
+// TranslatePayload implements the tenso.TranslationHandler interface.
 func (t *activeDirectoryDeploymentV1ToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[activeDirectoryDeploymentV1Event](payload)
 	if err != nil {
@@ -225,14 +232,17 @@ func (t *activeDirectoryDeploymentV1ToSNowTranslator) TranslatePayload(payload [
 type activeDirectoryDeploymentV2Validator struct {
 }
 
+// Init implements the tenso.ValidationHandler interface.
 func (v *activeDirectoryDeploymentV2Validator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (v *activeDirectoryDeploymentV2Validator) PluginTypeID() string {
 	return "active-directory-deployment-from-concourse.v2"
 }
 
+// ValidatePayload implements the tenso.ValidationHandler interface.
 func (v *activeDirectoryDeploymentV2Validator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
 	event, err := parseAndValidateDeployEvent(payload)
 	if err != nil {
@@ -287,15 +297,18 @@ type activeDirectoryDeploymentV2ToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
+// Init implements the tenso.TranslationHandler interface.
 func (t *activeDirectoryDeploymentV2ToSNowTranslator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	t.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (t *activeDirectoryDeploymentV2ToSNowTranslator) PluginTypeID() string {
 	return "active-directory-deployment-from-concourse.v2->active-directory-deployment-to-servicenow.v1"
 }
 
+// TranslatePayload implements the tenso.TranslationHandler interface.
 func (t *activeDirectoryDeploymentV2ToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
@@ -326,15 +339,18 @@ type activeDirectoryDeploymentV1ToSNowDeliverer struct {
 	Mapping servicenow.MappingConfiguration
 }
 
+// Init implements the tenso.DeliveryHandler interface.
 func (d *activeDirectoryDeploymentV1ToSNowDeliverer) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	d.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (d *activeDirectoryDeploymentV1ToSNowDeliverer) PluginTypeID() string {
 	return "active-directory-deployment-to-servicenow.v1"
 }
 
+// DeliverPayload implements the tenso.DeliveryHandler interface.
 func (d *activeDirectoryDeploymentV1ToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	return d.Mapping.Endpoints.DeliverChangePayload(ctx, payload, routingInfo)
 }

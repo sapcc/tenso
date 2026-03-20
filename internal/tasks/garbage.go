@@ -17,6 +17,8 @@ var gcDeliveredEventsQuery = sqlext.SimplifyWhitespace(`
 	DELETE FROM events WHERE id NOT IN (SELECT event_id FROM pending_deliveries)
 `)
 
+// GarbageCollectionJob is a jobloop.Job.
+// Each run clears all events that have no remaining pending deliveries.
 func (c *Context) GarbageCollectionJob(registerer prometheus.Registerer) jobloop.Job {
 	return (&jobloop.CronJob{
 		Metadata: jobloop.JobMetadata{

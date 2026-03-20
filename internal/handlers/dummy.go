@@ -31,14 +31,17 @@ type dummyTranslator struct {
 	pluginTypeID string
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *dummyTranslator) PluginTypeID() string {
 	return h.pluginTypeID
 }
 
+// Init implements the tenso.TranslationHandler interface.
 func (h *dummyTranslator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
+// TranslatePayload implements the tenso.TranslationHandler interface.
 func (h *dummyTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	return payload, nil
 }

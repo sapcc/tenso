@@ -34,14 +34,17 @@ func init() {
 type terraformDeploymentValidator struct {
 }
 
+// Init implements the tenso.ValidationHandler interface.
 func (v *terraformDeploymentValidator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
 	return nil
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (v *terraformDeploymentValidator) PluginTypeID() string {
 	return "terraform-deployment-from-concourse.v1"
 }
 
+// ValidatePayload implements the tenso.ValidationHandler interface.
 func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
 	event, err := parseAndValidateDeployEvent(payload)
 	if err != nil {
@@ -84,7 +87,7 @@ func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.P
 		}
 
 		// Terraform will only show the change_summary if the operation completes successfully
-		//Ref: <https://github.com/hashicorp/terraform/blob/6fa5784129f706a4b459b4495394899c6cc3e041/internal/command/apply.go#L131-L138>
+		// Ref: <https://github.com/hashicorp/terraform/blob/6fa5784129f706a4b459b4495394899c6cc3e041/internal/command/apply.go#L131-L138>
 		if runInfo.Outcome == deployevent.OutcomeSucceeded && runInfo.ChangeSummary == nil {
 			return nil, fmt.Errorf(`in terraform-runs[%d]: field change-summary must be set for outcome %q`, idx, runInfo.Outcome)
 		}
@@ -113,15 +116,18 @@ type terraformDeploymentToSwiftDeliverer struct {
 	Container *schwift.Container
 }
 
+// Init implements the tenso.DeliveryHandler interface.
 func (h *terraformDeploymentToSwiftDeliverer) Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (err error) {
 	h.Container, err = tenso.InitializeSwiftDelivery(ctx, pc, eo, "TENSO_TERRAFORM_DEPLOYMENT_SWIFT_CONTAINER")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (h *terraformDeploymentToSwiftDeliverer) PluginTypeID() string {
 	return "terraform-deployment-to-swift.v1"
 }
 
+// DeliverPayload implements the tenso.DeliveryHandler interface.
 func (h *terraformDeploymentToSwiftDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
@@ -144,15 +150,18 @@ type terraformDeploymentToSNowTranslator struct {
 	Mapping servicenow.MappingConfiguration
 }
 
+// Init implements the tenso.TranslationHandler interface.
 func (t *terraformDeploymentToSNowTranslator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	t.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (t *terraformDeploymentToSNowTranslator) PluginTypeID() string {
 	return "terraform-deployment-from-concourse.v1->terraform-deployment-to-servicenow.v1"
 }
 
+// TranslatePayload implements the tenso.TranslationHandler interface.
 func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte, routingInfo map[string]string) ([]byte, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
@@ -190,7 +199,7 @@ func (t *terraformDeploymentToSNowTranslator) TranslatePayload(payload []byte, r
 		Outcome:     event.CombinedOutcome(),
 		Summary:     fmt.Sprintf("Deploy %s for %s", event.Pipeline.PipelineName, event.Pipeline.JobName),
 		Description: strings.Join(descLines, "\n"),
-		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty
+		Executee:    event.Pipeline.CreatedBy, // NOTE: can be empty
 		Region:      event.Region,
 	}
 
@@ -221,15 +230,18 @@ type terraformDeploymentToSNowDeliverer struct {
 	Mapping servicenow.MappingConfiguration
 }
 
+// Init implements the tenso.DeliveryHandler interface.
 func (d *terraformDeploymentToSNowDeliverer) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) (err error) {
 	d.Mapping, err = servicenow.LoadMappingConfiguration("TENSO_SERVICENOW_MAPPING_CONFIG_PATH")
 	return err
 }
 
+// PluginTypeID implements the pluggable.Plugin interface.
 func (d *terraformDeploymentToSNowDeliverer) PluginTypeID() string {
 	return "terraform-deployment-to-servicenow.v1"
 }
 
+// DeliverPayload implements the tenso.DeliveryHandler interface.
 func (d *terraformDeploymentToSNowDeliverer) DeliverPayload(ctx context.Context, payload []byte, routingInfo map[string]string) (*tenso.DeliveryLog, error) {
 	return d.Mapping.Endpoints.DeliverChangePayload(ctx, payload, routingInfo)
 }

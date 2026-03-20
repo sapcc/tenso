@@ -22,6 +22,7 @@ type Context struct {
 	timeNow func() time.Time
 }
 
+// NewContext constructs a new tasks.Context.
 func NewContext(cfg tenso.Configuration, db *gorp.DbMap) *Context {
 	return &Context{cfg, db, time.Now}
 }
