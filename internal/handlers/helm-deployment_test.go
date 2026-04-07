@@ -18,6 +18,7 @@ import (
 func TestHelmDeploymentValidationSuccess(t *testing.T) {
 	// we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
 	t.Setenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST", "localhost:1")
+	t.Setenv("TENSO_HELM_DEPLOYMENT_CLUSTER_REGEX", "[a-z]{2}-[a-z]{2}-[0-9]{1}")
 
 	s := test.NewSetup(t,
 		test.WithRoute("helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1"),
@@ -49,6 +50,7 @@ func TestHelmDeploymentValidationSuccess(t *testing.T) {
 
 func TestHelmDeploymentConversionToSNow(t *testing.T) {
 	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
+	t.Setenv("TENSO_HELM_DEPLOYMENT_CLUSTER_REGEX", "[a-z]{2}-[a-z]{2}-[0-9]{1}")
 
 	s := test.NewSetup(t,
 		test.WithRoute("helm-deployment-from-concourse.v1 -> helm-deployment-to-servicenow.v1"),
