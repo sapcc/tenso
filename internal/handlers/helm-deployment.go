@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"regexp"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/majewsky/schwift/v2"
 	"github.com/sapcc/go-api-declarations/deployevent"
 	"github.com/sapcc/go-bits/osext"
+	"github.com/sapcc/go-bits/regexpext"
 
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -42,10 +44,20 @@ func releaseDescriptorsOf(event deployevent.Event, sep string) (result []string)
 // ValidationHandler
 
 type helmDeploymentValidator struct {
+	clusterRx *regexp.Regexp
 }
 
 // Init implements the tenso.ValidationHandler interface.
 func (h *helmDeploymentValidator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+	clusterRegexEnvVar := "TENSO_HELM_DEPLOYMENT_CLUSTER_REGEX"
+	clusterString, err := osext.NeedGetenv(clusterRegexEnvVar)
+	if err != nil {
+		return err
+	}
+	h.clusterRx, err = regexpext.BoundedRegexp(clusterString).Regexp()
+	if err != nil {
+		return fmt.Errorf("while compiling %s: %w", clusterRegexEnvVar, err)
+	}
 	return nil
 }
 
@@ -74,7 +86,7 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 		if relInfo == nil {
 			return nil, fmt.Errorf(`helm-release[%d] may not be nil`, idx)
 		}
-		//TODO: Can we do regex matches to validate the contents of Name, Namespace, ChartID, ChartPath?
+		// TODO: Can we do regex matches to validate the contents of Name, Namespace, ChartID, ChartPath?
 		if relInfo.Name == "" {
 			return nil, fmt.Errorf(`invalid value for field helm-release[].name: %q`, relInfo.Name)
 		}
@@ -87,7 +99,7 @@ func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.Payloa
 		if relInfo.ChartID != "" && relInfo.ChartPath != "" {
 			return nil, fmt.Errorf(`in helm-release %q: chart-id and chart-path can not both be set`, relInfo.Name)
 		}
-		if !clusterRx.MatchString(relInfo.Cluster) {
+		if !h.clusterRx.MatchString(relInfo.Cluster) {
 			return nil, fmt.Errorf(`in helm-release %q: invalid value for field cluster: %q`, relInfo.Name, relInfo.Cluster)
 		}
 		if !isClusterLocatedInRegion(relInfo.Cluster, event.Region) {
@@ -239,7 +251,7 @@ func (h *helmDeploymentToSNowTranslator) TranslatePayload(payload []byte, routin
 		Outcome:     event.CombinedOutcome(),
 		Summary:     "Deploy " + releaseDesc,
 		Description: fmt.Sprintf("Deployed %s with versions: %s\nDeployment log: %s\n\nOutcome: %s", releaseDesc, inputDesc, event.Pipeline.BuildURL, string(event.CombinedOutcome())),
-		Executee:    event.Pipeline.CreatedBy, //NOTE: can be empty
+		Executee:    event.Pipeline.CreatedBy, // NOTE: can be empty
 		Region:      event.Region,
 	}
 
