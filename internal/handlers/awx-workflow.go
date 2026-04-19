@@ -15,10 +15,10 @@ import (
 
 	"github.com/gophercloud/gophercloud/v2"
 	"github.com/gophercloud/gophercloud/v2/openstack"
-	"github.com/majewsky/schwift/v2"
-	"github.com/majewsky/schwift/v2/gopherschwift"
 	"github.com/sapcc/go-api-declarations/deployevent"
 	"github.com/sapcc/go-bits/osext"
+	"go.xyrillian.de/schwift/v2"
+	"go.xyrillian.de/schwift/v2/gopherschwift"
 
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
