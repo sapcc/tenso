@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/gophercloud/gophercloud/v2"
-	"github.com/majewsky/schwift/v2"
+	"go.xyrillian.de/schwift/v2"
 
 	"github.com/sapcc/go-api-declarations/deployevent"
 

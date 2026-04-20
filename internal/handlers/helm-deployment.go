@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"github.com/gophercloud/gophercloud/v2"
-	"github.com/majewsky/schwift/v2"
 	"github.com/sapcc/go-api-declarations/deployevent"
 	"github.com/sapcc/go-bits/osext"
 	"github.com/sapcc/go-bits/regexpext"
+	"go.xyrillian.de/schwift/v2"
 
 	"github.com/sapcc/tenso/internal/servicenow"
 	"github.com/sapcc/tenso/internal/tenso"
