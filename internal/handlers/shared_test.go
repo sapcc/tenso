@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/majewsky/gg/jsonmatch"
 	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/must"
+	"go.xyrillian.de/gg/jsonmatch"
 )
 
 func TestMain(m *testing.M) {
