@@ -40,6 +40,9 @@ func isClusterLocatedInRegion(cluster, region string) bool {
 	if cluster == "k-master" {
 		return region == "eu-nl-1"
 	}
+	if strings.HasSuffix(cluster, "-ora-1") {
+		return region == "eu-de-1"
+	}
 	qaClusters := map[string]struct{}{
 		"a-qa-de-100": {},
 		"a-qa-de-200": {},
@@ -73,7 +76,7 @@ func parseAndValidateDeployEvent(payload []byte) (deployevent.Event, error) {
 		}
 	}
 
-	//TODO: Can we validate values for TeamName by providing a set of valid values in env?
+	// TODO: Can we validate values for TeamName by providing a set of valid values in env?
 	if !buildNumberRx.MatchString(event.Pipeline.BuildNumber) {
 		return event, fmt.Errorf("field pipeline.build-number is invalid: %q", event.Pipeline.BuildNumber)
 	}
