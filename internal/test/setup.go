@@ -60,6 +60,7 @@ type Setup struct {
 	// fields that are set if WithAPI is included
 	Validator *mock.Validator[*mock.Enforcer]
 	Handler   httptest.Handler
+	API       *api.API
 	// fields that are set if WithTaskContext is included
 	TaskContext *tasks.Context
 }
@@ -97,8 +98,9 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 			"user_id":          "testuserid",
 			"user_domain_name": "testdomainname",
 		})
+		s.API = must.ReturnT(api.NewAPI(s.Config, s.DB, s.Validator))(t).OverrideTimeNow(s.Clock.Now)
 		s.Handler = httptest.NewHandler(httpapi.Compose(
-			api.NewAPI(s.Config, s.DB, s.Validator).OverrideTimeNow(s.Clock.Now),
+			s.API,
 			httpapi.WithoutLogging(),
 		))
 	}

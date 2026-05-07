@@ -5,6 +5,7 @@ package handlers_test
 
 import (
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/sapcc/go-bits/assert"
@@ -15,6 +16,7 @@ import (
 
 func TestTerraformDeploymentValidationSuccess(t *testing.T) {
 	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
+	regionRx := regexp.MustCompile("^[a-z]{2}-[a-z]{2}-[0-9]$")
 
 	s := test.NewSetup(t,
 		test.WithRoute("terraform-deployment-from-concourse.v1 -> terraform-deployment-to-servicenow.v1"),
@@ -22,7 +24,7 @@ func TestTerraformDeploymentValidationSuccess(t *testing.T) {
 	vh := s.Config.EnabledRoutes[0].ValidationHandler
 
 	sourcePayloadBytes := must.ReturnT(os.ReadFile("fixtures/terraform-deployment-from-concourse.v1.terragrunt-virtual-apod.json"))(t)
-	payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes))(t)
+	payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes, regionRx))(t)
 	assert.Equal(t, payloadInfo.Description, "services/terragrunt-virtual-apod: Terraform run for vnode4-v-qa-de-1")
 }
 
