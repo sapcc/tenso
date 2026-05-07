@@ -49,14 +49,14 @@ type helmDeploymentValidator struct {
 
 // Init implements the tenso.ValidationHandler interface.
 func (h *helmDeploymentValidator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
-	clusterRegexEnvVar := "TENSO_HELM_DEPLOYMENT_CLUSTER_REGEX"
-	clusterString, err := osext.NeedGetenv(clusterRegexEnvVar)
+	clusterRxEnvVar := "TENSO_HELM_DEPLOYMENT_CLUSTER_REGEX"
+	clusterRxString, err := osext.NeedGetenv(clusterRxEnvVar)
 	if err != nil {
 		return err
 	}
-	h.clusterRx, err = regexpext.BoundedRegexp(clusterString).Regexp()
+	h.clusterRx, err = regexpext.BoundedRegexp(clusterRxString).Regexp()
 	if err != nil {
-		return fmt.Errorf("while compiling %s: %w", clusterRegexEnvVar, err)
+		return fmt.Errorf("while compiling %s: %w", clusterRxEnvVar, err)
 	}
 	return nil
 }
@@ -67,8 +67,8 @@ func (h *helmDeploymentValidator) PluginTypeID() string {
 }
 
 // ValidatePayload implements the tenso.ValidationHandler interface.
-func (h *helmDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
-	event, err := parseAndValidateDeployEvent(payload)
+func (h *helmDeploymentValidator) ValidatePayload(payload []byte, regionRx *regexp.Regexp) (*tenso.PayloadInfo, error) {
+	event, err := parseAndValidateDeployEvent(payload, regionRx)
 	if err != nil {
 		return nil, err
 	}

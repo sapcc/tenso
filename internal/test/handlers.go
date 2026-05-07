@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/gophercloud/gophercloud/v2"
 
@@ -63,7 +64,7 @@ func (h *testValidationHandler) PluginTypeID() string {
 }
 
 // ValidatePayload implements the tenso.ValidationHandler interface.
-func (h *testValidationHandler) ValidatePayload(data []byte) (*tenso.PayloadInfo, error) {
+func (h *testValidationHandler) ValidatePayload(data []byte, _ *regexp.Regexp) (*tenso.PayloadInfo, error) {
 	p, err := parseTestPayload(data, h.Type)
 	if err != nil {
 		return nil, err

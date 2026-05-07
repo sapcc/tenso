@@ -6,6 +6,7 @@ package handlers_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/sapcc/go-bits/assert"
@@ -16,6 +17,7 @@ import (
 
 func TestActiveDirectoryDeploymentValidationSuccess(t *testing.T) {
 	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
+	regionRx := regexp.MustCompile("^[a-z]{2}-[a-z]{2}-[0-9]$")
 
 	for _, eventFormat := range []string{"v1", "v2"} {
 		t.Logf("-- testing event format %s", eventFormat)
@@ -35,7 +37,7 @@ func TestActiveDirectoryDeploymentValidationSuccess(t *testing.T) {
 
 		for _, tc := range testCases {
 			sourcePayloadBytes := must.ReturnT(os.ReadFile(tc))(t)
-			payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes))(t)
+			payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes, regionRx))(t)
 			assert.Equal(t, payloadInfo.Description, "core/active-directory: deploy AD to ad-dev.example.sap")
 		}
 	}

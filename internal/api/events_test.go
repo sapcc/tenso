@@ -21,6 +21,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestPostNewEvent(t *testing.T) {
+	t.Setenv("TENSO_REGION_REGEX", "[a-z]{2}-[a-z]{2}-[0-9][a-z]")
 	s := test.NewSetup(t,
 		test.WithAPI,
 		test.WithRoute("test-foo.v1 -> test-bar.v1"),

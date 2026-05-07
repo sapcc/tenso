@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -45,8 +46,8 @@ func (v *terraformDeploymentValidator) PluginTypeID() string {
 }
 
 // ValidatePayload implements the tenso.ValidationHandler interface.
-func (v *terraformDeploymentValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
-	event, err := parseAndValidateDeployEvent(payload)
+func (v *terraformDeploymentValidator) ValidatePayload(payload []byte, regionRx *regexp.Regexp) (*tenso.PayloadInfo, error) {
+	event, err := parseAndValidateDeployEvent(payload, regionRx)
 	if err != nil {
 		return nil, err
 	}
