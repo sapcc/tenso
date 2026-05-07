@@ -6,6 +6,7 @@ package tenso
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/gophercloud/gophercloud/v2"
@@ -23,7 +24,7 @@ type ValidationHandler interface {
 	// talk to OpenStack. During unit tests, (nil, nil) will be provided instead.
 	Init(ctx context.Context, pc *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) error
 
-	ValidatePayload(payload []byte) (*PayloadInfo, error)
+	ValidatePayload(payload []byte, regionRx *regexp.Regexp) (*PayloadInfo, error)
 }
 
 // PayloadInfo contains structured information about a payload. It is returned

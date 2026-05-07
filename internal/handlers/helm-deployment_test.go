@@ -6,6 +6,7 @@ package handlers_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/sapcc/go-bits/assert"
@@ -19,6 +20,7 @@ func TestHelmDeploymentValidationSuccess(t *testing.T) {
 	// we will not be using this, but we need some config for the DeliveryHandler for the test.Setup() to go through
 	t.Setenv("TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST", "localhost:1")
 	t.Setenv("TENSO_HELM_DEPLOYMENT_CLUSTER_REGEX", "[a-z]{2}-[a-z]{2}-[0-9]{1}")
+	regionRx := regexp.MustCompile("^[a-z]{2}-[a-z]{2}-[0-9]$")
 
 	s := test.NewSetup(t,
 		test.WithRoute("helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1"),
@@ -41,7 +43,7 @@ func TestHelmDeploymentValidationSuccess(t *testing.T) {
 
 	for _, tc := range testCases {
 		sourcePayloadBytes := must.ReturnT(os.ReadFile(fmt.Sprintf("fixtures/helm-deployment-from-concourse.v1.%s.json", tc.ReleaseName)))(t)
-		payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes))(t)
+		payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes, regionRx))(t)
 		assert.Equal(t, payloadInfo.Description, tc.ExpectedDescription)
 	}
 }

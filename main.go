@@ -93,7 +93,7 @@ func runAPI(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap, provid
 		AllowedHeaders: []string{"Content-Type", "User-Agent", "X-Auth-Token", "Authorization"},
 	})
 	handler := httpapi.Compose(
-		api.NewAPI(cfg, db, &tv),
+		must.Return(api.NewAPI(cfg, db, &tv)),
 		httpapi.HealthCheckAPI{
 			SkipRequestLog: true,
 			Check: func() error {

@@ -30,7 +30,6 @@ func jsonUnmarshalStrict[T any](payload []byte) (T, error) {
 // terraform-deployment)
 
 var (
-	regionRx      = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9]$`)       // e.g. "qa-de-1"
 	gitCommitRx   = regexp.MustCompile(`^[0-9a-f]{40}$`)                  // SHA-1 digest with lower-case digits
 	buildNumberRx = regexp.MustCompile(`^[1-9][0-9]*(?:\.[1-9][0-9]*)?$`) // e.g. "23" or "42.1"
 	sapUserIDRx   = regexp.MustCompile(`^(?:C[0-9]{7}|[DI][0-9]{6})$`)    // e.g. "D123456" or "C1234567"
@@ -41,7 +40,7 @@ func isClusterLocatedInRegion(cluster, region string) bool {
 		return region == "eu-nl-1"
 	}
 	if strings.HasSuffix(cluster, "-ora-1") {
-		return region == "eu-de-1"
+		return region == "ora"
 	}
 	qaClusters := map[string]struct{}{
 		"a-qa-de-100": {},
@@ -57,7 +56,7 @@ func isClusterLocatedInRegion(cluster, region string) bool {
 	return strings.HasSuffix(cluster, region)
 }
 
-func parseAndValidateDeployEvent(payload []byte) (deployevent.Event, error) {
+func parseAndValidateDeployEvent(payload []byte, regionRx *regexp.Regexp) (deployevent.Event, error) {
 	event, err := jsonUnmarshalStrict[deployevent.Event](payload)
 	if err != nil {
 		return deployevent.Event{}, err

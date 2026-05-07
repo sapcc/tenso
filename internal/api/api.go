@@ -4,11 +4,15 @@
 package api
 
 import (
+	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/go-gorp/gorp/v3"
 	"github.com/gorilla/mux"
 	"github.com/sapcc/go-bits/gopherpolicy"
+	"github.com/sapcc/go-bits/osext"
+	"github.com/sapcc/go-bits/regexpext"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -18,12 +22,22 @@ type API struct {
 	Config    tenso.Configuration
 	DB        *gorp.DbMap
 	Validator gopherpolicy.Validator
+	RegionRx  *regexp.Regexp
 	timeNow   func() time.Time
 }
 
 // NewAPI creates an tenso API.
-func NewAPI(cfg tenso.Configuration, db *gorp.DbMap, validator gopherpolicy.Validator) *API {
-	return &API{cfg, db, validator, time.Now}
+func NewAPI(cfg tenso.Configuration, db *gorp.DbMap, validator gopherpolicy.Validator) (*API, error) {
+	regionRxEnvVar := "TENSO_REGION_REGEX"
+	regionRxString, err := osext.NeedGetenv(regionRxEnvVar)
+	if err != nil {
+		return nil, err
+	}
+	regionRx, err := regexpext.BoundedRegexp(regionRxString).Regexp()
+	if err != nil {
+		return nil, fmt.Errorf("while compiling %s: %w", regionRxEnvVar, err)
+	}
+	return &API{cfg, db, validator, regionRx, time.Now}, nil
 }
 
 // OverrideTimeNow is used by unit tests to inject a mock clock.
