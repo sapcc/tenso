@@ -178,8 +178,10 @@ To configure these delivery paths, the following environment variables are inspe
 
 | Variable | Default | Explanation |
 | -------- | ------- | ----------- |
+| `TENSO_REGION_REGEX` | *(required)* | A regex compiled as `regexpext.BoundedRegexp` which extracts the region from the `region` field in the incoming payload. The region is used to find the data centers for the ServiceNow change template. |
 | `TENSO_AWX_WORKFLOW_SWIFT_CONTAINER` | *(required)* | The name of the target Swift container for `infra-workflow-to-swift.v1` delivery. |
-| `TENSO_HELM_DEPLOYMENT_CLUSTER_REGEX` | *(required)* | A regex compiled as `regexpext.BoundedRegexp` which extracts the cluster name from the `cluster` field in the incoming `helm-deployment-from-concourse.v1` payload. The cluster name is used for routing and in the ServiceNow change template. |
+| `TENSO_AWX_WORKFLOW_AZ_REGEX` | *(required)* | A regex compiled as `regexpext.BoundedRegexp` which extracts the availability zone from the `az` field in the incoming `infra-workflow-from-awx.v1` payload. The availability zone is used to find the data centers for the ServiceNow change template. |
+| `TENSO_HELM_DEPLOYMENT_CLUSTER_REGEX` | *(required)* | A regex compiled as `regexpext.BoundedRegexp` which extracts the cluster name from the `cluster` field in the incoming `helm-deployment-from-concourse.v1` payload. The cluster name is used in the description for the ServiceNow change template. |
 | `TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST` | *(required)* | The host:port pair of the Logstash service for `helm-deployment-to-elk.v1` delivery. |
 | `TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER` | *(required)* | The name of the target Swift container for `helm-deployment-to-swift.v1` delivery. |
 | `TENSO_TERRAFORM_DEPLOYMENT_SWIFT_CONTAINER` | *(required)* | The name of the target Swift container for `terraform-deployment-to-swift.v1` delivery. |
