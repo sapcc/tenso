@@ -17,6 +17,7 @@ import (
 	"github.com/gophercloud/gophercloud/v2/openstack"
 	"github.com/sapcc/go-api-declarations/deployevent"
 	"github.com/sapcc/go-bits/osext"
+	"github.com/sapcc/go-bits/regexpext"
 	"go.xyrillian.de/schwift/v2"
 	"go.xyrillian.de/schwift/v2/gopherschwift"
 
@@ -97,10 +98,20 @@ func (t *awxWorkflowTime) UnmarshalJSON(buf []byte) error {
 // ValidationHandler
 
 type awxWorkflowValidator struct {
+	azRx *regexp.Regexp
 }
 
 // Init implements the tenso.ValidationHandler interface.
 func (a *awxWorkflowValidator) Init(context.Context, *gophercloud.ProviderClient, gophercloud.EndpointOpts) error {
+	azRxEnvVar := "TENSO_AWX_WORKFLOW_AZ_REGEX"
+	azRxString, err := osext.NeedGetenv(azRxEnvVar)
+	if err != nil {
+		return err
+	}
+	a.azRx, err = regexpext.BoundedRegexp(azRxString).Regexp()
+	if err != nil {
+		return fmt.Errorf("while compiling %s: %w", azRxEnvVar, err)
+	}
 	return nil
 }
 
@@ -109,12 +120,8 @@ func (a *awxWorkflowValidator) PluginTypeID() string {
 	return "infra-workflow-from-awx.v1"
 }
 
-var (
-	availabilityZoneRx = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}-[0-9][a-z]$`) // e.g. "qa-de-1a"
-)
-
 // ValidatePayload implements the tenso.ValidationHandler interface.
-func (a *awxWorkflowValidator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
+func (a *awxWorkflowValidator) ValidatePayload(payload []byte, _ *regexp.Regexp) (*tenso.PayloadInfo, error) {
 	event, err := jsonUnmarshalStrict[awxWorkflowEvent](payload)
 	if err != nil {
 		return nil, err
@@ -135,7 +142,7 @@ func (a *awxWorkflowValidator) ValidatePayload(payload []byte) (*tenso.PayloadIn
 	if _, ok := awxOutcomes[event.Status]; !ok {
 		return nil, fmt.Errorf(`invalid value for field "status": %q`, event.Status)
 	}
-	if !availabilityZoneRx.MatchString(event.AvailabilityZone) {
+	if !a.azRx.MatchString(event.AvailabilityZone) {
 		return nil, fmt.Errorf(`invalid value for field "inventory": %q is not an AZ name`, event.AvailabilityZone)
 	}
 

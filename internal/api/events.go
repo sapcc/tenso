@@ -89,7 +89,7 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
-	payloadInfo, err := validationHandler.ValidatePayload(payloadBytes)
+	payloadInfo, err := validationHandler.ValidatePayload(payloadBytes, a.RegionRx)
 	if err != nil {
 		http.Error(w, "invalid event payload: "+err.Error(), http.StatusUnprocessableEntity)
 		return

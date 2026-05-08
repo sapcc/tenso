@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -99,7 +100,7 @@ func (v *activeDirectoryDeploymentV1Validator) PluginTypeID() string {
 }
 
 // ValidatePayload implements the tenso.ValidationHandler interface.
-func (v *activeDirectoryDeploymentV1Validator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
+func (v *activeDirectoryDeploymentV1Validator) ValidatePayload(payload []byte, regionRx *regexp.Regexp) (*tenso.PayloadInfo, error) {
 	event, err := jsonUnmarshalStrict[activeDirectoryDeploymentV1Event](payload)
 	if err != nil {
 		return nil, err
@@ -243,8 +244,8 @@ func (v *activeDirectoryDeploymentV2Validator) PluginTypeID() string {
 }
 
 // ValidatePayload implements the tenso.ValidationHandler interface.
-func (v *activeDirectoryDeploymentV2Validator) ValidatePayload(payload []byte) (*tenso.PayloadInfo, error) {
-	event, err := parseAndValidateDeployEvent(payload)
+func (v *activeDirectoryDeploymentV2Validator) ValidatePayload(payload []byte, regionRx *regexp.Regexp) (*tenso.PayloadInfo, error) {
+	event, err := parseAndValidateDeployEvent(payload, regionRx)
 	if err != nil {
 		return nil, err
 	}

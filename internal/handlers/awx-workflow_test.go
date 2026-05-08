@@ -5,6 +5,7 @@ package handlers_test
 
 import (
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/sapcc/go-bits/assert"
@@ -15,6 +16,8 @@ import (
 
 func TestAWXWorkflowValidationAndConversionToSNow(t *testing.T) {
 	t.Setenv("TENSO_SERVICENOW_MAPPING_CONFIG_PATH", "fixtures/servicenow-mapping-config.json")
+	t.Setenv("TENSO_AWX_WORKFLOW_AZ_REGEX", "[a-z]{2}-[a-z]{2}-[0-9][a-z]")
+	regionRx := regexp.MustCompile("^[a-z]{2}-[a-z]{2}-[0-9]$")
 
 	s := test.NewSetup(t,
 		test.WithRoute("infra-workflow-from-awx.v1 -> infra-workflow-to-servicenow.v1"),
@@ -23,7 +26,7 @@ func TestAWXWorkflowValidationAndConversionToSNow(t *testing.T) {
 	th := s.Config.EnabledRoutes[0].TranslationHandler
 
 	sourcePayloadBytes := must.ReturnT(os.ReadFile("fixtures/infra-workflow-from-awx.v1.good.json"))(t)
-	payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes))(t)
+	payloadInfo := must.ReturnT(vh.ValidatePayload(sourcePayloadBytes, regionRx))(t)
 	assert.Equal(t, payloadInfo.Description, "ESX upgrade, qa-de-1a, node002-bb091.cc.qa-de-1.cloud.sap")
 
 	targetPayloadBytes := must.ReturnT(th.TranslatePayload(sourcePayloadBytes, nil))(t)
