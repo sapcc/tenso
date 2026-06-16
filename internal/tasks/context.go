@@ -6,7 +6,7 @@ package tasks
 import (
 	"time"
 
-	"github.com/go-gorp/gorp/v3"
+	"go.xyrillian.de/oblast"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -15,7 +15,7 @@ import (
 // package.
 type Context struct {
 	Config tenso.Configuration
-	DB     *gorp.DbMap
+	DB     *oblast.DB
 
 	// dependency injection slots (usually filled by ApplyDefaults(), but filled
 	// with doubles in tests)
@@ -23,7 +23,7 @@ type Context struct {
 }
 
 // NewContext constructs a new tasks.Context.
-func NewContext(cfg tenso.Configuration, db *gorp.DbMap) *Context {
+func NewContext(cfg tenso.Configuration, db *oblast.DB) *Context {
 	return &Context{cfg, db, time.Now}
 }
 

@@ -9,15 +9,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/dlmiddlecote/sqlstats"
-	"github.com/go-gorp/gorp/v3"
 	"github.com/gophercloud/gophercloud/v2"
 	"github.com/gophercloud/gophercloud/v2/openstack"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/sapcc/go-api-declarations/bininfo"
-	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/gopherpolicy"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/httpapi/pprofapi"
@@ -26,6 +22,7 @@ import (
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
+	"go.xyrillian.de/oblast"
 
 	"github.com/sapcc/tenso/internal/api"
 	_ "github.com/sapcc/tenso/internal/handlers" // must be imported to register the handler implementations
@@ -50,20 +47,7 @@ func main() {
 
 	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
 	cfg, provider, eo := tenso.ParseConfiguration(ctx)
-
-	// initialize DB connection
-	dbName := osext.GetenvOrDefault("TENSO_DB_NAME", "tenso")
-	dbURL := must.Return(easypg.URLFrom(easypg.URLParts{
-		HostName:          osext.GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost"),
-		Port:              osext.GetenvOrDefault("TENSO_DB_PORT", "5432"),
-		UserName:          osext.GetenvOrDefault("TENSO_DB_USERNAME", "postgres"),
-		Password:          os.Getenv("TENSO_DB_PASSWORD"),
-		ConnectionOptions: os.Getenv("TENSO_DB_CONNECTION_OPTIONS"),
-		DatabaseName:      dbName,
-	}))
-	dbConn := must.Return(easypg.Connect(dbURL, tenso.DBConfiguration()))
-	prometheus.MustRegister(sqlstats.NewStatsCollector(dbName, dbConn))
-	db := tenso.InitORM(dbConn)
+	db := tenso.InitDB()
 
 	switch commandWord {
 	case "api":
@@ -75,7 +59,7 @@ func main() {
 	}
 }
 
-func runAPI(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
+func runAPI(ctx context.Context, cfg tenso.Configuration, db *oblast.DB, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
 	identityV3, err := openstack.NewIdentityV3(provider, eo)
 	if err != nil {
 		logg.Fatal("cannot find Keystone V3 API: " + err.Error())
@@ -97,7 +81,7 @@ func runAPI(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap, provid
 		httpapi.HealthCheckAPI{
 			SkipRequestLog: true,
 			Check: func() error {
-				return db.Db.PingContext(ctx)
+				return db.PingContext(ctx)
 			},
 		},
 		httpapi.WithGlobalMiddleware(corsMiddleware.Handler),
@@ -112,7 +96,7 @@ func runAPI(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap, provid
 	must.Succeed(httpext.ListenAndServeContext(ctx, apiListenAddress, mux))
 }
 
-func runWorker(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap) {
+func runWorker(ctx context.Context, cfg tenso.Configuration, db *oblast.DB) {
 	// start worker loops (we have a budget of 16 DB connections, which we
 	// distribute between converting and delivering with some headroom to spare)
 	c := tasks.NewContext(cfg, db)
@@ -125,7 +109,7 @@ func runWorker(ctx context.Context, cfg tenso.Configuration, db *gorp.DbMap) {
 		httpapi.HealthCheckAPI{
 			SkipRequestLog: true,
 			Check: func() error {
-				return db.Db.PingContext(ctx)
+				return db.PingContext(ctx)
 			},
 		},
 		pprofapi.API{IsAuthorized: pprofapi.IsRequestFromLocalhost},

@@ -4,10 +4,14 @@
 package tenso
 
 import (
-	"database/sql"
+	"os"
 
-	"github.com/go-gorp/gorp/v3"
+	"github.com/dlmiddlecote/sqlstats"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sapcc/go-bits/easypg"
+	"github.com/sapcc/go-bits/must"
+	"github.com/sapcc/go-bits/osext"
+	"go.xyrillian.de/oblast"
 )
 
 var sqlMigrations = map[string]string{
@@ -65,12 +69,23 @@ func DBConfiguration() easypg.Configuration {
 	}
 }
 
-// InitORM wraps a database connection into a gorp.DbMap instance.
-func InitORM(dbConn *sql.DB) *gorp.DbMap {
+// InitDB initializes a DB connection for productive use.
+// (Tests use the DB connection logic in test.NewSetup() instead.)
+func InitDB() *oblast.DB {
+	dbName := osext.GetenvOrDefault("TENSO_DB_NAME", "tenso")
+	dbURL := must.Return(easypg.URLFrom(easypg.URLParts{
+		HostName:          osext.GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost"),
+		Port:              osext.GetenvOrDefault("TENSO_DB_PORT", "5432"),
+		UserName:          osext.GetenvOrDefault("TENSO_DB_USERNAME", "postgres"),
+		Password:          os.Getenv("TENSO_DB_PASSWORD"),
+		ConnectionOptions: os.Getenv("TENSO_DB_CONNECTION_OPTIONS"),
+		DatabaseName:      dbName,
+	}))
+	dbConn := must.Return(easypg.Connect(dbURL, DBConfiguration()))
+
 	// ensure that this process does not starve other Tenso processes for DB connections
 	dbConn.SetMaxOpenConns(16)
 
-	result := &gorp.DbMap{Db: dbConn, Dialect: gorp.PostgresDialect{}}
-	initModels(result)
-	return result
+	prometheus.MustRegister(sqlstats.NewStatsCollector(dbName, dbConn))
+	return oblast.NewDB(dbConn)
 }

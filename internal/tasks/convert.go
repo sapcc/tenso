@@ -9,23 +9,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-gorp/gorp/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sapcc/go-bits/jobloop"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/sqlext"
+	"go.xyrillian.de/oblast"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
 
 // WARNING: This must be run in a transaction, or else `FOR UPDATE SKIP LOCKED`
 // will not work as expected.
-var selectNextConversionQuery = sqlext.SimplifyWhitespace(`
-	SELECT * FROM pending_deliveries
-	 WHERE converted_at IS NULL AND next_conversion_at <= $1
-	 ORDER BY next_conversion_at ASC, payload_type ASC   -- secondary order ensures deterministic behavior during test
-	 LIMIT 1 FOR UPDATE SKIP LOCKED
-`)
+var selectNextConversionQuery = tenso.PendingDeliveryStore.MustPrepareSelectQueryWhere(sqlext.SimplifyWhitespace(`
+	converted_at IS NULL AND next_conversion_at <= $1
+	ORDER BY next_conversion_at ASC, payload_type ASC   -- secondary order ensures deterministic behavior during test
+	LIMIT 1 FOR UPDATE SKIP LOCKED
+`))
 
 const (
 	ConversionRetryInterval = 2 * time.Minute
@@ -34,7 +33,7 @@ const (
 // ConversionJob is a jobloop.Job. Each task run takes one event to be converted
 // from the database and invokes the respective conversion.
 func (c *Context) ConversionJob(registerer prometheus.Registerer) jobloop.Job {
-	return (&jobloop.TxGuardedJob[*gorp.Transaction, tenso.PendingDelivery]{
+	return (&jobloop.TxGuardedJob[*oblast.Tx, tenso.PendingDelivery]{
 		Metadata: jobloop.JobMetadata{
 			ReadableName:    "Event conversion",
 			ConcurrencySafe: true, // because "FOR UPDATE SKIP LOCKED" is used
@@ -45,15 +44,14 @@ func (c *Context) ConversionJob(registerer prometheus.Registerer) jobloop.Job {
 			CounterLabels: []string{"source_payload_type", "target_payload_type"},
 		},
 		BeginTx: c.DB.Begin,
-		DiscoverRow: func(_ context.Context, tx *gorp.Transaction, _ prometheus.Labels) (pd tenso.PendingDelivery, err error) {
-			err = tx.SelectOne(&pd, selectNextConversionQuery, c.timeNow())
-			return pd, err
+		DiscoverRow: func(ctx context.Context, tx *oblast.Tx, _ prometheus.Labels) (tenso.PendingDelivery, error) {
+			return selectNextConversionQuery.SelectOne(ctx, tx, c.timeNow())
 		},
 		ProcessRow: c.processConversion,
 	}).Setup(registerer)
 }
 
-func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd tenso.PendingDelivery, labels prometheus.Labels) (returnedError error) {
+func (c *Context) processConversion(ctx context.Context, tx *oblast.Tx, pd tenso.PendingDelivery, labels prometheus.Labels) (returnedError error) {
 	var event tenso.Event
 
 	labels["target_payload_type"] = pd.PayloadType
@@ -67,7 +65,8 @@ func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd 
 	}()
 
 	// find the corresponding event
-	err := tx.SelectOne(&event, `SELECT * FROM events WHERE id = $1`, pd.EventID)
+	var err error
+	event, err = tenso.EventStore.SelectOneWhere(ctx, tx, `id = $1`, pd.EventID)
 	if err != nil {
 		return err
 	}
@@ -100,7 +99,7 @@ func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd 
 	if err != nil {
 		pd.NextConversionAt = c.timeNow().Add(ConversionRetryInterval)
 		pd.FailedConversionCount++
-		_, err2 := tx.Update(&pd)
+		err2 := tenso.PendingDeliveryStore.Update(ctx, tx, pd)
 		if err2 == nil {
 			err2 = tx.Commit()
 		}
@@ -116,7 +115,7 @@ func (c *Context) processConversion(_ context.Context, tx *gorp.Transaction, pd 
 	now := c.timeNow()
 	pd.ConvertedAt = &now
 
-	_, err = tx.Update(&pd)
+	err = tenso.PendingDeliveryStore.Update(ctx, tx, pd)
 	if err != nil {
 		return err
 	}
