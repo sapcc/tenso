@@ -44,6 +44,7 @@ func (a *API) handlePostSyntheticEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, policyRule string, getPayload func(payloadType string) ([]byte, error)) {
+	ctx := r.Context()
 	requestTime := a.timeNow()
 
 	// collect required query parameters
@@ -107,9 +108,10 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 	}
 
 	// find or create user account
-	userID, err := a.DB.SelectInt(findOrCreateUserQuery,
+	var userID int64
+	err = a.DB.QueryRowContext(ctx, findOrCreateUserQuery,
 		token.UserUUID(), token.UserName(), token.UserDomainName(),
-	)
+	).Scan(&userID)
 	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
@@ -129,12 +131,12 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 		Description:     payloadInfo.Description,
 		RoutingInfoJSON: string(routingInfoJSON),
 	}
-	err = tx.Insert(&event)
+	err = tenso.EventStore.Insert(ctx, tx, &event)
 	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
 	for _, targetPayloadType := range targetPayloadTypes {
-		err = tx.Insert(&tenso.PendingDelivery{
+		err = tenso.PendingDeliveryStore.Insert(ctx, tx, &tenso.PendingDelivery{
 			EventID:               event.ID,
 			PayloadType:           targetPayloadType,
 			Payload:               nil, // to be converted later

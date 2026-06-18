@@ -30,7 +30,7 @@ func TestPostNewEvent(t *testing.T) {
 	h := s.Handler
 	ctx := t.Context()
 
-	tr, tr0 := easypg.NewTracker(t, s.DB.Db)
+	tr, tr0 := easypg.NewTracker(t, s.DB.DB)
 	tr0.AssertEmpty()
 
 	// test error cases: invalid payload type

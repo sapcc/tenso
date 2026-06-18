@@ -7,7 +7,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-gorp/gorp/v3"
 	"github.com/gophercloud/gophercloud/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sapcc/go-bits/easypg"
@@ -17,6 +16,7 @@ import (
 	"github.com/sapcc/go-bits/mock"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
+	"go.xyrillian.de/oblast"
 
 	"github.com/sapcc/tenso/internal/api"
 	"github.com/sapcc/tenso/internal/tasks"
@@ -54,7 +54,7 @@ type Setup struct {
 	// fields that are always set
 	Clock    *mock.Clock
 	Config   tenso.Configuration
-	DB       *gorp.DbMap
+	DB       *oblast.DB
 	Ctx      context.Context //nolint: containedctx  // only used in tests
 	Registry *prometheus.Registry
 	// fields that are set if WithAPI is included
@@ -75,7 +75,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	}
 
 	// connect to DB
-	db := tenso.InitORM(easypg.ConnectForTest(t, tenso.DBConfiguration(),
+	db := oblast.NewDB(easypg.ConnectForTest(t, tenso.DBConfiguration(),
 		easypg.ClearTables("pending_deliveries", "events", "users"),
 		easypg.ResetPrimaryKeys("events", "users"),
 	))

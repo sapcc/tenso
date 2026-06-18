@@ -18,6 +18,7 @@ import (
 )
 
 func TestConversionCommon(t *testing.T) {
+	ctx := t.Context()
 	s := test.NewSetup(t,
 		test.WithTaskContext,
 		test.WithRoute("test-foo.v1 -> test-bar.v1"),
@@ -31,7 +32,7 @@ func TestConversionCommon(t *testing.T) {
 		UUID:       "testuserid",
 		DomainName: "testdomainname",
 	}
-	must.SucceedT(t, s.DB.Insert(&user))
+	must.SucceedT(t, tenso.UserStore.Insert(ctx, s.DB, &user))
 	event := tenso.Event{
 		CreatorID:       user.ID,
 		CreatedAt:       s.Clock.Now(),
@@ -40,9 +41,9 @@ func TestConversionCommon(t *testing.T) {
 		Description:     "foo event with value 42",
 		RoutingInfoJSON: `{"target":"test"}`,
 	}
-	must.SucceedT(t, s.DB.Insert(&event))
+	must.SucceedT(t, tenso.EventStore.Insert(ctx, s.DB, &event))
 	for _, targetPayloadType := range []string{"test-bar.v1", "test-baz.v1"} {
-		must.SucceedT(t, s.DB.Insert(&tenso.PendingDelivery{
+		must.SucceedT(t, tenso.PendingDeliveryStore.Insert(ctx, s.DB, &tenso.PendingDelivery{
 			EventID:          event.ID,
 			PayloadType:      targetPayloadType,
 			Payload:          nil,
@@ -52,7 +53,7 @@ func TestConversionCommon(t *testing.T) {
 		}))
 	}
 
-	tr, _ := easypg.NewTracker(t, s.DB.Db)
+	tr, _ := easypg.NewTracker(t, s.DB.DB)
 	conversionJob := s.TaskContext.ConversionJob(s.Registry)
 
 	// simulate conversion failure by having provided a broken source payload
