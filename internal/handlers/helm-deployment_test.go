@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/sapcc/go-bits/assert"
 	"github.com/sapcc/go-bits/must"
+	"go.xyrillian.de/gg/assert"
 
 	_ "github.com/sapcc/tenso/internal/handlers"
 	"github.com/sapcc/tenso/internal/test"
