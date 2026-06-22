@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sapcc/go-bits/assert"
 	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/httptest"
+	"go.xyrillian.de/gg/assert"
 
 	"github.com/sapcc/tenso/internal/test"
 )
