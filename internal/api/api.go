@@ -12,7 +12,7 @@ import (
 	"github.com/sapcc/go-bits/gopherpolicy"
 	"github.com/sapcc/go-bits/osext"
 	"github.com/sapcc/go-bits/regexpext"
-	"go.xyrillian.de/oblast"
+	"go.xyrillian.de/gg/gsql"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -20,14 +20,14 @@ import (
 // API is a httpapi.API that serves the tenso API.
 type API struct {
 	Config    tenso.Configuration
-	DB        *oblast.DB
+	DB        *gsql.DB
 	Validator gopherpolicy.Validator
 	RegionRx  *regexp.Regexp
 	timeNow   func() time.Time
 }
 
 // NewAPI creates an tenso API.
-func NewAPI(cfg tenso.Configuration, db *oblast.DB, validator gopherpolicy.Validator) (*API, error) {
+func NewAPI(cfg tenso.Configuration, db *gsql.DB, validator gopherpolicy.Validator) (*API, error) {
 	regionRxEnvVar := "TENSO_REGION_REGEX"
 	regionRxString, err := osext.NeedGetenv(regionRxEnvVar)
 	if err != nil {

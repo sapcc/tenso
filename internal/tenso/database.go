@@ -11,7 +11,7 @@ import (
 	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
-	"go.xyrillian.de/oblast"
+	"go.xyrillian.de/gg/gsql"
 )
 
 var sqlMigrations = map[string]string{
@@ -71,7 +71,7 @@ func DBConfiguration() easypg.Configuration {
 
 // InitDB initializes a DB connection for productive use.
 // (Tests use the DB connection logic in test.NewSetup() instead.)
-func InitDB() *oblast.DB {
+func InitDB() *gsql.DB {
 	dbName := osext.GetenvOrDefault("TENSO_DB_NAME", "tenso")
 	dbURL := must.Return(easypg.URLFrom(easypg.URLParts{
 		HostName:          osext.GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost"),
@@ -87,5 +87,5 @@ func InitDB() *oblast.DB {
 	dbConn.SetMaxOpenConns(16)
 
 	prometheus.MustRegister(sqlstats.NewStatsCollector(dbName, dbConn))
-	return oblast.NewDB(dbConn)
+	return gsql.NewDB(dbConn)
 }

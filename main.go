@@ -22,7 +22,7 @@ import (
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
-	"go.xyrillian.de/oblast"
+	"go.xyrillian.de/gg/gsql"
 
 	"github.com/sapcc/tenso/internal/api"
 	_ "github.com/sapcc/tenso/internal/handlers" // must be imported to register the handler implementations
@@ -59,7 +59,7 @@ func main() {
 	}
 }
 
-func runAPI(ctx context.Context, cfg tenso.Configuration, db *oblast.DB, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
+func runAPI(ctx context.Context, cfg tenso.Configuration, db *gsql.DB, provider *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) {
 	identityV3, err := openstack.NewIdentityV3(provider, eo)
 	if err != nil {
 		logg.Fatal("cannot find Keystone V3 API: " + err.Error())
@@ -96,7 +96,7 @@ func runAPI(ctx context.Context, cfg tenso.Configuration, db *oblast.DB, provide
 	must.Succeed(httpext.ListenAndServeContext(ctx, apiListenAddress, mux))
 }
 
-func runWorker(ctx context.Context, cfg tenso.Configuration, db *oblast.DB) {
+func runWorker(ctx context.Context, cfg tenso.Configuration, db *gsql.DB) {
 	// start worker loops (we have a budget of 16 DB connections, which we
 	// distribute between converting and delivering with some headroom to spare)
 	c := tasks.NewContext(cfg, db)
