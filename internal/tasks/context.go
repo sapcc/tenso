@@ -6,7 +6,7 @@ package tasks
 import (
 	"time"
 
-	"go.xyrillian.de/oblast"
+	"go.xyrillian.de/gg/gsql"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -15,7 +15,7 @@ import (
 // package.
 type Context struct {
 	Config tenso.Configuration
-	DB     *oblast.DB
+	DB     *gsql.DB
 
 	// dependency injection slots (usually filled by ApplyDefaults(), but filled
 	// with doubles in tests)
@@ -23,7 +23,7 @@ type Context struct {
 }
 
 // NewContext constructs a new tasks.Context.
-func NewContext(cfg tenso.Configuration, db *oblast.DB) *Context {
+func NewContext(cfg tenso.Configuration, db *gsql.DB) *Context {
 	return &Context{cfg, db, time.Now}
 }
 

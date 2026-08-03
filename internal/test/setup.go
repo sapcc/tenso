@@ -16,7 +16,7 @@ import (
 	"github.com/sapcc/go-bits/mock"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
-	"go.xyrillian.de/oblast"
+	"go.xyrillian.de/gg/gsql"
 
 	"github.com/sapcc/tenso/internal/api"
 	"github.com/sapcc/tenso/internal/tasks"
@@ -54,7 +54,7 @@ type Setup struct {
 	// fields that are always set
 	Clock    *mock.Clock
 	Config   tenso.Configuration
-	DB       *oblast.DB
+	DB       *gsql.DB
 	Ctx      context.Context //nolint: containedctx  // only used in tests
 	Registry *prometheus.Registry
 	// fields that are set if WithAPI is included
@@ -75,7 +75,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	}
 
 	// connect to DB
-	db := oblast.NewDB(easypg.ConnectForTest(t, tenso.DBConfiguration(),
+	db := gsql.NewDB(easypg.ConnectForTest(t, tenso.DBConfiguration(),
 		easypg.ClearTables("pending_deliveries", "events", "users"),
 		easypg.ResetPrimaryKeys("events", "users"),
 	))

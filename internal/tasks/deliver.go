@@ -13,7 +13,7 @@ import (
 	"github.com/sapcc/go-bits/jobloop"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/sqlext"
-	"go.xyrillian.de/oblast"
+	"go.xyrillian.de/gg/gsql"
 
 	"github.com/sapcc/tenso/internal/tenso"
 )
@@ -33,7 +33,7 @@ const (
 // DeliveryJob is a jobloop.Job. Each task run takes one event to be delivered
 // from the database and invokes the respective delivery.
 func (c *Context) DeliveryJob(registerer prometheus.Registerer) jobloop.Job {
-	return (&jobloop.TxGuardedJob[*oblast.Tx, tenso.PendingDelivery]{
+	return (&jobloop.TxGuardedJob[*gsql.Tx, tenso.PendingDelivery]{
 		Metadata: jobloop.JobMetadata{
 			ReadableName:    "Event delivery",
 			ConcurrencySafe: true, // because "FOR UPDATE SKIP LOCKED" is used
@@ -44,14 +44,14 @@ func (c *Context) DeliveryJob(registerer prometheus.Registerer) jobloop.Job {
 			CounterLabels: []string{"payload_type"},
 		},
 		BeginTx: c.DB.Begin,
-		DiscoverRow: func(ctx context.Context, tx *oblast.Tx, _ prometheus.Labels) (tenso.PendingDelivery, error) {
+		DiscoverRow: func(ctx context.Context, tx *gsql.Tx, _ prometheus.Labels) (tenso.PendingDelivery, error) {
 			return selectNextDeliveryQuery.SelectOne(ctx, tx, c.timeNow())
 		},
 		ProcessRow: c.processDelivery,
 	}).Setup(registerer)
 }
 
-func (c *Context) processDelivery(ctx context.Context, tx *oblast.Tx, pd tenso.PendingDelivery, labels prometheus.Labels) (returnedError error) {
+func (c *Context) processDelivery(ctx context.Context, tx *gsql.Tx, pd tenso.PendingDelivery, labels prometheus.Labels) (returnedError error) {
 	var event tenso.Event
 
 	labels["payload_type"] = pd.PayloadType
