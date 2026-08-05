@@ -9,6 +9,7 @@ import (
 
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sapcc/go-api-declarations/bininfo"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
 	"go.xyrillian.de/gg/gsql"
@@ -72,6 +73,7 @@ func InitDB(ctx context.Context) *gsql.DB {
 		Password:          os.Getenv("TENSO_DB_PASSWORD"),
 		ConnectionOptions: os.Getenv("TENSO_DB_CONNECTION_OPTIONS"),
 		DatabaseName:      osext.GetenvOrDefault("TENSO_DB_NAME", "tenso"),
+		ApplicationName:   bininfo.Component(),
 	}
 	dbConn := must.Return(pgruntime.StdConnector("postgres").Connect(ctx, target, DBConfiguration()))
 
