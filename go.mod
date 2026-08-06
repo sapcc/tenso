@@ -10,7 +10,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/cors v1.11.1
 	github.com/sapcc/go-api-declarations v1.24.0
-	github.com/sapcc/go-bits v0.0.0-20260806072527-32381c36b909
+	github.com/sapcc/go-bits v0.0.0-20260806170240-4bbc84d224db
 	go.xyrillian.de/gg v1.13.3
 	go.xyrillian.de/oblast v0.13.2
 	go.xyrillian.de/schwift/v2 v2.2.1
