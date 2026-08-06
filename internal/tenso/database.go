@@ -4,18 +4,23 @@
 package tenso
 
 import (
+	"context"
 	"os"
 
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sapcc/go-bits/easypg"
+	"github.com/sapcc/go-api-declarations/bininfo"
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
 	"go.xyrillian.de/gg/gsql"
+	"go.xyrillian.de/gg/pgruntime"
+
+	// include DB driver
+	_ "github.com/lib/pq"
 )
 
-var sqlMigrations = map[string]string{
-	"001_initial.up.sql": `
+var sqlMigrations = map[int64]string{
+	1: `
 		CREATE TABLE users (
 			id          BIGSERIAL NOT NULL PRIMARY KEY,
 			uuid        TEXT      NOT NULL UNIQUE,
@@ -43,49 +48,38 @@ var sqlMigrations = map[string]string{
 			PRIMARY KEY (event_id, payload_type)
 		);
 	`,
-	"001_initial.down.sql": `
-		DROP TABLE pending_deliveries;
-		DROP TABLE events;
-		DROP TABLE users;
-	`,
-	"002_add_events_description.up.sql": `
+	2: `
 		ALTER TABLE events ADD COLUMN description TEXT NOT NULL DEFAULT '';
 	`,
-	"002_add_events_description.down.sql": `
-		ALTER TABLE events DROP COLUMN description;
-	`,
-	"003_add_events_routing_info.up.sql": `
+	3: `
 		ALTER TABLE events ADD COLUMN routing_info_json TEXT NOT NULL DEFAULT '';
-	`,
-	"003_add_events_routing_info.down.sql": `
-		ALTER TABLE events DROP COLUMN routing_info_json;
 	`,
 }
 
-// DBConfiguration returns the easypg.Configuration object that func main() needs to initialize the DB connection.
-func DBConfiguration() easypg.Configuration {
-	return easypg.Configuration{
+// DBConfiguration returns the [pgruntime.ConnectionBehavior] object that func main() needs to initialize the DB connection.
+func DBConfiguration() pgruntime.ConnectionBehavior {
+	return pgruntime.ConnectionBehavior{
 		Migrations: sqlMigrations,
 	}
 }
 
 // InitDB initializes a DB connection for productive use.
 // (Tests use the DB connection logic in test.NewSetup() instead.)
-func InitDB() *gsql.DB {
-	dbName := osext.GetenvOrDefault("TENSO_DB_NAME", "tenso")
-	dbURL := must.Return(easypg.URLFrom(easypg.URLParts{
+func InitDB(ctx context.Context) *gsql.DB {
+	target := pgruntime.ConnectionTarget{
 		HostName:          osext.GetenvOrDefault("TENSO_DB_HOSTNAME", "localhost"),
 		Port:              osext.GetenvOrDefault("TENSO_DB_PORT", "5432"),
 		UserName:          osext.GetenvOrDefault("TENSO_DB_USERNAME", "postgres"),
 		Password:          os.Getenv("TENSO_DB_PASSWORD"),
 		ConnectionOptions: os.Getenv("TENSO_DB_CONNECTION_OPTIONS"),
-		DatabaseName:      dbName,
-	}))
-	dbConn := must.Return(easypg.Connect(dbURL, DBConfiguration()))
+		DatabaseName:      osext.GetenvOrDefault("TENSO_DB_NAME", "tenso"),
+		ApplicationName:   bininfo.Component(),
+	}
+	dbConn := must.Return(pgruntime.StdConnector("postgres").Connect(ctx, target, DBConfiguration()))
 
 	// ensure that this process does not starve other Tenso processes for DB connections
 	dbConn.SetMaxOpenConns(16)
 
-	prometheus.MustRegister(sqlstats.NewStatsCollector(dbName, dbConn))
-	return gsql.NewDB(dbConn)
+	prometheus.MustRegister(sqlstats.NewStatsCollector(target.DatabaseName, dbConn))
+	return dbConn
 }

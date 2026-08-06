@@ -6,9 +6,9 @@ package tasks_test
 import (
 	"testing"
 
-	"github.com/sapcc/go-bits/easypg"
+	"go.xyrillian.de/gg/pgruntime"
 )
 
 func TestMain(m *testing.M) {
-	easypg.WithTestDB(m, func() int { return m.Run() })
+	pgruntime.WithTestDB(m, m.Run)
 }

@@ -12,12 +12,13 @@ import (
 	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/httptest"
 	"go.xyrillian.de/gg/assert"
+	"go.xyrillian.de/gg/pgruntime"
 
 	"github.com/sapcc/tenso/internal/test"
 )
 
 func TestMain(m *testing.M) {
-	easypg.WithTestDB(m, func() int { return m.Run() })
+	pgruntime.WithTestDB(m, m.Run)
 }
 
 func TestPostNewEvent(t *testing.T) {

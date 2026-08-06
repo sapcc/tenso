@@ -47,7 +47,7 @@ func main() {
 
 	ctx := httpext.ContextWithSIGINT(context.Background(), 10*time.Second)
 	cfg, provider, eo := tenso.ParseConfiguration(ctx)
-	db := tenso.InitDB()
+	db := tenso.InitDB(ctx)
 
 	switch commandWord {
 	case "api":

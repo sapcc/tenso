@@ -9,7 +9,6 @@ import (
 
 	"github.com/gophercloud/gophercloud/v2"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/httptest"
 	"github.com/sapcc/go-bits/logg"
@@ -17,6 +16,7 @@ import (
 	"github.com/sapcc/go-bits/must"
 	"github.com/sapcc/go-bits/osext"
 	"go.xyrillian.de/gg/gsql"
+	"go.xyrillian.de/gg/pgruntime"
 
 	"github.com/sapcc/tenso/internal/api"
 	"github.com/sapcc/tenso/internal/tasks"
@@ -75,10 +75,7 @@ func NewSetup(t *testing.T, opts ...SetupOption) Setup {
 	}
 
 	// connect to DB
-	db := gsql.NewDB(easypg.ConnectForTest(t, tenso.DBConfiguration(),
-		easypg.ClearTables("pending_deliveries", "events", "users"),
-		easypg.ResetPrimaryKeys("events", "users"),
-	))
+	db, _ := pgruntime.StdConnector("postgres").ConnectForTest(t, tenso.DBConfiguration())
 
 	// build configuration
 	s := Setup{
