@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/sapcc/go-bits/gopherpolicy"
+	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/osext"
 	"github.com/sapcc/go-bits/regexpext"
 	"go.xyrillian.de/gg/gsql"
@@ -47,7 +47,8 @@ func (a *API) OverrideTimeNow(now func() time.Time) *API {
 }
 
 // AddTo implements the httpapi.API interface.
-func (a *API) AddTo(r *mux.Router) {
+func (a *API) AddTo(c *httpapi.Composer) {
+	r := c.Router()
 	r.Methods("POST").Path("/v1/events/new").HandlerFunc(a.handlePostNewEvent)
 	r.Methods("POST").Path("/v1/events/synthetic").HandlerFunc(a.handlePostSyntheticEvent)
 }

@@ -84,7 +84,7 @@ github.com/rs/cors/internal
 github.com/sapcc/go-api-declarations/bininfo
 github.com/sapcc/go-api-declarations/cadf
 github.com/sapcc/go-api-declarations/deployevent
-# github.com/sapcc/go-bits v0.0.0-20260827091731-7669cbdb53fb
+# github.com/sapcc/go-bits v0.0.0-20260907125021-ceb8c12b73ac
 ## explicit; go 1.27
 github.com/sapcc/go-bits/easypg
 github.com/sapcc/go-bits/gophercloudext
