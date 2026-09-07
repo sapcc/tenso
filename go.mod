@@ -5,12 +5,11 @@ go 1.27
 require (
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/gophercloud/gophercloud/v2 v2.14.0
-	github.com/gorilla/mux v1.8.1
 	github.com/lib/pq v1.12.3
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/cors v1.11.1
 	github.com/sapcc/go-api-declarations v1.25.0
-	github.com/sapcc/go-bits v0.0.0-20260827091731-7669cbdb53fb
+	github.com/sapcc/go-bits v0.0.0-20260907125021-ceb8c12b73ac
 	go.xyrillian.de/gg v1.14.0
 	go.xyrillian.de/oblast v0.13.2
 	go.xyrillian.de/schwift/v2 v2.2.1
@@ -20,6 +19,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/databus23/goslo.policy v0.0.0-20250326134918-4afc2c56a903 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/itchyny/gojq v0.12.19 // indirect
 	github.com/itchyny/timefmt-go v0.1.8 // indirect
