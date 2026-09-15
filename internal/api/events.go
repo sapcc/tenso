@@ -13,6 +13,7 @@ import (
 	"github.com/sapcc/go-bits/httpapi"
 	"github.com/sapcc/go-bits/respondwith"
 	"github.com/sapcc/go-bits/sqlext"
+	"go.xyrillian.de/gg/gsql"
 
 	"github.com/sapcc/tenso/internal/synthetic"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -117,40 +118,36 @@ func (a *API) handlePostNewEventCommon(w http.ResponseWriter, r *http.Request, p
 	}
 
 	// create DB records for this event
-	tx, err := a.DB.Begin()
-	if respondwith.ObfuscatedErrorText(w, err) {
-		return
-	}
-	defer sqlext.RollbackUnlessCommitted(tx)
-
-	event := tenso.Event{
-		CreatorID:       userID,
-		CreatedAt:       requestTime,
-		PayloadType:     payloadType,
-		Payload:         string(payloadBytes),
-		Description:     payloadInfo.Description,
-		RoutingInfoJSON: string(routingInfoJSON),
-	}
-	err = tenso.EventStore.Insert(ctx, tx, &event)
-	if respondwith.ObfuscatedErrorText(w, err) {
-		return
-	}
-	for _, targetPayloadType := range targetPayloadTypes {
-		err = tenso.PendingDeliveryStore.Insert(ctx, tx, &tenso.PendingDelivery{
-			EventID:               event.ID,
-			PayloadType:           targetPayloadType,
-			Payload:               nil, // to be converted later
-			ConvertedAt:           nil, // to be converted later
-			FailedConversionCount: 0,
-			FailedDeliveryCount:   0,
-			NextConversionAt:      requestTime, // convert immediately
-			NextDeliveryAt:        requestTime, // deliver immediately once converted
-		})
-		if respondwith.ObfuscatedErrorText(w, err) {
-			return
+	err = a.DB.WithinTransaction(ctx, nil, func(tx *gsql.Tx) error {
+		event := tenso.Event{
+			CreatorID:       userID,
+			CreatedAt:       requestTime,
+			PayloadType:     payloadType,
+			Payload:         string(payloadBytes),
+			Description:     payloadInfo.Description,
+			RoutingInfoJSON: string(routingInfoJSON),
 		}
-	}
-	err = tx.Commit()
+		err = tenso.EventStore.Insert(ctx, tx, &event)
+		if err != nil {
+			return err
+		}
+		for _, targetPayloadType := range targetPayloadTypes {
+			err = tenso.PendingDeliveryStore.Insert(ctx, tx, &tenso.PendingDelivery{
+				EventID:               event.ID,
+				PayloadType:           targetPayloadType,
+				Payload:               nil, // to be converted later
+				ConvertedAt:           nil, // to be converted later
+				FailedConversionCount: 0,
+				FailedDeliveryCount:   0,
+				NextConversionAt:      requestTime, // convert immediately
+				NextDeliveryAt:        requestTime, // deliver immediately once converted
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if respondwith.ObfuscatedErrorText(w, err) {
 		return
 	}
