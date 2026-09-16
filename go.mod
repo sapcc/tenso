@@ -8,7 +8,7 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/cors v1.11.1
-	github.com/sapcc/go-api-declarations v1.25.0
+	github.com/sapcc/go-api-declarations v1.25.1
 	github.com/sapcc/go-bits v0.0.0-20260908173957-572b68774a1c
 	go.xyrillian.de/gg v1.15.0
 	go.xyrillian.de/oblast v0.14.0
