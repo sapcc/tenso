@@ -6,7 +6,7 @@ package tenso
 import (
 	"time"
 
-	"go.xyrillian.de/oblast"
+	"go.xyrillian.de/gg/oblast"
 )
 
 // Event contains a record from the `events` table.

@@ -11,7 +11,6 @@ require (
 	github.com/sapcc/go-api-declarations v1.25.1
 	github.com/sapcc/go-bits v0.0.0-20261105181628-13886743d3a7
 	go.xyrillian.de/gg v1.19.0
-	go.xyrillian.de/oblast v0.17.0
 	go.xyrillian.de/schwift/v2 v2.2.1
 )
 
