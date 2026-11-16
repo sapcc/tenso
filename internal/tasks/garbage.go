@@ -11,6 +11,7 @@ import (
 	"github.com/sapcc/go-bits/jobloop"
 	"github.com/sapcc/go-bits/logg"
 	"github.com/sapcc/go-bits/sqlext"
+	"go.xyrillian.de/gg/gsql"
 )
 
 var gcDeliveredEventsQuery = sqlext.SimplifyWhitespace(`
@@ -33,8 +34,8 @@ func (c *Context) GarbageCollectionJob(registerer prometheus.Registerer) jobloop
 	}).Setup(registerer)
 }
 
-func (c *Context) collectGarbage(_ context.Context, _ prometheus.Labels) error {
-	result, err := c.DB.Exec(gcDeliveredEventsQuery)
+func (c *Context) collectGarbage(ctx context.Context, _ prometheus.Labels) error {
+	result, err := gsql.Exec(ctx, c.DB, gcDeliveredEventsQuery)
 	if err != nil {
 		return err
 	}

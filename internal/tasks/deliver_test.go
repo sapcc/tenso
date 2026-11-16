@@ -11,6 +11,7 @@ import (
 	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/must"
 	"go.xyrillian.de/gg/assert"
+	"go.xyrillian.de/gg/gsql"
 
 	"github.com/sapcc/tenso/internal/tasks"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -66,7 +67,7 @@ func TestDeliveryCommon(t *testing.T) {
 	tr.DBChanges().AssertEmpty()
 
 	// provide a translated payload, but an invalid one (we use this to simulate a delivery failure in the next step)
-	_ = must.ReturnT(s.DB.Exec(`UPDATE pending_deliveries SET payload = $1, converted_at = $2 WHERE payload_type = $3`,
+	_ = must.ReturnT(gsql.Exec(ctx, s.DB, `UPDATE pending_deliveries SET payload = $1, converted_at = $2 WHERE payload_type = $3`,
 		`{"event":"invalid","value":42}`, s.Clock.Now(), "test-bar.v1"))(t)
 	tr.DBChanges().Ignore()
 
@@ -83,7 +84,7 @@ func TestDeliveryCommon(t *testing.T) {
 	)
 
 	// fix target payload
-	_ = must.ReturnT(s.DB.Exec(`UPDATE pending_deliveries SET payload = $1, converted_at = $2 WHERE payload_type = $3`,
+	_ = must.ReturnT(gsql.Exec(ctx, s.DB, `UPDATE pending_deliveries SET payload = $1, converted_at = $2 WHERE payload_type = $3`,
 		`{"event":"bar","value":42}`, s.Clock.Now(), "test-bar.v1"))(t)
 	tr.DBChanges().Ignore()
 
@@ -96,7 +97,7 @@ func TestDeliveryCommon(t *testing.T) {
 	tr.DBChanges().AssertEqualf(`DELETE FROM pending_deliveries WHERE event_id = 1 AND payload_type = 'test-bar.v1';`)
 
 	// also deliver the second payload in the same way
-	_ = must.ReturnT(s.DB.Exec(`UPDATE pending_deliveries SET payload = $1, converted_at = $2 WHERE payload_type = $3`,
+	_ = must.ReturnT(gsql.Exec(ctx, s.DB, `UPDATE pending_deliveries SET payload = $1, converted_at = $2 WHERE payload_type = $3`,
 		`{"event":"baz","value":42}`, s.Clock.Now(), "test-baz.v1"))(t)
 	must.SucceedT(t, deliveryJob.ProcessOne(s.Ctx))
 	tr.DBChanges().AssertEqualf(`DELETE FROM pending_deliveries WHERE event_id = 1 AND payload_type = 'test-baz.v1';`)

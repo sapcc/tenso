@@ -11,6 +11,7 @@ import (
 	"github.com/sapcc/go-bits/easypg"
 	"github.com/sapcc/go-bits/must"
 	"go.xyrillian.de/gg/assert"
+	"go.xyrillian.de/gg/gsql"
 
 	"github.com/sapcc/tenso/internal/tasks"
 	"github.com/sapcc/tenso/internal/tenso"
@@ -69,7 +70,7 @@ func TestConversionCommon(t *testing.T) {
 	)
 
 	// fix source payload to enable a successful conversion
-	_ = must.ReturnT(s.DB.Exec(`UPDATE events SET payload = $1`, `{"event":"foo","value":42}`))(t)
+	_ = must.ReturnT(gsql.Exec(ctx, s.DB, `UPDATE events SET payload = $1`, `{"event":"foo","value":42}`))(t)
 	tr.DBChanges().Ignore()
 
 	// check successful conversion (this touches the second PendingDelivery since it's NextConversionAt is lower)
